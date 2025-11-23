@@ -1,0 +1,44 @@
+{
+  "$schema": "https://neutralino.js.org/schemas/neutralino.config.json",
+  "applicationId": "js.neutralino.fractalos",
+  "version": "0.0.5",
+  "defaultMode": "window",
+  "port": 0,
+  "url": "/index.html",
+  "documentRoot": "/resources/",
+  "enableServer": true,
+  "enableNativeAPI": true,
+  "tokenSecurity": "one-time",
+  "logging": {
+    "enabled": true,
+    "writeToLogFile": true
+  },
+  "nativeAllowList": [
+    "app.*",
+    "os.*",
+    "filesystem.*"
+  ],
+  "modes": {
+    "window": {
+      "title": "FractalOS",
+      "width": 1200,
+      "height": 900,
+      "minWidth": 800,
+      "minHeight": 600,
+      "fullScreen": false,
+      "alwaysOnTop": false,
+      "icon": "/resources/icons/appIcon.png",
+      "enableInspector": true,
+      "borderless": false,
+      "maximize": false
+    }
+  },
+  "cli": {
+    "binaryName": "fractalos",
+    "resourcesPath": "/resources/",
+    "extensionsPath": "/extensions/",
+    "clientLibrary": "/resources/neutralino.js",
+    "binaryVersion": "6.2.0",
+    "clientVersion": "6.2.0"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Space Cowboy",
+  "description": "A dusty, futuristic theme with sunset colors and the hum of a lone spaceship.",
+  "colors": {
+    "text-primary": "#FFDDAA",
+    "text-secondary": "#BBAA88",
+    "text-subtle": "#887766",
+    "accent-sky": "#FF8844",
+    "accent-amber": "#FFBB33",
+    "background-darkest": "#221100",
+    "background-dark": "#332211",
+    "background-medium": "#443322",
+    "background-light": "#554433",
+    "border-primary": "#776655",
+    "border-secondary": "#554433",
+    "error": "#FF6666",
+    "success": "#AADD88",
+    "info": "#88CCFF"
+  },
+  "fonts": {
+    "googleFontUrl": "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap",
+    "mono": "'Orbitron', 'VT323', monospace",
+    "sans": "'Orbitron', 'Inter', sans-serif"
+  },
+  "sounds": {
+    "beepNote": "A4"
+  }
+}

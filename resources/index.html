@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FractalOS v0.0.5</title>
+    <script src="./neutralino.js"></script>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="main-column">
+        <div id="terminal-bezel">
+            <div id="terminal" class="terminal">
+                <div id="output" class="terminal__output"></div>
+                <div id="app-layer" class="hidden"></div>
+                <div class="terminal__input-line">
+                    <div id="prompt-container" class="terminal__prompt">
+                    </div>
+                    <div id="editable-input-container" class="terminal__input-wrapper">
+                        <div id="editable-input" contenteditable="true" spellcheck="false" autocapitalize="none" class="terminal__input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h1 id="main-footer">| COPYRIGHT ©2025 | <a href="mailto:oopismcgoopis@gmail.com">EDMARK</a> & <a href="https://gemini.google.com">GEMINI</a> | <a target="_blank" href="https://samwiseos.neocities.org">HOME</a> | <a target="_blank" href="https://gitlab.com/aedmark/FractalOS">GITLAB</a> | <a target="_blank" href="https://gitlab.com/aedmark/FractalOS/-/wikis/home">WIKI</a> |</h1>
+    </div>
+</div>
+
+<script src="./scripts/asset_manifest.js"></script>
+<script>
+    (async () => {
+        const manifest = window.FRACTAL_ASSET_MANIFEST;
+        if (!manifest) {
+            console.error("FATAL: Asset manifest not found!");
+            document.body.innerHTML = '<p style="color:red; font-family:monospace;">FATAL ERROR: Could not load asset manifest. The OS cannot start.</p>';
+            return;
+        }
+
+        const loadCss = (url) => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = url;
+            document.head.appendChild(link);
+        };
+
+        const loadJs = (url) => {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error(`Script load error for ${url}`));
+                document.body.appendChild(script);
+            });
+        };
+
+        // Load all CSS files in parallel
+        manifest.css.forEach(loadCss);
+
+        // Load all JS files sequentially to respect dependencies
+        try {
+            for (const scriptUrl of manifest.js) {
+                await loadJs(scriptUrl);
+            }
+        } catch (error) {
+            console.error("FATAL: Failed to load a critical script.", error);
+            document.body.innerHTML = `<p style="color:red; font-family:monospace;">FATAL ERROR: ${error.message}. The OS cannot start.</p>`;
+        }
+    })();
+</script>
+
+</body>
+</html>
