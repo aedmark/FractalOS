@@ -1,4 +1,4 @@
-# FractalOS v0.0.5: The Little OS That Could
+# FractalOS v0.0.5: The Little WebOS That Could
 
 ### An AI-centric operating system built with relentless optimism and a whole lot of Python.
 
@@ -6,7 +6,7 @@ This project is a bold exploration into creating a unique, web-based operating s
 
 ## What is this?
 
-FractalOS is a **Hybrid Web Operating System**. It reimagines the OS experience by placing a Large Language Model (LLM) at the center of the user interaction loop.
+FractalOS is a **Hybrid Browser-Based Operating System**. It reimagines the OS experience by placing a Large Language Model (LLM) at the center of the user interaction loop.
 
 Instead of clicking icons or memorizing complex CLI flags, you converse with the system. The AI acts as your intelligent agent, capable of understanding natural language, executing system commands, managing files, and even writing code on your behalf.
 
