@@ -1,6 +1,6 @@
 # FractalOS v0.0.5: The Little WebOS That Could
 
-### An AI-centric operating system built with relentless optimism and a whole lot of Python.
+### An AI-centric, virtual operating system built with relentless optimism and a whole lot of Python.
 
 This project is a bold exploration into creating a unique, web-based operating system where the primary interface is a generative AI. After a successful and system-wide migration, our core logic now runs on a robust Python kernel, making the OS more powerful and extensible than ever. It's a testament to what we can achieve with a can-do attitude, a lot of heart, and a little help from our friends (even the digital ones!).
 
