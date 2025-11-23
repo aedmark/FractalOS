@@ -1,0 +1,39 @@
+/* Top Style Sheet */
+
+/* NEW: Make the app container itself fill the entire screen */
+#fractalos-process-viewer-app-container {
+    width: 98%;
+    height: 98%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+}
+
+#fractalos-process-viewer-app-container .app-main {
+    padding: var(--spacing-md);
+    overflow-y: auto;
+    align-items: flex-start;
+    /* The incorrect align-items rule from the last attempt has been removed */
+}
+
+.top-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.top-table th {
+    text-align: left;
+    padding: var(--spacing-sm);
+    border-bottom: 2px solid var(--color-border-primary);
+    background-color: var(--color-background-medium);
+    position: sticky;
+    top: 0;
+}
+
+.top-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border-secondary);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
