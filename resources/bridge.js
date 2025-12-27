@@ -30,7 +30,7 @@ const OopisOS_Kernel = {
     getKernelFileManifest() {
         const coreFiles = [
             "kernel", "filesystem", "executor", "session", "groups", "users",
-            "sudo", "audit", "ai_manager", "time_utils", "story_manager"
+            "sudo", "audit", "ai_manager", "time_utils", "story_manager", "bone_driver"
         ];
 
         const appFiles = [

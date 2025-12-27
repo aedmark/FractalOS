@@ -6,6 +6,7 @@ import shlex
 import pyodide.http as pyodide_http
 from asyncio import TimeoutError
 from audit import audit_manager
+from bone_driver import BoneDriver
 
 class AIManager:
     """
@@ -19,7 +20,7 @@ class AIManager:
         # This dictionary is now the single source of truth for provider info.
         self.provider_config = {
             "gemini": {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent", "defaultModel": "gemini-1.5-flash"},
-            "ollama": {"url": "http://localhost:11434/api/generate", "defaultModel": "gemma3:12b"}
+            "ollama": {"url": "http://localhost:11434/api/generate", "defaultModel": "gemma3:latest"}
         }
 
         self.CHAT_SYSTEM_PROMPT = "You are a helpful assistant in the FractalOS environment. Be friendly and concise. Format your responses in Markdown."
@@ -52,10 +53,11 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
 
         self.COMMAND_WHITELIST = [
             "ls", "cat", "grep", "find", "tree", "pwd", "head", "tail",
-            "wc", "man", "help", "echo", "bc", "expr", "whoami", "date", "story"
+            "wc", "man", "help", "echo", "bc", "expr", "whoami", "date", "story",
+            "mkdir", "touch", "mv", "cp", "rm", "rmdir", "forge", "run", "chmod"
         ]
         self.DANGEROUS_COMMANDS = [
-            "rm", "mv", "chmod", "chown", "chgrp", "useradd", "usermod",
+            "rm", "mv", "chown", "chgrp", "useradd", "usermod",
             "passwd", "forge", "patch", "reset", "clearfs"
         ]
 
@@ -120,6 +122,114 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         ls_output = ls_result.get("output", "(empty)")
 
         return f"## OopisOS Session Context ##\\nCurrent Directory:\\n{pwd_output}\\n\\nDirectory Listing:\\n{ls_output}"
+
+    async def perform_autopilot(self, prompt, history, provider, model, options):
+        """
+        BONEAMANITA AUTOPILOT PROTOCOL.
+        Executes tasks using the BoneDriver persona and Safety Interlocks.
+        """
+        # 1. RESOLVE ENGINE (Provider/Model)
+        final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
+        
+        # 2. SUMMON THE DRIVER (System Prompt)
+        # We assume command_executor has the current user_context populated from the request
+        driver_prompt = BoneDriver.get_system_prompt(self.command_executor.user_context)
+        
+        # 3. SENSE THE ROAD (Context)
+        road_conditions = await self._get_terminal_context()
+        full_prompt = f"{driver_prompt}\n\nCURRENT ROAD CONDITIONS:\n{road_conditions}\n\nUSER REQUEST: {prompt}"
+        
+        # 4. CALCULATE TRAJECTORY (The Plan)
+        # We treat this as a single-turn instruction for now to ensure strict adherence to the plan format
+        conversation = [{"role": "user", "parts": [{"text": full_prompt}]}]
+        plan_result = await self._call_llm_api(final_provider, final_model, conversation, options.get("apiKey"))
+
+        if not plan_result["success"]:
+            return plan_result # Return error if API failed
+
+        plan_text = plan_result.get("answer", "").strip()
+        
+        # 5. THE SAFETY INTERLOCK (Voltage Check)
+        voltage = BoneDriver.audit_plan_voltage(plan_text)
+        safety_status = BoneDriver.get_safety_report(voltage)
+        
+        # LOG THE SENSATION
+        print(f"[BONE] Plan Voltage: {voltage} | Status: {safety_status}")
+        
+        # REJECTION THRESHOLD: 
+        # If Voltage > 10 (Destructive) and user didn't force it, we brake.
+        # (For this implementation, we will auto-brake on High Voltage).
+        if voltage >= 20.0:
+            return {
+                "success": False, 
+                "error": f"🛑 AUTOPILOT DISENGAGED. {safety_status}. Human confirmation required.\nPlan:\n{plan_text}"
+            }
+
+       # 6. DRIVE (Execution)
+        commands_to_execute = []
+        for line in plan_text.splitlines():
+            line = line.strip()
+            # Accept numbers (1.), bullets (-, *), or code blocks (without backticks)
+            if re.match(r'^(\d+\.|-|\*)\s+', line) or line.startswith(tuple(self.COMMAND_WHITELIST)):
+                commands_to_execute.append(line)
+
+        if not commands_to_execute:
+             # Fallback: Try to grab code blocks
+             code_blocks = re.findall(r'```(?:bash|sh)?\n(.*?)```', plan_text, re.DOTALL)
+             for block in code_blocks:
+                 for line in block.splitlines():
+                     if line.strip(): commands_to_execute.append(line.strip())
+
+        if not commands_to_execute:
+             return {
+                 "success": True,
+                 "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"
+             }
+
+        execution_log = ""
+
+        # [[[ MEMORY INJECTION START ]]]
+        # We start tracking the path from where the system currently is.
+        simulated_current_path = self.fs_manager.current_path
+        # [[[ MEMORY INJECTION END ]]]
+
+        for command_line in commands_to_execute:
+            # Clean the command
+            command_str = re.sub(r'^(\d+\.|-|\*)\s+', '', command_line).strip()
+            command_str = command_str.replace('`', '')
+
+            # 7. KINETIC DISCHARGE
+            # We explicitly tell the executor: "THIS IS WHERE WE ARE."
+            js_context = {
+                "user_context": self.command_executor.user_context,
+                "current_path": simulated_current_path # <--- THE FIX
+            }
+
+            exec_result_json = await self.command_executor.execute(command_str, json.dumps(js_context))
+            exec_result = json.loads(exec_result_json)
+
+            # 8. UPDATE MEMORY (Did we move?)
+            # If the command was `cd`, we must update our simulated path for the next loop.
+            if exec_result.get("success"):
+                # Direct effect check
+                if exec_result.get("effect") == "change_directory":
+                    simulated_current_path = exec_result.get("path")
+
+                # Bundled effects check
+                if exec_result.get("effects"):
+                    for effect in exec_result["effects"]:
+                        if effect.get("effect") == "change_directory":
+                            simulated_current_path = effect.get("path")
+
+            output = exec_result.get("output", "") if exec_result.get("success") else f"Error: {exec_result.get('error')}"
+            execution_log += f"► {command_str}\n{output}\n"
+
+        # 9. REPORT (The Aftermath)
+        final_report = f"### 🍄 BONEAMANITA AUTOPILOT REPORT\n**Status:** {safety_status} (Voltage: {voltage})\n\n**Execution Log:**\n```\n{execution_log}\n```"
+        
+        response = {"success": True, "data": final_report}
+        if warning: response["warning"] = warning
+        return response
 
     async def perform_agentic_search(self, prompt, history, provider, model, options):
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
