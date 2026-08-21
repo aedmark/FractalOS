@@ -28,8 +28,8 @@ def _ensure_bulletin_exists(user_context):
         try:
             initial_content = "# OopisOS Town Bulletin\n"
             fs_manager.write_file(BULLETIN_PATH, initial_content, user_context)
-            fs_manager.chown(BULLETIN_PATH, "root")
-            fs_manager.chgrp(BULLETIN_PATH, "towncrier")
+            fs_manager.chown(BULLETIN_PATH, "root", user_context=user_context)
+            fs_manager.chgrp(BULLETIN_PATH, "towncrier", user_context=user_context)
             fs_manager.chmod(BULLETIN_PATH, "666") # rw-rw-rw-
         except Exception:
             return False

@@ -284,10 +284,14 @@ class FileSystemManager:
             for child_node in node['children'].values():
                 self._recursive_chown(child_node, new_owner)
 
-    def chown(self, path, new_owner, recursive=False):
+    def chown(self, path, new_owner, recursive=False, user_context=None):
         node = self.get_node(path)
         if not node:
             raise FileNotFoundError(f"Cannot access '{path}': No such file or directory")
+
+        # Security check: Only root can change file ownership
+        if user_context and user_context.get('name') != 'root':
+            raise PermissionError("Operation not permitted")
 
         if recursive and node.get('type') == 'directory':
             self._recursive_chown(node, new_owner)
@@ -305,10 +309,14 @@ class FileSystemManager:
             for child_node in node['children'].values():
                 self._recursive_chgrp(child_node, new_group)
 
-    def chgrp(self, path, new_group, recursive=False):
+    def chgrp(self, path, new_group, recursive=False, user_context=None):
         node = self.get_node(path)
         if not node:
             raise FileNotFoundError(f"Cannot access '{path}': No such file or directory")
+
+        # Security check: Only root can change group ownership
+        if user_context and user_context.get('name') != 'root':
+            raise PermissionError("Operation not permitted")
 
         if recursive and node.get('type') == 'directory':
             self._recursive_chgrp(node, new_group)

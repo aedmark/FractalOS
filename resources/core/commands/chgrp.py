@@ -39,7 +39,7 @@ def run(args, flags, user_context, stdin_data=None, users=None, user_groups=None
     for path in paths:
         try:
             # Security check is handled within fs_manager.chgrp
-            fs_manager.chgrp(path, new_group, recursive=is_recursive)
+            fs_manager.chgrp(path, new_group, recursive=is_recursive, user_context=user_context)
         except PermissionError as e:
             return {
                 "success": False,
