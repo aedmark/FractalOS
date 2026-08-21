@@ -85,8 +85,8 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
             if registration_result["success"]:
                 home_path = f"/home/{username}"
                 fs_manager.create_directory(home_path, {"name": "root", "group": "root"})
-                fs_manager.chown(home_path, username)
-                fs_manager.chgrp(home_path, username)
+                fs_manager.chown(home_path, username, user_context=user_context)
+                fs_manager.chgrp(home_path, username, user_context=user_context)
                 audit_manager.log(actor, 'USERADD_SUCCESS', f"Successfully added user '{username}'", user_context)
                 return {
                     "success": True,

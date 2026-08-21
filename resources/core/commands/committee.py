@@ -57,8 +57,8 @@ def run(args, flags, user_context, **kwargs):
 
         # Create project directory and set permissions
         fs_manager.create_directory(project_path, {"name": "root", "group": "root"})
-        fs_manager.chown(project_path, "root")
-        fs_manager.chgrp(project_path, committee_name)
+        fs_manager.chown(project_path, "root", user_context=user_context)
+        fs_manager.chgrp(project_path, committee_name, user_context=user_context)
         fs_manager.chmod(project_path, "770") # rwxrwx---
 
         # Create and pre-populate the planner file
@@ -76,7 +76,7 @@ def run(args, flags, user_context, **kwargs):
         planner_content = json.dumps(initial_plan, indent=2)
         fs_manager.write_file(planner_path, planner_content, user_context)
         # Ensure the new planner file also has the correct group permissions
-        fs_manager.chgrp(planner_path, committee_name)
+        fs_manager.chgrp(planner_path, committee_name, user_context=user_context)
         fs_manager.chmod(planner_path, "660") # rw-rw----
 
 

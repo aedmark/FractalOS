@@ -39,7 +39,7 @@ def run(args, flags, user_context, stdin_data=None, users=None, **kwargs):
     for path in paths:
         try:
             # Security check is handled within fs_manager.chown
-            fs_manager.chown(path, new_owner, recursive=is_recursive)
+            fs_manager.chown(path, new_owner, recursive=is_recursive, user_context=user_context)
         except PermissionError as e:
             return {
                 "success": False,
