@@ -260,34 +260,49 @@ class CommandExecutor:
                 result_parts.append(part)
         command_string = "'".join(result_parts)
 
-        # Command Substitution
+        # Command Substitution (quote-aware: only process $() outside single quotes)
+        # Split by single quotes to identify quoted vs unquoted sections
+        parts = command_string.split("'")
+        result_parts = []
         pattern = re.compile(r'\$\((.*?)\)', re.DOTALL)
-        match = pattern.search(command_string)
-        while match:
-            sub_command = match.group(1)
-            sub_result_json = await self.execute(sub_command, js_context_json)
-            sub_result = json.loads(sub_result_json)
-            if sub_result.get("success"):
-                # Shell-like behavior: strip trailing newlines; replace embedded newlines with spaces
-                output = str(sub_result.get("output", ""))
-                # Normalize Windows CRLF and Unix LF
-                output = output.replace('\r\n', '\n').replace('\r', '\n')
-                # Remove trailing newlines
-                output = output.rstrip('\n')
-                # Replace remaining newlines with spaces
-                output = output.replace('\n', ' ')
-                # If substitution occurs immediately after '=', treat as a single assignment value by quoting
-                before_idx = match.start() - 1
-                if before_idx >= 0 and command_string[before_idx] == '=':
-                    # Escape any double quotes in the output
-                    safe_output = output.replace('"', '\\"')
-                    replacement = f'"{safe_output}"'
-                else:
-                    replacement = output
-                command_string = command_string[:match.start()] + replacement + command_string[match.end():]
+        
+        for i, part in enumerate(parts):
+            # Even indices (0, 2, 4...) are outside single quotes
+            # Odd indices (1, 3, 5...) are inside single quotes
+            if i % 2 == 0:
+                # Process command substitutions in unquoted sections
+                match = pattern.search(part)
+                while match:
+                    sub_command = match.group(1)
+                    sub_result_json = await self.execute(sub_command, js_context_json)
+                    sub_result = json.loads(sub_result_json)
+                    if sub_result.get("success"):
+                        # Shell-like behavior: strip trailing newlines; replace embedded newlines with spaces
+                        output = str(sub_result.get("output", ""))
+                        # Normalize Windows CRLF and Unix LF
+                        output = output.replace('\r\n', '\n').replace('\r', '\n')
+                        # Remove trailing newlines
+                        output = output.rstrip('\n')
+                        # Replace remaining newlines with spaces
+                        output = output.replace('\n', ' ')
+                        # If substitution occurs immediately after '=', treat as a single assignment value by quoting
+                        before_idx = match.start() - 1
+                        if before_idx >= 0 and part[before_idx] == '=':
+                            # Escape any double quotes in the output
+                            safe_output = output.replace('"', '\\"')
+                            replacement = f'"{safe_output}"'
+                        else:
+                            replacement = output
+                        part = part[:match.start()] + replacement + part[match.end():]
+                    else:
+                        raise ValueError(f"Command substitution failed: {sub_result.get('error')}")
+                    match = pattern.search(part)
+                result_parts.append(part)
             else:
-                raise ValueError(f"Command substitution failed: {sub_result.get('error')}")
-            match = pattern.search(command_string)
+                # Inside single quotes - do not process command substitutions
+                result_parts.append(part)
+        
+        command_string = "'".join(result_parts)
         return command_string
 
     def _parse_command_string(self, command_string):
