@@ -85,7 +85,7 @@ some of which run in background jobs). The full transcript lands in `tests/out/d
 3. Wraps `OutputManager.appendToOutput` to record every printed line and whether it carried the error class.
 4. Runs `run /home/root/diag.sh` through `CommandExecutor.processSingleCommand`. The `execute_script` effect
    awaits every line, so the call returns when the script finishes or aborts.
-5. Grades: PASS only if the script reached its "Test Suite ... Complete" banner, no `CHECK_FAIL: FAILURE` line
+5. Grades: PASS only if the script reached its closing banner ("ALL SYSTEMS OPERATIONAL"), no `CHECK_FAIL: FAILURE` line
    was printed, no line was printed with the error class, and at least as many `CHECK_FAIL: SUCCESS` lines
    appeared as there are top-level `check_fail` lines in the file (38; 40 run, because the script writes child
    scripts that call `check_fail` too).

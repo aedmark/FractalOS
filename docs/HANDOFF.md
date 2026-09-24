@@ -76,8 +76,9 @@ _Last updated: 2026-09-24, session 2 (the in-OS diag suite runs headlessly and p
   `OutputManager.appendToOutput`, as `tests/diag.js` does, never by reading `#output` afterwards.
 - **A failing line aborts a `run` script** (`execute_script` breaks on the first error). So a script that
   prints its final banner ran every line.
-- **The diag script's final banner says "SamwiseOS".** A third name (before OopisOS, before FractalOS). Cosmetic;
-  `tests/diag.js` matches on "Test Suite ... Complete", not the name.
+- **The diag script's closing banner is prose the owner edits** (it went from "SamwiseOS Core Test Suite ...
+  Complete" to "FractalOS Gauntlet Complete" the same day the harness was written). `tests/diag.js` keys on the
+  "ALL SYSTEMS OPERATIONAL" line; if that line changes, change the regex in the harness with it.
 - **Git working agreement (from the owner):** commit finished, verified work with a normal message; push when
   asked. History was rewritten once with explicit permission (D-005); that is not a standing permission. The
   owner also commits from PyCharm and their local clone is at `/home/gordonk/PycharmProjects/FractalOS/`; after

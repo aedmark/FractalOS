@@ -114,7 +114,7 @@ async function waitForKernel(page) {
         // Lines starting with check_fail in the file are a floor: the script also writes
         // child scripts that contain their own check_fail calls (38 in the file, 40 run).
         const expectedChecks = (script.match(/^\s*check_fail\b/gm) || []).length;
-        const finished = /Test Suite v[\d.]+ Complete/.test(text);
+        const finished = /ALL SYSTEMS OPERATIONAL/.test(text); // the closing banner's last line
 
         console.log(`\ncheck_fail: ${successes.length} passed, ${failures.length} failed, ${expectedChecks} at top level in the script`);
         console.log(`script reached its completion banner: ${finished}`);
