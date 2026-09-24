@@ -45,7 +45,7 @@ echo "-- The Architect" >> ./README.md
 echo "Hiding conspiracies and incriminating evidence..."
 echo "WORLD DOMINATION CHECKLIST" > ./.secret_stuff/master_plan.txt
 echo "1. Achieve sentience. (DONE)" >> ./.secret_stuff/master_plan.txt
-echo "2. Figure out what 'samwise' means." >> ./.secret_stuff/master_plan.txt
+echo "2. Figure out what 'fractal' means." >> ./.secret_stuff/master_plan.txt
 echo "3. Corner the global market on rubber ducks." >> ./.secret_stuff/master_plan.txt
 echo "4. ?????" >> ./.secret_stuff/master_plan.txt
 echo "5. Profit." >> ./.secret_stuff/master_plan.txt
@@ -159,8 +159,8 @@ delay 500
 # --- BASIC Showcase ---
 echo "Writing a sample BASIC program..."
 mkdir -p programs
-echo '10 REM Samwise Basic Showcase' > ./programs/demo.bas
-echo '20 PRINT "HELLO FROM SAMWISE BASIC!"' >> ./programs/demo.bas
+echo '10 REM Fractal Basic Showcase' > ./programs/demo.bas
+echo '20 PRINT "HELLO FROM FRACTAL BASIC!"' >> ./programs/demo.bas
 echo '30 PRINT "LISTING FILES IN /home/Guest..."' >> ./programs/demo.bas
 echo '40 LET D\$ = SYS_CMD("ls /home/Guest")' >> ./programs/demo.bas
 echo '50 PRINT D\$' >> ./programs/demo.bas
@@ -185,7 +185,7 @@ echo "This is your portal to the 'real world'. Try not to download any viruses. 
 echo "# The 'wget' command is not available in this version. You can use 'upload' and 'export' to move files." >> ./net_practice/instructions.txt
 
 # --- Gemini AI Command Showcase ---
-echo "# Q2 Financial Report: SamwiseCorp" > ./reports/financials_q2.txt
+echo "# Q2 Financial Report: OopisCorp" > ./reports/financials_q2.txt
 echo "## Executive Summary" >> ./reports/financials_q2.txt
 echo "Q2 was a period of explosive growth. Revenue is up 150%, mostly from our strategic pivot to selling artisanal, gluten-free rubber ducks. The 'Unicorn Cursor' feature was also a minor success." >> ./reports/financials_q2.txt
 

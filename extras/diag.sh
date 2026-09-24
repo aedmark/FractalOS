@@ -1411,14 +1411,14 @@ cd /home/root
 delay 400
 printf "\n \n---------------------------------------------------------------------"
 echo ""
-echo "      ===== SamwiseOS Core Test Suite v0.0.5 Complete ======="
+echo "       ===== FractalOS Gauntlet Complete ======="
 echo " "
 delay 500
 echo "  ======================================================"
 delay 150
 echo "  ==                                                  =="
 delay 150
-echo "  ==           SamwiseOS Core Diagnostics             =="
+echo "  ==           FractalOS Core Diagnostics             =="
 delay 150
 echo "  ==            ALL SYSTEMS OPERATIONAL               =="
 delay 150
