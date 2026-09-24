@@ -14,6 +14,7 @@
     - Supports atomic writes and newline expansion (`\n`) to replace the clumsy `echo` redirection for code generation.
 
 ### ⚡ System Improvements
+- **Pyodide Upgrade & Trim:** Updated the vendored Pyodide runtime in `resources/dep/pyodide/` from 0.28.0.dev0 (Python 3.13) to 314.0.7 (Python 3.14.2), and trimmed it from ~415 MB / 413 files to ~16 MB / 9 files: the core runtime (`pyodide.js`, `pyodide.asm.mjs`, `pyodide.asm.wasm`, `python_stdlib.zip`, `pyodide-lock.json`) plus only the wheels the kernel loads (`cryptography` and its dependencies `cffi`, `pycparser`, `six`). `ssl` and `hashlib` are now built into the core runtime, so `bridge.js` no longer requests the `ssl` package.
 - **Expanded Whitelist:** Updated `ai_manager.py` to allow the AI to use `forge`, `run`, `chmod`, and `python`.
 - **Manifest Update:** Updated `resources/bridge.js` to include `bone_driver` in the Python Kernel boot sequence.
 - **Safety Calibration:** Tuned the "Voltage" costs to distinguish between "Creation" (High Cost) and "Execution" (Medium Cost), enabling smoother developer workflows.

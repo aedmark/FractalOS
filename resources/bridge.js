@@ -102,7 +102,7 @@ const OopisOS_Kernel = {
                 indexURL: pyodideIndexURL
             });
 
-            await this.pyodide.loadPackage(["cryptography", "ssl"]);
+            await this.pyodide.loadPackage(["cryptography"]);
             await OutputManager.appendToOutput("Python runtime loaded. Loading kernel...", { typeClass: Config.CSS_CLASSES.CONSOLE_LOG_MSG });
 
             this.pyodide.FS.mkdir('/core');

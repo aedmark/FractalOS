@@ -51,8 +51,8 @@ Great for quick testing and development. No installation required other than a s
 
 **Steps:**
 1.  **Clone the repository.**
-2.  **Download Pyodide:**
-    *   Download the Pyodide distribution (v0.26.0 or compatible) and extract it into `resources/dep/pyodide/`.
+2.  **Pyodide runtime:**
+    *   The trimmed Pyodide runtime (v314.0.7, Python 3.14) is already vendored in `resources/dep/pyodide/`. Only the core files plus the `cryptography` wheel and its dependencies are kept; nothing to download.
 3.  **Start a Web Server:**
     *   Run `python -m http.server` in the project root.
 4.  **Open in Browser:**
