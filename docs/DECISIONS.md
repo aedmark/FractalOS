@@ -140,6 +140,38 @@ merge conflict in it is resolved by regenerating, never by hand. `asset_manifest
 order matters, D-003); the test checks completeness, not order. The executor's own `_discover_commands` still
 lists the Pyodide directory at runtime, so `help` reflects what was actually copied.
 
+## D-011 `python` runs scripts in the kernel's own interpreter, with a VFS-aware `open()` and a step budget  (2026-09-24, status: accepted)
+**Context:** The README promised a `python` command, the AI whitelist and voltage table named it, and no such
+command existed (P1-09). The owner wants it. The kernel already is CPython 3.14 under Pyodide, so the question
+was how much of a wall to put between a user script and the OS.
+**Decision:** `commands/python.py` compiles and `exec`s the script in the same interpreter, in a fresh globals
+dict with a copied `builtins`. Three things are rewired for the script only: `open()` reads and writes the
+FractalOS virtual file system through `fs_manager` with its permission checks (text modes only, written back
+on flush/close, and a dropped file object closes itself under CPython refcounting); `input()` reads lines from
+the command's stdin pipe; `sys.argv` / `sys.stdin` are set for the run and restored after. stdout and stderr
+are captured and returned as the command's output; an exception returns the script's own traceback (this
+module's frames stripped) after any output so far; `sys.exit(n)` maps to success or "exit status n". A
+`sys.settrace` line counter stops the script after 2,000,000 line events (`--steps N`, `0` = unlimited),
+because the kernel runs on the browser's main thread and nothing else can interrupt a loop.
+**Not done, deliberately:** no sandbox. A script can `import filesystem` and do anything the kernel can; that
+is the same trust a shell command already has (and `run` scripts already can). Only the script's own `open`
+sees the VFS: `pathlib`, `os`, `shutil` and friends see Pyodide's private FS where `/core` lives. No `-m`, no
+REPL, no threads or sockets.
+**Consequences:** Tracing makes scripts several times slower than bare `exec`; `--steps 0` removes both the
+cost and the safety net. `open` semantics differ from CPython in small ways (no binary, no buffering, no
+`encoding` effect). The agent does not get the command yet (P2-03). Tests: 17 checks in `tests/smoke.js`.
+
+## D-012 JS `null` is normalised to `None` at the kernel entry point  (2026-09-24, status: accepted)
+**Context:** Writing D-011's tests showed that with no pipe, `python` ran the text "jsnull" as a script. The
+bridge passes JS `null` for stdin, and Pyodide converts it to `pyodide.ffi.jsnull`, which is falsy but is
+not `None` and has no string methods. Fourteen commands test `stdin_data is not None`; `wc` with no input
+crashed with `'JsNull' object has no attribute 'split'`. The old 0.28 build did exactly the same, so this
+predates the upgrade.
+**Decision:** `kernel.execute_command` converts `jsnull` to `None` before calling the executor (`_from_js`).
+One place, all commands. Values that arrive through `syscall_handler` are JSON and never carry `jsnull`.
+**Consequences:** Commands may keep testing `is not None`. Any new function that takes a raw JS value across
+the bridge (not JSON) must run it through `_from_js` or `to_py`; P1-12 audits the existing ones.
+
 ## Open questions
 
 - Q-001 Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the

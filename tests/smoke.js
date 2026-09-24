@@ -25,6 +25,30 @@ const CHECKS = [
     // Guest may not write to /home: a denial is the correct answer.
     { cmd: 'mkdir /home/t', expect: r => !r.success && /Permission denied/.test(errorMessage(r)) },
     { cmd: 'cat /nonexistent', expect: r => !r.success && /No such file/.test(errorMessage(r)) },
+    // python (D-011): the kernel's own interpreter, VFS-aware open()/input(), a step budget.
+    { cmd: 'python -c "print(2 ** 10)"', expect: r => r.success && r.output === '1024' },
+    { cmd: 'python -c "import sys; print(sys.argv[1:])" one two', expect: r => r.success && r.output === "['one', 'two']" },
+    { cmd: 'echo 21 | python -c "print(int(input()) * 2)"', expect: r => r.success && r.output === '42' },
+    { cmd: 'echo hello > /home/Guest/hello.txt', expect: r => r.success },
+    { cmd: 'echo "print(open(\'/home/Guest/hello.txt\').read().upper())" > /home/Guest/shout.py', expect: r => r.success },
+    { cmd: 'python /home/Guest/shout.py', expect: r => r.success && r.output === 'HELLO' },
+    // cd is an effect applied after the line finishes, so it gets its own command (D-002).
+    { cmd: 'cd /home/Guest', expect: r => r.success },
+    { cmd: 'python -c "open(\'out.txt\', \'w\').write(\'written\')"', expect: r => r.success },
+    { cmd: 'cd /', expect: r => r.success },
+    { cmd: 'cat /home/Guest/out.txt', expect: r => r.success && r.output === 'written' },
+    { cmd: 'python -c "with open(\'/home/Guest/out.txt\', \'a\') as f: f.write(\' twice\')"', expect: r => r.success },
+    { cmd: 'cat /home/Guest/out.txt', expect: r => r.success && r.output === 'written twice' },
+    { cmd: 'python -c "open(\'/etc/sudoers\', \'w\')"', expect: r => !r.success && /PermissionError/.test(errorMessage(r)) },
+    { cmd: 'python -c "print(1); 1/0"', expect: r => !r.success && /^1\n[\s\S]*ZeroDivisionError/.test(errorMessage(r)) },
+    { cmd: 'python -c "import sys; sys.exit(3)"', expect: r => !r.success && /exit status 3/.test(errorMessage(r)) },
+    { cmd: 'python -c "print(("', expect: r => !r.success && /SyntaxError/.test(errorMessage(r)) },
+    { cmd: 'python --steps 5000 -c "while True: pass"', expect: r => !r.success && /stopped after 5,000 steps/.test(errorMessage(r)) },
+    { cmd: 'python -c "print(1)" | python -c "print(int(input()) + 1)"', expect: r => r.success && r.output === '2' },
+    { cmd: 'python', expect: r => !r.success && /nothing to run/.test(errorMessage(r)) },
+    // No pipe means no stdin: JS null must reach Python as None, not as Pyodide's jsnull (D-011).
+    { cmd: 'cat', expect: r => r.success && (r.output || '') === '' },
+    { cmd: 'wc', expect: r => r.success && (r.output || '') === '' }, // crashed on JsNull before the fix
 ];
 
 function errorMessage(r) {

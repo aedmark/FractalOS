@@ -70,12 +70,16 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 - [x] P1-08 `tools/gen_manifest.py` writes `resources/core/manifest.json` from the directories; `bridge.js`
   fetches it instead of carrying hand-typed lists; `tests/structure.js` fails when the manifest or
   `asset_manifest.js` drifts from disk (mutation-checked both ways) (D-010, 2026-09-24)
-- [ ] P1-09 Reconcile README claims with the code: `python` command is "planned" in the README and appears in the
-  AI whitelist and voltage table but there is no `commands/python.py`; "Package Management (Coming Soon)" has
-  only `loadPackageManifest` reading `/etc/pkg_manifest.json`. Decide: build or delete the claims.
+- [x] P1-09 Reconcile README claims with the code. Decided 2026-09-24: **build `python`** (the owner: "running real
+  python inside FractalOS is definitely something that could be very useful"). Done as `commands/python.py`
+  (D-011), README updated. The other stale claim, "Package Management (Coming Soon)" with only
+  `loadPackageManifest` behind it, is P4-01's to settle.
 - [ ] P1-10 Delete or explain `www/` (the stock Neutralino "It works" template; `documentRoot` is `/resources/`)
 - [ ] P1-11 Automated check that every module in `resources/core/commands/` exposes `run` and `man`, and that
   `help` lists it
+- [ ] P1-12 Audit the other raw JS→Python crossings for `jsnull` (D-012): `kernel.write_file` /
+  `create_directory` / `top_get_process_list` take JS values directly (`to_py` handles objects, not `null`),
+  and `syscall_handler` args arrive via JSON (safe). A grep for `is not None` / `is None` on bridge-fed values.
 
 ## Phase 2: The agent
 
@@ -85,8 +89,10 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   interlock, multi-step `cd` memory ("stateless memory injection"). Nothing in this phase has been observed by a
   session yet; the CHANGELOG entries are the owner's.
 - [ ] P2-02 Voltage calibration with evidence: a table of plans and their scores, and the thresholds justified
-- [ ] P2-03 Decide the fate of `python` in the AI whitelist and `bone_driver.py` (see P1-09); the persona prompt
-  currently tells the model the system cannot run Python, which is true
+- [ ] P2-03 Let the agent use `python` now that it exists: add it to `COMMAND_WHITELIST` in `ai_manager.py`
+  (the voltage table already prices it at 2.0) and rewrite the "THIS SYSTEM DOES NOT RUN PYTHON SCRIPTS
+  DIRECTLY" law in `bone_driver.py`, which is now false. Decide the step budget the agent gets. Not done with
+  P1-09 on purpose: it changes what the autopilot will do, and P2-01 (observe it at all) comes first.
 - [ ] P2-04 Chidi and `remix` / `storyboard` verified against Gemini and Ollama with a recorded transcript
 - [ ] P2-05 Gemini model and endpoint are hard-coded (`gemini-1.5-flash`, `v1beta`); make the model configurable
   through `/etc/ai.conf` for Gemini as it already is for Ollama, and pick a current default

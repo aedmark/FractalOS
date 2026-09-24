@@ -78,9 +78,24 @@ async def syscall_handler(request_json):
             "traceback": traceback.format_exc()
         })
 
+try:
+    from pyodide.ffi import jsnull as _JS_NULL
+except ImportError:  # running outside Pyodide (tests, tooling)
+    _JS_NULL = None
+
+
+def _from_js(value):
+    """JS null crosses the bridge as pyodide.ffi.jsnull, which is not None (and
+    is falsy but has no str methods). Commands test `stdin_data is not None`, so
+    normalise it here, at the one entry point, rather than in 123 commands."""
+    if _JS_NULL is not None and value is _JS_NULL:
+        return None
+    return value
+
+
 async def execute_command(command_string: str, js_context_json: str, stdin_data: str = None) -> str:
     try:
-        return await command_executor.execute(command_string, js_context_json, stdin_data)
+        return await command_executor.execute(command_string, js_context_json, _from_js(stdin_data))
     except Exception as e:
         return json.dumps({
             "success": False, "error": f"Kernel Error before execution: {repr(e)}",

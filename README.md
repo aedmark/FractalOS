@@ -79,6 +79,7 @@ The full experience. Runs as a standalone desktop application using **Neutralino
 *   **🎨 Graphical Apps:** Includes a text editor (`edit`), paint program (`paint`), process viewer (`top`), and more.
 *   **🛡️ Security:** A robust permission model with `sudo` support and a virtual `/etc/sudoers` file.
 *   **🎭 Cinematic Mode:** Toggle `cinematic` for a retro, typewriter-style aesthetic.
+*   **🐍 Real Python:** `python script.py`, `python -c "..."`, or pipe code in. Same interpreter as the kernel, with `open()` and `input()` wired to the virtual file system and the pipe, and a step budget so a runaway loop can't freeze the page.
 *   **📦 Package Management:** (Coming Soon) Install new commands and apps dynamically.
 
 ## System Reference
@@ -93,7 +94,7 @@ The full experience. Runs as a standalone desktop application using **Neutralino
 | `man <cmd>` | Show the manual page for a command. |
 | `ls`, `cd`, `pwd` | Standard file system navigation. |
 | `cat`, `grep`, `echo` | Text processing tools. |
-| `python` | (Planned) Run Python scripts directly. |
+| `python` | Run real Python (the kernel's own CPython 3.14) on a script, `-c` code, or piped input. |
 
 *(For a full list, run `help` inside the OS)*
 

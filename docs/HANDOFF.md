@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-24, session 3 (kernel file list generated; structure test)._
+_Last updated: 2026-09-24, session 4 (`python` command; JS null fixed at the bridge)._
 
 **What works**
 - **The OS boots and runs on Pyodide 314.0.7 / Python 3.14.2** from a 16 MB vendored runtime (D-004). Smoke
@@ -29,6 +29,13 @@ _Last updated: 2026-09-24, session 3 (kernel file list generated; structure test
 - **The repo is small again, on `main`.** History was rewritten to drop the 415 MB of old Pyodide (D-005):
   pack 327 MB → 8.8 MB, same messages and dates, new hashes. The owner replaced `main` with the rewritten branch
   and deleted the two Aikido bot branches that still pinned the old blobs. A fresh `git clone` measured 9.1 MB.
+- **`python` runs real Python inside the OS** (P1-09, D-011). `python script.py [args]`, `python -c "..."`,
+  or piped code, in the kernel's own CPython 3.14: output captured, `open()` on the virtual file system with
+  permissions, `input()` from the pipe, `sys.argv` / `sys.exit`, tracebacks from the script's frames, and a
+  2,000,000-step budget (`--steps`) so a runaway loop cannot freeze the page. Not a sandbox. The agent does
+  not have it yet (P2-03).
+- **JS `null` no longer leaks into commands as `jsnull`** (D-012). `kernel.execute_command` normalises stdin;
+  `wc` with no input used to crash. Pre-existing, not from the upgrade.
 - **Registration lists are guarded** (P1-08, D-010). `bridge.js` fetches `resources/core/manifest.json`, which
   `tools/gen_manifest.py` writes from the directories; `tests/structure.js` fails in a second if that manifest
   or `asset_manifest.js` disagrees with the files on disk. Both harnesses (smoke, diag) pass on the new boot path.
@@ -36,10 +43,14 @@ _Last updated: 2026-09-24, session 3 (kernel file list generated; structure test
   `tests/smoke.js`, `.gitignore`. README and CONTRIBUTING point at them.
 
 **Verified**
+- `node tests/smoke.js`: 35/35 (17 of them exercise `python`: values, argv, piped `input()`, VFS read, write
+  on drop, append in a `with`, a permission denial on `/etc/sudoers`, a traceback after partial output, exit
+  status, a syntax error, the step budget, python-to-python pipe, and the no-input case); bare `cat` and `wc`
+  guard D-012.
 - `node tests/structure.js`: 10/10; fails as intended on an unregistered Python file and on an orphan script.
 - `node tests/diag.js http://127.0.0.1:8000/index.html`: PASS, exit 0, twice in a row (Chromium 1194 via
   Playwright 1.56, Node 22). Transcript 1,761 lines.
-- `node tests/smoke.js http://127.0.0.1:8000/index.html`: 14/14 checks pass on Pyodide 314.0.7 (Chromium 1194
+- (earlier) `node tests/smoke.js`: 14/14 checks pass on Pyodide 314.0.7 (Chromium 1194
   via Playwright 1.56, Node 22). Boot to kernel-ready is about 10 s in the cloud container.
 - The same commands against the previous Pyodide 0.28.0.dev0 build (served from `git archive` of the old tree)
   gave identical results, including the two Guest permission denials.
@@ -61,6 +72,10 @@ _Last updated: 2026-09-24, session 3 (kernel file list generated; structure test
 **Gotchas for the next session**
 - **Two names.** The code says OopisOS (`OopisOS_Kernel`, `oopisOs*` keys, `oopisos-network`); the product is
   FractalOS. Do not rename either (D-009).
+- **`cd` is an effect and applies after the line.** `cd x && cmd` runs `cmd` in the old directory. One
+  command per line in tests.
+- **Raw JS values can be `jsnull`.** Only stdin crosses raw today and is normalised (D-012). P1-12 audits the
+  rest.
 - **Registration lists.** A new JS file must be in `resources/scripts/asset_manifest.js` (hand-ordered); a new
   Python file needs `python3 tools/gen_manifest.py`. `node tests/structure.js` catches both omissions (D-010).
   `core/manifest.json` is generated: never hand-edit it, and resolve a merge conflict in it by regenerating.
@@ -95,13 +110,12 @@ _Last updated: 2026-09-24, session 3 (kernel file list generated; structure test
 
 ## Next steps (in order)
 
-1. **P1-09 / P2-03: decide the `python` command's fate** (claimed, whitelisted, not implemented).
-2. **P2-01: watch the autopilot run** against Ollama with a transcript in the handoff.
+1. **P2-03: give the agent `python`** (whitelist, and the persona's "does not run Python" law is now false), after
+   or alongside **P2-01: watch the autopilot run** against Ollama with a transcript in the handoff.
 
 ## Open questions for the user
 
 - Untrack `.idea/` and `neutralinojs.log`? (P1-07)
-- Is `python` (script execution inside the OS) a real goal or a stale claim? (P1-09)
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
 - Should the agent whitelist converge on "anything a user can do" with voltage as the brake? (Q-001)
 
@@ -110,6 +124,27 @@ _Last updated: 2026-09-24, session 3 (kernel file list generated; structure test
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 4: 2026-09-24: `python` command (P1-09, D-011) and the `jsnull` fix (D-012)
+
+**Goal:** The owner decided: real Python inside FractalOS is wanted. Build it (P1-09), closing the README's
+"planned" claim.
+**Done:** `resources/core/commands/python.py` (D-011): file / `-c` / stdin, captured output, VFS `open()`
+(text modes, permission-checked, write-back on flush/close/drop), piped `input()`, `sys.argv`, `sys.exit`,
+script-only tracebacks, `--steps` budget via `sys.settrace`, man page in the OS voice. Manifest regenerated
+(123 commands). 17 smoke checks. README row and feature bullet, CHANGELOG. Found and fixed D-012 on the way.
+**Changed:** `commands/python.py` (new), `kernel.py` (`_from_js`), `core/manifest.json`, `tests/smoke.js`,
+README, CHANGELOG, ROADMAP (P1-09 done, P2-03 rewritten, P1-12 added), DECISIONS, CLAUDE.md, TESTING.md, this.
+**Decisions:** D-011, D-012.
+**Problems / surprises**
+- `python` with nothing piped executed the source text "jsnull": Pyodide turns JS `null` into
+  `pyodide.ffi.jsnull`, not `None`. Checked against the old build (same), so pre-existing; `wc` crashed the
+  same way. Fixed at the one entry point instead of in fourteen commands.
+- A test using `cd /home/Guest && python ...` wrote to `/`: effects run after the line. Test rewritten; the
+  rule added to CLAUDE.md.
+- `wc` with no input prints nothing (by design); my first expectation of `0 0 0` was wrong.
+**Left undone:** The agent cannot use `python` yet (P2-03). No REPL, no `-m`, no binary files. P1-12 audit.
+**Next session should start with:** "Next steps" above.
 
 ### Session 3: 2026-09-24: Generated kernel manifest and structure test (P1-08)
 

@@ -137,6 +137,13 @@ The CONTRIBUTING.md checklist, made concrete:
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
 
+- **`cd` takes effect after the line.** `cd /home/Guest && python -c "open('x','w')"` wrote to `/x`: the
+  `change_directory` effect runs when the whole line is done (D-002). In tests, give `cd` its own command.
+- **No pipe means `jsnull`, not `None`, on the Python side** (D-012), now normalised in `kernel.execute_command`.
+  The smoke test's bare `cat` and `wc` checks guard it. Symptom before the fix: `wc` crashed on `JsNull`,
+  and `python` ran the word "jsnull".
+- **`wc` with no input prints nothing**, by design (like `cat`). Do not expect `0 0 0`.
+
 - **`su` and `logout` replace the terminal output.** `SessionManager.loadAutomaticState` restores the user's
   saved terminal state, including the output div, so reading `#output` after a script that switches users shows
   only the last user's tail (34 lines of 1,761 on the first try). `tests/diag.js` records output by wrapping
