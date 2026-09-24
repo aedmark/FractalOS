@@ -16,3 +16,6 @@ package-lock.json
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Test output
+tests/out/

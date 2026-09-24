@@ -5,12 +5,12 @@ reference for how to run the checks again, what each one proves, and the traps a
 does not re-discover them. `ROADMAP.md` says what is planned; `DECISIONS.md` (D-008) says why the tests look
 the way they do.
 
-There are three layers. Only the first is automated today.
+There are three layers. The first two are automated.
 
 | Layer | What | Proves | Runs in |
 | --- | --- | --- | --- |
 | Smoke | `tests/smoke.js` | Pyodide boots, kernel comes up, accounts and hashing work, the executor runs commands | ~40 s, headless Chromium |
-| In-OS suite | `extras/diag.sh` | 30+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links | minutes, inside the OS, read by a human (P1-06 automates it) |
+| In-OS suite | `tests/diag.js` running `extras/diag.sh` | 40+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links, scripting | ~2 min, headless Chromium, inside the OS as root |
 | Manual | CONTRIBUTING.md checklist | UI, apps, sounds, portable mode | a person |
 
 ## The smoke test
@@ -61,7 +61,39 @@ result object (`{ success, output }` or `{ success: false, error: { message, sug
 pass. Keep each command independent of the others' side effects, or order them explicitly and say so in a
 comment.
 
-## The in-OS suite (`extras/diag.sh`)
+## The in-OS suite (`tests/diag.js` + `extras/diag.sh`)
+
+### Run
+
+```bash
+cd resources && python3 -m http.server 8000 &
+node tests/diag.js http://127.0.0.1:8000/index.html            # extras/diag.sh by default
+node tests/diag.js http://127.0.0.1:8000/index.html other.sh   # any FractalOS script
+```
+
+Same requirements as the smoke test. It takes about 100 s (the script has 277 `delay` lines totalling 124 s,
+some of which run in background jobs). The full transcript lands in `tests/out/diag-transcript.txt`
+(gitignored). `DIAG_TIMEOUT_MS` raises the 15-minute ceiling.
+
+### What it does
+
+1. Boots the page and completes onboarding the way `OnboardingManager.onFinish` does: `first_time_setup`
+   through the JS `UserManager`, the four localStorage keys, then a reload. After the reload it waits for the
+   "loaded successfully" console line, so the terminal, session stack and storage are fully initialised.
+2. Writes the script into `/home/root/` through the `filesystem.write_file` syscall, runs `login root rootpw`,
+   `chmod 755`, `cd /home/root`.
+3. Wraps `OutputManager.appendToOutput` to record every printed line and whether it carried the error class.
+4. Runs `run /home/root/diag.sh` through `CommandExecutor.processSingleCommand`. The `execute_script` effect
+   awaits every line, so the call returns when the script finishes or aborts.
+5. Grades: PASS only if the script reached its "Test Suite ... Complete" banner, no `CHECK_FAIL: FAILURE` line
+   was printed, no line was printed with the error class, and at least as many `CHECK_FAIL: SUCCESS` lines
+   appeared as there are top-level `check_fail` lines in the file (38; 40 run, because the script writes child
+   scripts that call `check_fail` too).
+
+A script line that fails aborts the whole run (`execute_script` prints `run: error on line N` in the error
+class and breaks), so "reached the banner" is the strongest single signal.
+
+### The script itself
 
 A 1,435-line FractalOS shell script, not bash: it is run *inside* the OS by the `run` command, and the
 interpreter is `executor.py`. It creates users and groups, builds files, then walks through 30+ phases (core FS
@@ -70,9 +102,10 @@ cases, symlinks, signals, `tr`, `comm`, `binder`, `agenda`, brace expansion, `ca
 `check_fail` assertion at each point that must fail). Password prompts are answered by the lines that follow a
 `useradd` (`testpass` twice).
 
-To run it by hand today: boot the OS, finish onboarding, `upload` the file (browser file picker) into your home
-directory, `chmod 755 diag.sh`, `run diag.sh`, and read the output. Every `CHECK_FAIL: FAILURE` line is a bug.
-It has not been run in this doc's lifetime; P1-06 is to drive it from the smoke harness and count the failures.
+To run it by hand: boot the OS, finish onboarding, `login root`, `upload` the file (browser file picker) into
+`/home/root`, `chmod 755 diag.sh`, `run diag.sh`, and read the output. Every `CHECK_FAIL: FAILURE` line is a
+bug. It must run as root: Phase 1 creates users, writes under `/home/diagUser` and appends to `/etc/sudoers`.
+First headless result, 2026-09-24, Pyodide 314.0.7 / Python 3.14.2: clean pass.
 
 `extras/inflate.sh` is not a test. It fills `/home/Guest` with a demo world (docs, code, games, an archive) for
 trying the tools on. It starts with `rm -r -f` of its own previous output; do not run it in a home you care about.
@@ -88,6 +121,18 @@ The CONTRIBUTING.md checklist, made concrete:
 - Reload survives: files, users, aliases, history, the current theme.
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
+
+- **`su` and `logout` replace the terminal output.** `SessionManager.loadAutomaticState` restores the user's
+  saved terminal state, including the output div, so reading `#output` after a script that switches users shows
+  only the last user's tail (34 lines of 1,761 on the first try). `tests/diag.js` records output by wrapping
+  `OutputManager.appendToOutput` instead. Any future harness that reads the DOM has the same problem.
+- **`check_fail` count is 38 in the file and 40 at run time.** Two more come from child scripts the suite writes
+  and `run`s. Treat the file count as a floor.
+- **`beep` / `play` log "SoundManager not initialized" headlessly.** No user gesture, so no AudioContext. The
+  diag harness ignores that one console error; anything else in the console is reported.
+- **Completing onboarding without the UI:** replicate `OnboardingManager.onFinish` exactly (see `tests/diag.js`)
+  and reload; `main.js` only takes the post-onboarding path on a fresh load. Setting the flag alone does not
+  populate the users, groups and session stack.
 
 - **`window.OopisOS_Kernel` is `undefined`.** Every top-level object in the app is a `const`, so it is a global
   but not a `window` property. `waitForFunction(() => window.OopisOS_Kernel ...)` waits forever. Use the bare

@@ -23,7 +23,8 @@ Sessions are short-lived and context resets between them, so the repo carries th
 - Work one roadmap item at a time; keep each commit scoped to it. Reference IDs (`P1-04`) in commit messages.
 - If you make a choice a future session might question, add an entry to `docs/DECISIONS.md`.
 - If you discover new work, append a new item to `ROADMAP.md` (never renumber existing IDs).
-- Run the smoke test before declaring anything done (see "Running and testing").
+- Run the smoke test before declaring anything done, and the diag suite after touching Python (see "Running and
+  testing").
 
 **End of every session (or when the user says to wrap up)**
 1. Tick / update items in `ROADMAP.md`.
@@ -55,7 +56,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `resources/start_server.sh`, `stop_server.sh` | `python3 -m http.server 8000` from `resources/` |
 | `neutralino.config.json`, `resources/neutralino.js`, `www/` | Desktop (Portable) mode. `www/` is the untouched Neutralino template, not the app |
 | `extras/diag.sh`, `extras/inflate.sh` | In-OS shell scripts: a 1,400-line command test suite and a demo-world generator (see `docs/TESTING.md`) |
-| `tests/smoke.js` | Headless-Chromium boot and kernel smoke test (Node + Playwright) |
+| `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |
 | `ROADMAP.md` | The plan, with stable item IDs |
 | `docs/HANDOFF.md` | Current state, next steps, session log |
 | `docs/DECISIONS.md` | Append-only decision record |
@@ -104,6 +105,7 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
   and Playwright with a Chromium (`npm i -g playwright` or `npx playwright install chromium`). Boots the page,
   waits for the kernel, runs first-time user setup and a handful of shell commands, exits non-zero on any
   failure. Details and known traps: `docs/TESTING.md`.
-- **In-OS suite:** `extras/diag.sh` is a FractalOS shell script (not bash). Upload it (`upload`) and `run` it
-  inside the OS; it uses `check_fail` to assert failures. It has not been run headlessly yet (P1-06).
+- **In-OS suite:** `node tests/diag.js http://127.0.0.1:8000/index.html` runs `extras/diag.sh` (a FractalOS shell
+  script, not bash) inside the OS as root and grades its `check_fail` assertions and error lines. About two
+  minutes. Run it after any change to the kernel, the executor or a command.
 - Nothing here runs under `npm test`; there is no `package.json`.

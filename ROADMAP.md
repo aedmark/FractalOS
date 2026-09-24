@@ -62,8 +62,9 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 - [x] P1-03 Rewrite git history once to drop the 415 MB of old Pyodide blobs (pack 327 MB → 9 MB) (D-005)
 - [x] P1-04 Headless smoke test (`tests/smoke.js`): boot, first-time setup, password verify, shell commands (D-008)
 - [x] P1-05 `.gitignore` (`data/`, `.tmp/`, logs, `.idea/`, `node_modules/`)
-- [ ] P1-06 Run `extras/diag.sh` headlessly through the smoke harness and make its result the pass/fail gate; count
-  its `check_fail` assertions and fix what it finds
+- [x] P1-06 Run `extras/diag.sh` headlessly (`tests/diag.js`) and make its result the pass/fail gate. First run on
+  Pyodide 314 / Python 3.14: 40 `check_fail` assertions pass, 0 fail, no command errors, script reaches its
+  completion banner in about 100 s. Nothing needed fixing (2026-09-24)
 - [ ] P1-07 Untrack `.idea/` and `neutralinojs.log` (they are committed today; `.gitignore` alone does not remove
   them). Owner's call, since `.idea/` is their PyCharm project.
 - [ ] P1-08 Generate the `commandFiles` / `coreFiles` lists in `bridge.js` from the directory (a script, or a

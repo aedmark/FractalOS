@@ -93,6 +93,7 @@ Since this is a hybrid OS, testing can be tricky. The automated smoke test and t
 ```bash
 cd resources && python3 -m http.server 8000 &
 node tests/smoke.js http://127.0.0.1:8000/index.html
+node tests/diag.js  http://127.0.0.1:8000/index.html   # after changing Python: runs extras/diag.sh in the OS
 ```
 
 ### Manual Testing Checklist
