@@ -74,9 +74,9 @@ Python release (314.x = Python 3.14); the 0.29.x line is the older Python 3.13 s
 that no commit needed any more.
 **Decision:** `git filter-repo` with a commit callback that removed every `resources/dep/pyodide/*` blob not in
 the current set, on the branch `claude/gallant-archimedes-m4ylki` (7 commits, all rewritten; new hashes, same
-messages, authors and dates). Pack 327 MB → 8.8 MB. The rewritten branch is force-pushed; `main` on GitHub still
-has the old history until the owner replaces it (`git push --force origin <branch>:main`, then every clone must be
-re-cloned or hard-reset).
+messages, authors and dates). Pack 327 MB → 8.8 MB. The owner then replaced `main` with the rewritten branch
+(force push) and deleted two stale bot branches that still referenced the old commits; a fresh clone is 9.1 MB.
+Every existing clone must be re-cloned or hard-reset.
 **Consequences:** Commit hashes before this point in any notes, PRs or the CHANGELOG no longer resolve. This
 was a one-time exception: the standing rule is no rewriting of published history. If large binaries ever need
 to come back (a Neutralino binary, a big wheel), use Git LFS or a release asset, not a commit.
@@ -126,6 +126,5 @@ and `oopisos-network` would break existing users' saved state (D-006).
 - Q-001 Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the
   audit log as the safety net, or stay a curated list? The two halves of `ai_manager.py` (planner manifest of
   17 read-only commands vs. `COMMAND_WHITELIST` with `rm`, `mv`, `forge`, `run`, `chmod`) currently disagree.
-- Q-002 Should `main` on GitHub be replaced with the rewritten history (D-005) now, or after the next merge?
-  Until it is, the clone-size win exists only on the feature branch.
+- ~~Q-002 Should `main` be replaced with the rewritten history now or later?~~ Done the same day (D-005).
 - Q-003 Milestone 1 (AI Town Manager): what "long-term memory" means concretely. See P3-01.

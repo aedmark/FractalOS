@@ -22,8 +22,9 @@ _Last updated: 2026-09-24, session 1 (Pyodide trimmed and upgraded, history rewr
   123 commands, the apps, the `gemini` agent with Gemini and Ollama providers, `story` snapshots, portable mode,
   and the BoneAmanita autopilot. See ROADMAP P0-01 to P0-11. Of all that, only what the smoke test touches has
   been observed by a session; the rest is the owner's word and the code.
-- **The repo is small again.** History was rewritten to drop the 415 MB of old Pyodide (D-005): pack 327 MB →
-  8.8 MB, 7 commits, same messages and dates, new hashes. `claude/gallant-archimedes-m4ylki` carries it.
+- **The repo is small again, on `main`.** History was rewritten to drop the 415 MB of old Pyodide (D-005):
+  pack 327 MB → 8.8 MB, same messages and dates, new hashes. The owner replaced `main` with the rewritten branch
+  and deleted the two Aikido bot branches that still pinned the old blobs. A fresh `git clone` measured 9.1 MB.
 - **Docs**: this file, `CLAUDE.md`, `ROADMAP.md`, `docs/DECISIONS.md` (D-001 to D-009), `docs/TESTING.md`,
   `tests/smoke.js`, `.gitignore`. README and CONTRIBUTING point at them.
 
@@ -38,8 +39,6 @@ _Last updated: 2026-09-24, session 1 (Pyodide trimmed and upgraded, history rewr
   (`git log --stat` per commit compared before and after).
 
 **Not verified / not done**
-- **`main` on GitHub still has the fat history.** The rewritten branch is force-pushed; replacing `main` is the
-  owner's call (Q-002). Until then a fresh clone of `main` is still 327 MB.
 - **Nothing UI-level has been exercised by a session**: onboarding dialog, editor, paint, adventure, top, BASIC,
   Gemini chat, themes, sounds, `printscreen`. The smoke test stops at the kernel and executor.
 - **`extras/diag.sh` has not been run** in this doc's lifetime (P1-06). It is the real command-behaviour suite.
@@ -80,19 +79,16 @@ _Last updated: 2026-09-24, session 1 (Pyodide trimmed and upgraded, history rewr
 
 ## Next steps (in order)
 
-1. **Owner: replace `main` with the rewritten history** (Q-002, D-005) and re-point the local clone. Every
-   collaborator's clone must be re-cloned or hard-reset afterwards. Until then the size win is branch-only.
-2. **P1-06: run `extras/diag.sh` headlessly.** Extend `tests/smoke.js` (or a sibling) to finish onboarding as a
+1. **P1-06: run `extras/diag.sh` headlessly.** Extend `tests/smoke.js` (or a sibling) to finish onboarding as a
    real user, write the script into the VFS with the `_upload_handler` path or `forge`, `run` it, and count
    `CHECK_FAIL: FAILURE` lines. That turns the owner's suite into the pass/fail gate and will surface any Python
    3.14 behaviour changes the smoke test is too shallow to see.
-3. **P1-08: generate the `bridge.js` file lists** or test that they match `resources/core/`.
-4. **P1-09 / P2-03: decide the `python` command's fate** (claimed, whitelisted, not implemented).
-5. **P2-01: watch the autopilot run** against Ollama with a transcript in the handoff.
+2. **P1-08: generate the `bridge.js` file lists** or test that they match `resources/core/`.
+3. **P1-09 / P2-03: decide the `python` command's fate** (claimed, whitelisted, not implemented).
+4. **P2-01: watch the autopilot run** against Ollama with a transcript in the handoff.
 
 ## Open questions for the user
 
-- Replace `main` now with the rewritten branch, or after the next review? (Q-002)
 - Untrack `.idea/` and `neutralinojs.log`? (P1-07)
 - Is `python` (script execution inside the OS) a real goal or a stale claim? (P1-09)
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
@@ -130,9 +126,13 @@ CONTRIBUTING pointed at the new docs; CHANGELOG entry for the Pyodide change.
   commit had not started. Recorded in TESTING.md.
 - `add_repo` for `BoneAmanita` was denied by the session's permission classifier; the public repo was cloned
   read-only instead, which the tool's own guidance for public repos allows. `plainchant` attached normally.
-**Left undone:** `main` still carries the old history (owner's call). `diag.sh` not run (P1-06). Nothing above
+**Left undone:** `diag.sh` not run (P1-06). Nothing above
 the kernel exercised. Autopilot, portable mode, Firefox / Safari unobserved.
 **Next session should start with:** "Next steps" above.
+**Addendum, same day:** the owner replaced `main` with the rewritten branch from the IDE (reset + force push) and
+deleted `fix/aikido-security-code-audit-94322582-biyf` and `-94323551-kisu`, two 2026-08-21 bot branches (a
+quote-aware command-substitution fix in `executor.py`; root-only `chown` / `chgrp`) that still referenced the old
+history and kept a fresh clone at 335 MB. Owner's call: the fixes are not relevant any more. Fresh clone: 9.1 MB.
 
 ---
 
