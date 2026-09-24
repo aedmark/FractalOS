@@ -105,10 +105,14 @@ We welcome contributions! Whether you're fixing a bug, adding a new command, or 
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on how to get started.
 
+Working on the code with an AI session? Start with [CLAUDE.md](CLAUDE.md), then [docs/HANDOFF.md](docs/HANDOFF.md)
+for where things stand, [ROADMAP.md](ROADMAP.md) for the plan, [docs/DECISIONS.md](docs/DECISIONS.md) for why
+things are the way they are, and [docs/TESTING.md](docs/TESTING.md) for how to check your work.
+
 ---
 
 ## The Road Ahead
 
-We are currently working on **Milestone 1: The AI Town Manager**, focusing on giving the AI long-term memory and the ability to perform complex, multi-step tasks autonomously.
+We are currently working on **Milestone 1: The AI Town Manager**, focusing on giving the AI long-term memory and the ability to perform complex, multi-step tasks autonomously. The full plan, with stable item IDs, is in [ROADMAP.md](ROADMAP.md).
 
 Join us on this journey!

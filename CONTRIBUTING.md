@@ -31,9 +31,11 @@ Whether you're a Python pro, a JavaScript wizard, or just getting started, there
     *   `apps/`: Backend logic for GUI apps.
     *   `kernel.py`: The main kernel loop and syscall handler.
 *   `resources/scripts/`: **The JavaScript Frontend.**
-    *   `main.js`: Entry point and initialization.
     *   `terminal_ui.js`: Handles user input and terminal rendering.
-    *   `bridge.js`: The communication layer between JS and Python.
+    *   `boot.js`: Runs a command through the kernel and handles the result.
+    *   `effect_handler.js`: Performs the effects the kernel returns.
+*   `resources/main.js`: Entry point and initialization.
+*   `resources/bridge.js`: The communication layer between JS and Python, and the list of Python files it loads.
 *   `resources/dep/`: External dependencies (Pyodide, Tone.js, etc.).
 
 ---
@@ -63,7 +65,8 @@ Commands are the lifeblood of FractalOS. They are written in Python and run insi
     """
     ```
 
-3.  **Return Standard Responses:**
+3.  **Register It:** Add the command's name to the `commandFiles` list in `resources/bridge.js`, or it is never copied into the Python runtime and `help` will not know it.
+4.  **Return Standard Responses:**
     *   **Success:** `return {"success": True, "output": "..."}`
     *   **Error:** `return {"success": False, "error": {"message": "...", "suggestion": "..."}}`
     *   **Effect:** `return {"success": True, "effect": {"name": "play_sound", ...}}`
@@ -85,7 +88,12 @@ The frontend handles everything the user *sees* and *hears*.
 
 ## Testing & Verification
 
-Since this is a hybrid OS, testing can be tricky.
+Since this is a hybrid OS, testing can be tricky. The automated smoke test and the in-OS suite are described in [docs/TESTING.md](docs/TESTING.md); run the smoke test before you open a Merge Request:
+
+```bash
+cd resources && python3 -m http.server 8000 &
+node tests/smoke.js http://127.0.0.1:8000/index.html
+```
 
 ### Manual Testing Checklist
 Before submitting a Merge Request, please verify:

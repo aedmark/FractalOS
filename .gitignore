@@ -1,0 +1,18 @@
+# Portable (Neutralino) mode writes its state here, next to the binary
+data/
+.tmp/
+neutralino-*
+*.log
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Node (only the smoke test uses it)
+node_modules/
+package-lock.json
+
+# OS noise
+.DS_Store
+Thumbs.db
