@@ -121,6 +121,25 @@ the code, storage keys, the kernel object and the BroadcastChannel name still sa
 and `oopisos-network` would break existing users' saved state (D-006).
 **Consequences:** Two names in the codebase. `CLAUDE.md` says so up front so a new session does not "fix" it.
 
+## D-010 The kernel file list is generated into `core/manifest.json`, and a structure test guards both registration lists  (2026-09-24, status: accepted; amends D-003)
+**Context:** `bridge.js` carried three hand-typed arrays (`coreFiles`, `appFiles`, `commandFiles`, 140 names)
+naming every Python file to copy into Pyodide. A file missing from the list fails silently ("command not
+found", or the CHANGELOG's "ghost limb" `ModuleNotFoundError`). The browser cannot list a directory over http
+or under Neutralino, so the list has to exist somewhere.
+**Decision:** `tools/gen_manifest.py` writes `resources/core/manifest.json` (`core`, `apps`, `commands`: every
+`*.py` in the three directories except dunder files, sorted). `bridge.js` fetches it at boot and builds the copy
+map from it; the hand-typed arrays are gone, and a missing manifest is a loud boot error naming the script.
+`tests/structure.js` (Node, no browser, instant) fails when the manifest and the directories disagree, when
+`bridge.js` grows a hand-typed list back, when `asset_manifest.js` names a file that does not exist, or when a
+`.js` or `.css` under `resources/` is not in `asset_manifest.js`. `python3 tools/gen_manifest.py --check` is the
+same manifest comparison for people without Node. The dead `apps/gemini_chat.py` stub (nothing imported it)
+was dropped.
+**Consequences:** Adding a Python file is now "create it, run `python3 tools/gen_manifest.py`", and forgetting
+the second step is caught by the test rather than at runtime. The manifest is a committed generated file; a
+merge conflict in it is resolved by regenerating, never by hand. `asset_manifest.js` stays hand-ordered (load
+order matters, D-003); the test checks completeness, not order. The executor's own `_discover_commands` still
+lists the Pyodide directory at runtime, so `help` reflects what was actually copied.
+
 ## Open questions
 
 - Q-001 Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the

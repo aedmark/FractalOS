@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-24, session 2 (the in-OS diag suite runs headlessly and passes)._
+_Last updated: 2026-09-24, session 3 (kernel file list generated; structure test)._
 
 **What works**
 - **The OS boots and runs on Pyodide 314.0.7 / Python 3.14.2** from a 16 MB vendored runtime (D-004). Smoke
@@ -29,10 +29,14 @@ _Last updated: 2026-09-24, session 2 (the in-OS diag suite runs headlessly and p
 - **The repo is small again, on `main`.** History was rewritten to drop the 415 MB of old Pyodide (D-005):
   pack 327 MB → 8.8 MB, same messages and dates, new hashes. The owner replaced `main` with the rewritten branch
   and deleted the two Aikido bot branches that still pinned the old blobs. A fresh `git clone` measured 9.1 MB.
+- **Registration lists are guarded** (P1-08, D-010). `bridge.js` fetches `resources/core/manifest.json`, which
+  `tools/gen_manifest.py` writes from the directories; `tests/structure.js` fails in a second if that manifest
+  or `asset_manifest.js` disagrees with the files on disk. Both harnesses (smoke, diag) pass on the new boot path.
 - **Docs**: this file, `CLAUDE.md`, `ROADMAP.md`, `docs/DECISIONS.md` (D-001 to D-009), `docs/TESTING.md`,
   `tests/smoke.js`, `.gitignore`. README and CONTRIBUTING point at them.
 
 **Verified**
+- `node tests/structure.js`: 10/10; fails as intended on an unregistered Python file and on an orphan script.
 - `node tests/diag.js http://127.0.0.1:8000/index.html`: PASS, exit 0, twice in a row (Chromium 1194 via
   Playwright 1.56, Node 22). Transcript 1,761 lines.
 - `node tests/smoke.js http://127.0.0.1:8000/index.html`: 14/14 checks pass on Pyodide 314.0.7 (Chromium 1194
@@ -57,9 +61,9 @@ _Last updated: 2026-09-24, session 2 (the in-OS diag suite runs headlessly and p
 **Gotchas for the next session**
 - **Two names.** The code says OopisOS (`OopisOS_Kernel`, `oopisOs*` keys, `oopisos-network`); the product is
   FractalOS. Do not rename either (D-009).
-- **Silent registration lists.** A new JS file must be in `resources/scripts/asset_manifest.js`; a new Python
-  command in `commandFiles` and a new core module in `coreFiles`, both in `resources/bridge.js`. Missing either
-  fails silently (D-003, P1-08).
+- **Registration lists.** A new JS file must be in `resources/scripts/asset_manifest.js` (hand-ordered); a new
+  Python file needs `python3 tools/gen_manifest.py`. `node tests/structure.js` catches both omissions (D-010).
+  `core/manifest.json` is generated: never hand-edit it, and resolve a merge conflict in it by regenerating.
 - **`OopisOS_Kernel` is not on `window`.** Top-level `const`. Bare names in `page.evaluate`.
 - **`loadPackage(["ssl"])` throws on Pyodide 314.** `ssl` and `hashlib` are in the core now; only
   `cryptography` is loaded. `ssl` is a stub (`OPENSSL_VERSION` = "OpenSSL (stub)"); HTTPS goes through the
@@ -91,9 +95,8 @@ _Last updated: 2026-09-24, session 2 (the in-OS diag suite runs headlessly and p
 
 ## Next steps (in order)
 
-1. **P1-08: generate the `bridge.js` file lists** or test that they match `resources/core/`.
-2. **P1-09 / P2-03: decide the `python` command's fate** (claimed, whitelisted, not implemented).
-3. **P2-01: watch the autopilot run** against Ollama with a transcript in the handoff.
+1. **P1-09 / P2-03: decide the `python` command's fate** (claimed, whitelisted, not implemented).
+2. **P2-01: watch the autopilot run** against Ollama with a transcript in the handoff.
 
 ## Open questions for the user
 
@@ -107,6 +110,27 @@ _Last updated: 2026-09-24, session 2 (the in-OS diag suite runs headlessly and p
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 3: 2026-09-24: Generated kernel manifest and structure test (P1-08)
+
+**Goal:** P1-08: stop hand-maintaining the Python file lists in `bridge.js`; a test that fails when they drift.
+**Done:** P1-08 (D-010). `tools/gen_manifest.py` → `resources/core/manifest.json` (12 core, 6 apps, 122
+commands); `bridge.js` fetches it and the three hand-typed arrays are gone, as is the dead `apps/gemini_chat.py`
+stub; `tests/structure.js` (10 checks, Node only) guards the manifest and `asset_manifest.js` both ways.
+Mutation-checked: an unregistered command file and an orphan script each fail the right check. Smoke 14/14 and
+diag 40/0 both pass on the new boot path. Also merged the owner's "Samwise Cleanse" (banner rename) by rebasing
+and re-keyed the diag harness on the unchanged "ALL SYSTEMS OPERATIONAL" line.
+**Changed:** `resources/bridge.js`, `resources/core/manifest.json` (new, generated), `tools/gen_manifest.py`
+(new), `tests/structure.js` (new), `tests/diag.js` (banner regex), docs.
+**Decisions:** D-010.
+**Problems / surprises**
+- The owner renamed the diag banner while the harness that matched on it was in flight. Keyed on the last
+  banner line instead, and wrote down in HANDOFF that the banner is prose the owner edits.
+- The lists in `bridge.js` were already exactly in sync with disk, so this was prevention; the `gemini_chat`
+  null stub ("still needed to avoid import errors") was the only stale entry, and nothing imported it.
+**Left undone:** P1-11 (every command exposes `run` and `man`) would fit naturally into `tests/structure.js`.
+The apps, the agent and portable mode remain unobserved.
+**Next session should start with:** "Next steps" above.
 
 ### Session 2: 2026-09-24: The in-OS diag suite runs headlessly (P1-06)
 

@@ -23,8 +23,8 @@ Sessions are short-lived and context resets between them, so the repo carries th
 - Work one roadmap item at a time; keep each commit scoped to it. Reference IDs (`P1-04`) in commit messages.
 - If you make a choice a future session might question, add an entry to `docs/DECISIONS.md`.
 - If you discover new work, append a new item to `ROADMAP.md` (never renumber existing IDs).
-- Run the smoke test before declaring anything done, and the diag suite after touching Python (see "Running and
-  testing").
+- Run `node tests/structure.js` after adding or moving any file, the smoke test before declaring anything done,
+  and the diag suite after touching Python (see "Running and testing").
 
 **End of every session (or when the user says to wrap up)**
 1. Tick / update items in `ROADMAP.md`.
@@ -39,7 +39,8 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `resources/index.html` | The page. Loads `scripts/asset_manifest.js`, then every CSS and JS file it lists, in order |
 | `resources/scripts/asset_manifest.js` | The ordered load list. A new script file must be added here or it never loads |
 | `resources/main.js` | `window.onload`: builds every manager, wires dependencies, boots the kernel, runs onboarding or restores the session |
-| `resources/bridge.js` | `OopisOS_Kernel`: loads Pyodide, copies `core/` into the Pyodide FS, exposes `syscall()` and `execute_command()`. Holds the kernel file manifest (D-003) |
+| `resources/bridge.js` | `OopisOS_Kernel`: loads Pyodide, copies the files named in `core/manifest.json` into the Pyodide FS, exposes `syscall()` and `execute_command()` |
+| `resources/core/manifest.json`, `tools/gen_manifest.py` | Generated list of every kernel Python file. Regenerate after adding, renaming or deleting one (D-010) |
 | `resources/scripts/boot.js` | `executePythonCommand` (the one path a shell command takes), `createKernelContext`, terminal key handling |
 | `resources/scripts/effect_handler.js` | The front-end half of the effect contract (D-002): one `case` per effect name |
 | `resources/scripts/*.js` | One manager per concern: storage, fs, users, groups, sudo, session, output, terminal UI, modals, sound, network, theme |
@@ -56,6 +57,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `resources/start_server.sh`, `stop_server.sh` | `python3 -m http.server 8000` from `resources/` |
 | `neutralino.config.json`, `resources/neutralino.js`, `www/` | Desktop (Portable) mode. `www/` is the untouched Neutralino template, not the app |
 | `extras/diag.sh`, `extras/inflate.sh` | In-OS shell scripts: a 1,400-line command test suite and a demo-world generator (see `docs/TESTING.md`) |
+| `tests/structure.js` | Node-only, instant: the manifest and `asset_manifest.js` match the files on disk (D-010) |
 | `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |
 | `ROADMAP.md` | The plan, with stable item IDs |
 | `docs/HANDOFF.md` | Current state, next steps, session log |
@@ -86,10 +88,10 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
   but are **not** `window` properties; tests reach them by bare name.
 - Python: PEP 8, standard library plus `cryptography` only. Anything else means adding a wheel to
   `resources/dep/pyodide/` **and** to `pyodide-lock.json` (D-004). Ask first.
-- A new command is a new file in `resources/core/commands/` **plus** a line in the `commandFiles` list in
-  `bridge.js`; without the second it is never copied into Pyodide and "command not found" is the only symptom.
-- A new Python core module likewise goes in `coreFiles` in `bridge.js` (that is the "ghost limb" bug in the
-  CHANGELOG).
+- A new Python file anywhere under `resources/core/` (a command, an app backend, a core module) needs
+  `python3 tools/gen_manifest.py` run afterwards, or `bridge.js` never copies it into Pyodide and "command not
+  found" (or the CHANGELOG's "ghost limb" `ModuleNotFoundError`) is the only symptom. `node tests/structure.js`
+  catches the omission (D-010). Never edit `core/manifest.json` by hand.
 - Commands must never touch the DOM or JS. Return an effect and add a `case` in `effect_handler.js`.
 - Keep the `oopisOs*` localStorage keys and the `FractalOS` / `FileSystemsStore` IndexedDB names (D-006).
 - The `MESSAGES` in `config.js` are in the OS's own voice (wry, in character). Match it in new user-facing text.
@@ -101,6 +103,9 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
   wasm and the kernel copies `core/*.py` with `fetch`).
 - **Portable mode:** put the Neutralinojs binary in the repo root and run it (`neutralino.config.json` points
   `documentRoot` at `/resources/`). Data lands in `data/` next to the binary.
+- **Structure test:** `node tests/structure.js`. No browser or server; a second. Fails if a Python file is not
+  in `core/manifest.json` (fix: `python3 tools/gen_manifest.py`) or a script or stylesheet is not in
+  `asset_manifest.js`.
 - **Smoke test:** `node tests/smoke.js http://127.0.0.1:8000/index.html` with a server running. Needs Node 18+
   and Playwright with a Chromium (`npm i -g playwright` or `npx playwright install chromium`). Boots the page,
   waits for the kernel, runs first-time user setup and a handful of shell commands, exits non-zero on any

@@ -65,7 +65,7 @@ Commands are the lifeblood of FractalOS. They are written in Python and run insi
     """
     ```
 
-3.  **Register It:** Add the command's name to the `commandFiles` list in `resources/bridge.js`, or it is never copied into the Python runtime and `help` will not know it.
+3.  **Register It:** Run `python3 tools/gen_manifest.py`. It rewrites `resources/core/manifest.json`, which is what the bridge copies into the Python runtime; without it your command is never loaded. `node tests/structure.js` will tell you if you forgot.
 4.  **Return Standard Responses:**
     *   **Success:** `return {"success": True, "output": "..."}`
     *   **Error:** `return {"success": False, "error": {"message": "...", "suggestion": "..."}}`
@@ -92,6 +92,7 @@ Since this is a hybrid OS, testing can be tricky. The automated smoke test and t
 
 ```bash
 cd resources && python3 -m http.server 8000 &
+node tests/structure.js                                # instant: every file is registered
 node tests/smoke.js http://127.0.0.1:8000/index.html
 node tests/diag.js  http://127.0.0.1:8000/index.html   # after changing Python: runs extras/diag.sh in the OS
 ```

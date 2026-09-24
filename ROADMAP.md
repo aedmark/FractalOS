@@ -67,9 +67,9 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
   completion banner in about 100 s. Nothing needed fixing (2026-09-24)
 - [ ] P1-07 Untrack `.idea/` and `neutralinojs.log` (they are committed today; `.gitignore` alone does not remove
   them). Owner's call, since `.idea/` is their PyCharm project.
-- [ ] P1-08 Generate the `commandFiles` / `coreFiles` lists in `bridge.js` from the directory (a script, or a
-  manifest file the kernel reads) so a new command cannot be forgotten; a test that fails when the lists and
-  `resources/core/` disagree
+- [x] P1-08 `tools/gen_manifest.py` writes `resources/core/manifest.json` from the directories; `bridge.js`
+  fetches it instead of carrying hand-typed lists; `tests/structure.js` fails when the manifest or
+  `asset_manifest.js` drifts from disk (mutation-checked both ways) (D-010, 2026-09-24)
 - [ ] P1-09 Reconcile README claims with the code: `python` command is "planned" in the README and appears in the
   AI whitelist and voltage table but there is no `commands/python.py`; "Package Management (Coming Soon)" has
   only `loadPackageManifest` reading `/etc/pkg_manifest.json`. Decide: build or delete the claims.

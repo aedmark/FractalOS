@@ -5,13 +5,28 @@ reference for how to run the checks again, what each one proves, and the traps a
 does not re-discover them. `ROADMAP.md` says what is planned; `DECISIONS.md` (D-008) says why the tests look
 the way they do.
 
-There are three layers. The first two are automated.
+There are four layers. The first three are automated.
 
 | Layer | What | Proves | Runs in |
 | --- | --- | --- | --- |
+| Structure | `tests/structure.js` | Every Python file is in `core/manifest.json`; every script and stylesheet is in `asset_manifest.js`; nothing listed is missing | a second, Node only |
 | Smoke | `tests/smoke.js` | Pyodide boots, kernel comes up, accounts and hashing work, the executor runs commands | ~40 s, headless Chromium |
 | In-OS suite | `tests/diag.js` running `extras/diag.sh` | 40+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links, scripting | ~2 min, headless Chromium, inside the OS as root |
 | Manual | CONTRIBUTING.md checklist | UI, apps, sounds, portable mode | a person |
+
+## The structure test
+
+```bash
+node tests/structure.js
+python3 tools/gen_manifest.py --check   # the manifest half only, for machines without Node
+```
+
+Ten checks, no browser. It exists because both registration lists fail silently (D-003, D-010): a Python file
+not in `resources/core/manifest.json` is never copied into Pyodide, and a `.js` not in `asset_manifest.js`
+never loads. Mutation-checked on 2026-09-24: an unregistered `commands/zz.py` fails the manifest check and
+`--check`; an orphan `scripts/zz.js` fails the asset check. Fix the first with `python3 tools/gen_manifest.py`;
+fix the second by adding the file to `asset_manifest.js` in the right place (order matters there, so the test
+does not try to enforce it).
 
 ## The smoke test
 
