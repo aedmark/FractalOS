@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs plans for the first time)._
+_Last updated: 2026-09-25, session 6 (agent harness built and proven against a stand-in Ollama; two agent bugs fixed; the real-model run is a local job)._
 
 **What works**
 - **The OS boots and runs on Pyodide 314.0.7 / Python 3.14.2** from a 16 MB vendored runtime (D-004). Smoke
@@ -29,6 +29,14 @@ _Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs pl
 - **The repo is small again, on `main`.** History was rewritten to drop the 415 MB of old Pyodide (D-005):
   pack 327 MB → 8.8 MB, same messages and dates, new hashes. The owner replaced `main` with the rewritten branch
   and deleted the two Aikido bot branches that still pinned the old blobs. A fresh `git clone` measured 9.1 MB.
+- **The agent harness exists and the agent loop is proven end to end, minus the model** (P2-01 in progress,
+  D-014). `node tests/agent.js` runs seven tasks through the autopilot and agent mode in headless Chromium,
+  auto-confirms the permission dialog, grades on the file system and writes `tests/out/agent-transcript.md`.
+  Against `tests/fake_ollama.py` (a stand-in that speaks Ollama's API with canned plans) it is 7/7: the browser's
+  CORS preflight, the request body and the `response` field all work. Its first run found and this session fixed
+  two bugs: **the agent's context probe reset the kernel cwd to `/`** (every plan was sensed and driven from the
+  root; the persona's "Gravity" law was papering over it) and **agent mode crashed with `KeyError('success')`
+  whenever it tried to ask permission** (the confirm effect was indexed like a result). Two smoke checks guard them.
 - **The agent has `python`** (P2-03, D-013): whitelisted, confirmed-first in agent mode, `--steps` refused in
   both paths, the BoneAmanita persona rewritten for `.py` scripts. **Default `gemini "<prompt>"` mode executes
   its plan now, which it never did before:** its plan-line regex had doubled backslashes and never matched.
@@ -37,8 +45,8 @@ _Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs pl
 - **`python` runs real Python inside the OS** (P1-09, D-011). `python script.py [args]`, `python -c "..."`,
   or piped code, in the kernel's own CPython 3.14: output captured, `open()` on the virtual file system with
   permissions, `input()` from the pipe, `sys.argv` / `sys.exit`, tracebacks from the script's frames, and a
-  2,000,000-step budget (`--steps`) so a runaway loop cannot freeze the page. Not a sandbox. The agent does
-  not have it yet (P2-03).
+  2,000,000-step budget (`--steps`) so a runaway loop cannot freeze the page. Not a sandbox. The agent has it
+  too (P2-03).
 - **JS `null` no longer leaks into commands as `jsnull`** (D-012). `kernel.execute_command` normalises stdin;
   `wc` with no input used to crash. Pre-existing, not from the upgrade.
 - **Registration lists are guarded** (P1-08, D-010). `bridge.js` fetches `resources/core/manifest.json`, which
@@ -48,6 +56,11 @@ _Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs pl
   `tests/smoke.js`, `.gitignore`. README and CONTRIBUTING point at them.
 
 **Verified**
+- `node tests/agent.js` against `tests/fake_ollama.py`: 7/7 (A1 seeds.txt with 3 lines, A2 tools.txt in garden/,
+  A3 sum.py printed 55, B1 planner + synthesizer, B2 confirmation then kit.txt, C1 disengaged at critical voltage,
+  C2 `--force` changed nothing). Before the two fixes it was 5/7 (A2 and B2 failed).
+- `node tests/smoke.js`: 47/47 (two new: the context probe keeps the cwd; `gemini` passes the confirm effect).
+- `node tests/structure.js`: 10/10. `node tests/diag.js`: PASS, 40/0, 106 s, after the kernel edits.
 - `node tests/smoke.js`: 45/45. Nine drive the agent with a fake `_call_llm_api`: the autopilot runs a
   `python -c` plan line and refuses `--steps`; agent mode asks before `python`, halts on `--steps`, and still
   runs a read-only plan through to the synthesizer. One checks `find` prints one path per line.
@@ -70,8 +83,11 @@ _Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs pl
 **Not verified / not done**
 - **Nothing UI-level has been exercised by a session**: onboarding dialog, editor, paint, adventure, top, BASIC,
   Gemini chat, themes, sounds, `printscreen`. The smoke test stops at the kernel and executor.
-- **No real model has been observed** (P2-01). The agent paths are exercised only with a fake LLM. Needs an
-  Ollama or a Gemini key. Now that agent mode actually executes plans, this matters more than before.
+- **No real model has been observed** (P2-01). The harness is ready but the cloud container can reach no model
+  provider: Ollama, Gemini, GitHub releases and Hugging Face are all outside its network policy. The owner
+  offered to run a local session; that is the way to finish P2-01 (next steps, item 1).
+- **Agent mode stops after a confirmation** (P2-08): only the confirmed command runs; the rest of the plan and the
+  synthesizer are dropped. Seen in task B2. Not changed.
 - **The autopilot has no brakes but voltage** (P2-07): no whitelist check, `--force` unread. Found while
   doing P2-03, not changed.
 - **Portable (Neutralino) mode is untested here**: no binary in the container. The config pins Neutralino 6.2.0.
@@ -121,10 +137,15 @@ _Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs pl
 
 ## Next steps (in order)
 
-1. **P2-01: watch a real model drive it.** Both agent paths now run plans; the fake-LLM tests say the plumbing
-   works, not that a model produces usable plans. Ollama locally, transcript into this file.
+1. **P2-01: run the harness where a model lives.** On a machine with Ollama:
+   `cd resources && python3 -m http.server 8000 &` then `AGENT_MODEL=<model> node tests/agent.js`
+   (Playwright + Chromium needed, see TESTING.md). Read `tests/out/agent-transcript.md`, put the seven verdicts
+   and the surprises here, and tick P2-01 if the PASS lines hold. Expect the persona to matter: a model that skips
+   `story save` on a creating plan trips the +15 interlock and gets disengaged at voltage ≥ 20 (P2-02 evidence).
 2. **P2-07: decide the autopilot's brakes** (whitelist? confirm? make `--force` real?). Until then
-   `gemini --autopilot` runs whatever the model numbers, stopped only by voltage ≥ 20.
+   `gemini --autopilot` runs whatever the model numbers, stopped only by voltage ≥ 20. Task C2 shows `--force`
+   changing nothing.
+3. **P2-08: agent mode after "yes".** Resume the plan after a confirmation, or confirm the whole plan up front.
 
 ## Open questions for the user
 
@@ -137,6 +158,28 @@ _Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs pl
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 6: 2026-09-25: Agent harness and stand-in Ollama; two agent bugs fixed (P2-01 in progress, D-014)
+
+**Goal:** P2-01: let a real model drive the agent.
+**Done:** The container can reach no model (Ollama, Gemini, GitHub releases, Hugging Face all blocked; no key
+to use), so the session built what makes the local run one command: `tests/agent.js` (seven tasks, file-system
+grading, transcript) and `tests/fake_ollama.py` (Ollama's API with canned persona-shaped plans). The first run
+found the agent's context probe resetting the cwd to `/` and agent mode crashing on its own confirm effect;
+both fixed in `ai_manager.py` and `commands/gemini.py`, two smoke checks added. Harness 7/7 against the
+stand-in, smoke 47/47, structure 10/10, diag 40/0.
+**Changed:** `resources/core/ai_manager.py`, `resources/core/commands/gemini.py`, `tests/agent.js` (new),
+`tests/fake_ollama.py` (new), `tests/smoke.js`, CLAUDE.md, ROADMAP (P2-01 `[~]`, P2-06 note, P2-08 new),
+DECISIONS (D-014), TESTING.md, CHANGELOG, this file.
+**Decisions:** D-014.
+**Problems / surprises**
+- Every prompt the OS ever built said `Current Directory: /`, whatever the shell's cwd was. The persona's
+  "Gravity: if pwd is /, cd home" rule exists because of this bug.
+- Agent mode's permission dialog had never appeared: `gemini.py` indexed `["success"]` on the effect dict.
+- `pyfetch(timeout=20)` is not a thing; there is no LLM timeout at all (noted under P2-06).
+- The `\n`-in-a-template-literal trap from session 5, again; now in TESTING.md's pitfalls.
+**Left undone:** the real-model run itself (local job), P2-07, P2-08, P1-12.
+**Next session should start with:** "Next steps" above, item 1, on a machine with Ollama.
 
 ### Session 5: 2026-09-25: The agent gets `python`; agent mode's plan regex fixed (P2-03, D-013)
 

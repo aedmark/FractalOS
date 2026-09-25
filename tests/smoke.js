@@ -160,6 +160,16 @@ results["agent_halts_steps"] = r.get("success") is False and "step budget" in r.
 fake_llm.plan = '1. echo probe'
 r = await am.perform_agentic_search("x", [], "ollama", None, {"apiKey": None})
 results["agent_readonly_ok"] = r.get("success") and "probe" in r.get("data", "")
+# D-014: the context probe must not reset the cwd to "/", and a confirm effect must pass through gemini.py.
+saved_path = am.fs_manager.current_path
+am.fs_manager.current_path = "/etc"
+ctx = await am._get_terminal_context()
+results["context_keeps_cwd"] = "Current Directory:\\n/etc" in ctx and am.fs_manager.current_path == "/etc"
+am.fs_manager.current_path = saved_path
+import commands.gemini as gemini_cmd
+fake_llm.plan = '1. python -c "print(6 * 7)"'
+r = await gemini_cmd.run(["x"], {"provider": "ollama"}, {"name": "gordon", "group": "gordon"}, ai_manager=am)
+results["gemini_passes_confirm_effect"] = r.get("effect") == "confirm_ai_command"
 json.dumps(results)
 `);
         }));
@@ -173,6 +183,8 @@ json.dumps(results)
         report('agent mode asks before running python', agent.agent_asks_first === true);
         report('agent mode halts on python --steps', agent.agent_halts_steps === true);
         report('agent mode still runs a read-only plan', agent.agent_readonly_ok === true);
+        report('agent context probe keeps the shell cwd (D-014)', agent.context_keeps_cwd === true);
+        report('gemini passes the confirm effect through (D-014)', agent.gemini_passes_confirm_effect === true);
 
         // 3. Shell commands through the executor.
         for (const { cmd, expect } of CHECKS) {

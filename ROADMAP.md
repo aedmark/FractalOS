@@ -85,9 +85,14 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 
 Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to leave running.
 
-- [ ] P2-01 Verify the autopilot end to end against a local Ollama: plan, voltage report, `--force`, `story save`
+- [~] P2-01 Verify the autopilot end to end against a local Ollama: plan, voltage report, `--force`, `story save`
   interlock, multi-step `cd` memory ("stateless memory injection"). Nothing in this phase has been observed by a
   session yet; the CHANGELOG entries are the owner's.
+  *2026-09-25:* the harness exists (`tests/agent.js`, seven tasks, D-014) and passes against the stand-in
+  `tests/fake_ollama.py`, which proved the Ollama wire path (CORS, request body, `response` field) and found two
+  bugs (agent cwd reset to `/`, `KeyError` on the confirm effect; both fixed). **Still to do: run it on a machine
+  with Ollama** (`AGENT_MODEL=<model> node tests/agent.js`) and put the transcript's verdicts in HANDOFF. The cloud
+  container can reach no model provider.
 - [ ] P2-02 Voltage calibration with evidence: a table of plans and their scores, and the thresholds justified
 - [x] P2-03 The agent has `python`: whitelisted, confirmed-first in agent mode, `--steps` refused, persona
   rewritten. On the way, agent mode's plan regex was found never to have matched (doubled backslashes across
@@ -95,11 +100,17 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [ ] P2-04 Chidi and `remix` / `storyboard` verified against Gemini and Ollama with a recorded transcript
 - [ ] P2-05 Gemini model and endpoint are hard-coded (`gemini-1.5-flash`, `v1beta`); make the model configurable
   through `/etc/ai.conf` for Gemini as it already is for Ollama, and pick a current default
-- [ ] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named
+- [ ] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named.
+  Note: `_call_llm_api` passes `timeout=20` to `pyfetch`, which has no such parameter; there is no timeout at all
+  today and the `TimeoutError` branch is dead (found 2026-09-25, P2-01)
 - [ ] P2-07 The autopilot enforces nothing but voltage: `perform_autopilot` never checks `COMMAND_WHITELIST`
   or `DANGEROUS_COMMANDS` (the whitelist is only used to *recognise* plan lines), and the `--force` flag is
   passed in as `force_override` and never read. Decide what the autopilot's brakes are (whitelist? confirm?
   voltage plus force?) and make `--force` mean something or remove it.
+- [ ] P2-08 Agent mode abandons the rest of its plan after a confirmation: `perform_agentic_search` returns the
+  `confirm_ai_command` effect at the first dangerous line, the front end runs only that one command on "yes", and
+  the remaining plan lines and the synthesizer never run (seen in `tests/agent.js` task B2, 2026-09-25). Decide:
+  resume the plan after confirmation, or confirm the whole plan up front
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 

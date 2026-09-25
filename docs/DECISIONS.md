@@ -201,3 +201,33 @@ drive both paths with a fake `_call_llm_api`; a real model has still not been ob
   17 read-only commands vs. `COMMAND_WHITELIST` with `rm`, `mv`, `forge`, `run`, `chmod`) currently disagree.
 - ~~Q-002 Should `main` be replaced with the rewritten history now or later?~~ Done the same day (D-005).
 - Q-003 Milestone 1 (AI Town Manager): what "long-term memory" means concretely. See P3-01.
+
+## D-014 The agent harness grades the file system, and a stand-in Ollama proves the plumbing  (2026-09-25, status: accepted)
+
+**Context.** P2-01 asks for the agent to be observed with a real model. The cloud sessions that do most of the
+work here can reach no model provider (Ollama, Gemini, GitHub releases and Hugging Face are all outside the
+network policy), and the smoke test replaces `_call_llm_api` wholesale, so the Ollama request path itself had
+never run either. A model is also non-deterministic, so a test that asserts on its wording is a coin toss.
+
+**Decision.**
+1. `tests/agent.js` runs seven fixed tasks through `gemini --autopilot` and `gemini "<prompt>"` in headless
+   Chromium as a normal user, auto-confirms the "may the agent run this?" modal, and grades each task on a fact
+   about the file system afterwards (`garden/seeds.txt` exists with three lines; `tools.txt` landed in `garden/`
+   and not in `$HOME`; `garden/` survived a delete request). Anything that depends on how the model phrased
+   things, or on a policy not yet decided (P2-07's `--force`), is reported as **INFO**, which never fails the run.
+   Every LLM call's prompt size, seconds and raw answer, and every printed line, go to
+   `tests/out/agent-transcript.md`, because the transcript is the deliverable P2-01 asks for.
+2. `tests/fake_ollama.py` is a stand-in that speaks Ollama's `/api/generate` (plus the CORS preflight the browser
+   sends) and answers with canned, persona-shaped plans keyed on words in the request. It exists to prove the
+   harness and the OS's Ollama wire path, and to catch regressions in the agent loop without a GPU. **A green run
+   against it says nothing about a model.** The harness prints the model name so nobody mistakes one for the other.
+3. Two bugs the first run found are fixed in the kernel rather than worked around in the harness: the agent's
+   context probe passes the shell's real `current_path` through the nested `execute()` calls (a context without
+   one resets the kernel cwd to `/`, so every plan was sensed and driven from the root); and `gemini.py` passes a
+   `confirm_ai_command` effect through instead of indexing `["success"]` on it.
+
+**Consequences.** A real-model run is a local job (`AGENT_MODEL=<model> node tests/agent.js`); its transcript and
+verdicts belong in HANDOFF, and the INFO lines are the evidence for P2-02 and P2-07. The stand-in's canned plans
+must stay persona-shaped (`story save` present, absolute `cd $HOME` where the persona would) or they test a
+model that cannot exist. The persona's "Gravity" law (`cd $HOME` if `pwd` is `/`) was a workaround for the cwd
+bug and can be reconsidered once a real model has been seen with the fix.

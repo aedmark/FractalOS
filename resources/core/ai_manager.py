@@ -131,8 +131,13 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         return final_provider, final_model, warning_message
 
     async def _get_terminal_context(self):
-        pwd_result_json = await self.command_executor.execute("pwd", json.dumps({"user_context": self.command_executor.user_context}))
-        ls_result_json = await self.command_executor.execute("ls -la", json.dumps({"user_context": self.command_executor.user_context}))
+        # The nested execute() calls load a fresh context, and a context with no
+        # current_path resets the kernel's cwd to "/". Pass the real one through,
+        # or every plan is sensed from, and driven from, the root directory (D-014).
+        context = json.dumps({"user_context": self.command_executor.user_context,
+                              "current_path": self.fs_manager.current_path})
+        pwd_result_json = await self.command_executor.execute("pwd", context)
+        ls_result_json = await self.command_executor.execute("ls -la", context)
         pwd_result = json.loads(pwd_result_json)
         ls_result = json.loads(ls_result_json)
 

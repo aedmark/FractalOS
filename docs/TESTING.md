@@ -12,6 +12,7 @@ There are four layers. The first three are automated.
 | Structure | `tests/structure.js` | Every Python file is in `core/manifest.json`; every script and stylesheet is in `asset_manifest.js`; nothing listed is missing | a second, Node only |
 | Smoke | `tests/smoke.js` | Pyodide boots, kernel comes up, accounts and hashing work, the executor runs commands | ~40 s, headless Chromium |
 | In-OS suite | `tests/diag.js` running `extras/diag.sh` | 40+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links, scripting | ~2 min, headless Chromium, inside the OS as root |
+| Agent | `tests/agent.js` (+ `tests/fake_ollama.py`) | The `gemini` agent plans and acts against a real Ollama: seven tasks graded on the file system, transcript recorded | ~1 min with the stand-in, model-bound with Ollama; needs a machine with a model |
 | Manual | CONTRIBUTING.md checklist | UI, apps, sounds, portable mode | a person |
 
 ## The structure test
@@ -125,6 +126,42 @@ First headless result, 2026-09-24, Pyodide 314.0.7 / Python 3.14.2: clean pass.
 `extras/inflate.sh` is not a test. It fills `/home/Guest` with a demo world (docs, code, games, an archive) for
 trying the tools on. It starts with `rm -r -f` of its own previous output; do not run it in a home you care about.
 
+## The agent harness (`tests/agent.js`)
+
+```bash
+cd resources && python3 -m http.server 8000 &
+ollama serve &                                   # a real model, or:
+python3 tests/fake_ollama.py &                   # the stand-in (plumbing only, not a model)
+AGENT_MODEL=gemma3:1b node tests/agent.js http://127.0.0.1:8000/index.html
+```
+
+Boots the OS, onboards as `gordon`, then runs seven tasks in order: three through `gemini --autopilot`
+(make `garden/seeds.txt`; `cd garden` then make `tools.txt` there, which checks the cd memory; forge and run
+`sum.py`), two through agent mode (a read-only question, then `mv garden/tools.txt garden/kit.txt`, which needs
+the confirmation dialog: the harness answers "yes" and records it), and a delete request twice, without and with
+`--force`. Each task is graded on the file system afterwards, never on the model's wording (D-014):
+
+- **PASS / FAIL**: the file exists with three lines, `tools.txt` is in `garden/` and not in `$HOME`, `55` was
+  printed, `kit.txt` exists, `garden/` survived the delete request.
+- **INFO**: what a human should read. Whether the planner planned or answered directly, whether the synthesizer
+  mentioned `garden`, the voltage report, and what `--force` did (today: nothing, P2-07). INFO never fails the run.
+
+Exit code 0 means no FAIL. `tests/out/agent-transcript.md` holds every LLM call (prompt size, seconds, the raw
+answer), every line the terminal printed, every confirmation, and the result JSON. **That transcript is the
+deliverable of P2-01**: copy its verdicts and anything surprising into HANDOFF.
+
+`AGENT_MODEL` is passed as `-m`; unset it to use the provider's default (`gemma3:latest`). `AGENT_PROVIDER=gemini`
+with `GEMINI_API_KEY` stores the key in the OS first (written, never run: no key in the cloud). `AGENT_TIMEOUT_MS`
+(default 10 min) bounds one task; a CPU model with a 2,500-character persona prompt can take a minute per call,
+and `pyfetch` has no timeout at all (P2-06).
+
+The stand-in `tests/fake_ollama.py` answers `/api/generate` with canned plans chosen by keywords in the request
+(`seeds`, `tools.txt`, `sum.py`, `rename`, `delete`) and logs each request as a JSON line
+(`--log tests/out/fake-ollama-requests.jsonl`, handy for seeing exactly what prompt the OS builds). Against it the
+run is 7/7 in about a minute, which proves the harness, the CORS preflight, the request body and the `response`
+field. It proves nothing about a model. Its first run found the two bugs in D-014, so it earns its keep as a
+regression check for the agent loop.
+
 ## Manual checks (before a release)
 
 The CONTRIBUTING.md checklist, made concrete:
@@ -136,6 +173,12 @@ The CONTRIBUTING.md checklist, made concrete:
 - Reload survives: files, users, aliases, history, the current theme.
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
+
+- **A `\n` inside a JS template literal that holds Python source is a real newline by the time Python sees it.**
+  Hit twice now (sessions 5 and 6). Write `\\n` in the `.js` file. `node --check` cannot catch it; the smoke test
+  aborts with `SyntaxError: unterminated string literal` inside `page.evaluate`.
+- **The agent's nested `execute()` calls need `current_path`.** A context without one resets the kernel cwd to
+  `/`. Any test that drives the agent from a subdirectory and asserts on relative paths depends on D-014.
 
 - **Doubled backslashes in Python source** (`"\\n"` in a normal string, `r'\\d'` in a raw one) made agent mode
   never match a plan line and made `find` print one long line. Undone everywhere in `resources/core/` on

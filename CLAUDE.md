@@ -59,6 +59,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `extras/diag.sh`, `extras/inflate.sh` | In-OS shell scripts: a 1,400-line command test suite and a demo-world generator (see `docs/TESTING.md`) |
 | `tests/structure.js` | Node-only, instant: the manifest and `asset_manifest.js` match the files on disk (D-010) |
 | `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |
+| `tests/agent.js`, `tests/fake_ollama.py` | Headless run of the `gemini` agent (autopilot and agent mode) through seven tasks against a real Ollama, graded on the file system, transcript to `tests/out/`; and a stand-in Ollama that proves the plumbing without a model (D-014) |
 | `ROADMAP.md` | The plan, with stable item IDs |
 | `docs/HANDOFF.md` | Current state, next steps, session log |
 | `docs/DECISIONS.md` | Append-only decision record |
@@ -116,4 +117,8 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
 - **In-OS suite:** `node tests/diag.js http://127.0.0.1:8000/index.html` runs `extras/diag.sh` (a FractalOS shell
   script, not bash) inside the OS as root and grades its `check_fail` assertions and error lines. About two
   minutes. Run it after any change to the kernel, the executor or a command.
+- **Agent harness:** `AGENT_MODEL=<ollama model> node tests/agent.js http://127.0.0.1:8000/index.html` with Ollama
+  on `localhost:11434` (or `python3 tests/fake_ollama.py &` for a plumbing-only run). Seven tasks, PASS/FAIL on
+  file-system facts, INFO lines for a human to read; transcript in `tests/out/agent-transcript.md`. Needs a
+  machine with a model: the cloud container can reach none.
 - Nothing here runs under `npm test`; there is no `package.json`.
