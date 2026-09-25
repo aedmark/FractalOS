@@ -133,6 +133,9 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   --force deletion has a real verdict. Setup and executed commands appear in transcripts. Nineteen
   Node-only grading checks protect these criteria (2026-09-25).
 
+- [ ] P2-17 Inner Validation Loop ("Try Again"): Instead of halting immediately when `validate_plan()` catches a syntax error or non-whitelisted command, pass the error back to the LLM silently and allow 2-3 attempts to rewrite the plan.
+- [ ] P2-18 "Scar Tissue" Context Injection: Track recent execution failures (like `cd` into a missing directory) in the OS session state and inject them as temporary warnings in the system prompt to prevent the model from repeating the same contextual lapse.
+
 - [ ] P2-16 `samwise --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
   a confirmation effect despite promising not to execute. Separate planning from execution before treating
   this flag as a safe preview (found while tracing the command entry point, session 10).
