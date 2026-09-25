@@ -86,6 +86,61 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
         return None
 
 
+    def extract_plan(self, text):
+        """Select the last explicit plan, keeping every command for validation.
+
+        Models sometimes explain a numbered plan and then repeat it as commands.
+        A restarted numbered list is a new candidate, not extra steps to run twice.
+        Never remove a disallowed command from the selected list.
+        """
+        candidates, current = [], []
+        previous_number = 0
+        fenced = False
+        for raw in text.splitlines():
+            line = raw.strip()
+            if line.startswith("```"):
+                if current:
+                    candidates.append(current)
+                    current = []
+                fenced = not fenced
+                previous_number = 0
+                continue
+            match = re.match(r"^(\d+)[.)]\s+(.*)$", line)
+            bullet = re.match(r"^[-*]\s+(.*)$", line)
+            if match:
+                number = int(match[1])
+                if current and number <= previous_number:
+                    candidates.append(current)
+                    current = []
+                previous_number = number
+                line = match[2].strip()
+            elif bullet:
+                line = bullet[1].strip()
+            elif not fenced:
+                # Bare command lists are accepted, ordinary prose is not.
+                first = line.split(maxsplit=1)[0] if line else ""
+                if first not in self.COMMAND_WHITELIST:
+                    if current:
+                        candidates.append(current)
+                        current = []
+                    previous_number = 0
+                    continue
+            if not line:
+                continue
+            # Only strip a whole inline-code wrapper; preserve backticks in arguments.
+            wrapped = re.fullmatch(r"`([^`]+)`(?:\s+[-:]\s+.*)?", line)
+            if wrapped:
+                line = wrapped[1]
+            current.append(line)
+        if current:
+            candidates.append(current)
+        # Prefer the final list containing at least one recognizable command. Unknown
+        # lines in that list survive and will halt validation before any execution.
+        for candidate in reversed(candidates):
+            if any(line.split(maxsplit=1)[0] in self.COMMAND_WHITELIST for line in candidate):
+                return candidate
+        return candidates[-1] if candidates else []
+
     def _get_ai_config(self):
         """Reads and parses /etc/ai.conf to get default provider and model."""
         config_node = self.fs_manager.get_node("/etc/ai.conf")
@@ -194,26 +249,9 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
                 "error": f"🛑 AUTOPILOT DISENGAGED. {safety_status}. Human confirmation required.\nPlan:\n{plan_text}"
             }
 
-       # 6. DRIVE (Execution)
-        commands_to_execute = []
-        for line in plan_text.splitlines():
-            line = line.strip()
-            # Accept numbers (1.), bullets (-, *), or code blocks (without backticks)
-            if re.match(r'^(\d+\.|-|\*)\s+', line) or line.startswith(tuple(self.COMMAND_WHITELIST)):
-                commands_to_execute.append(line)
-
+        commands_to_execute = self.extract_plan(plan_text)
         if not commands_to_execute:
-             # Fallback: Try to grab code blocks
-             code_blocks = re.findall(r'```(?:bash|sh)?\n(.*?)```', plan_text, re.DOTALL)
-             for block in code_blocks:
-                 for line in block.splitlines():
-                     if line.strip(): commands_to_execute.append(line.strip())
-
-        if not commands_to_execute:
-             return {
-                 "success": True,
-                 "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"
-             }
+            return {"success": True, "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"}
 
         execution_log = ""
 
@@ -222,10 +260,7 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
         simulated_current_path = self.fs_manager.current_path
         # [[[ MEMORY INJECTION END ]]]
 
-        for command_line in commands_to_execute:
-            # Clean the command
-            command_str = re.sub(r'^(\d+\.|-|\*)\s+', '', command_line).strip()
-            command_str = command_str.replace('`', '')
+        for command_str in commands_to_execute:
 
             refusal = self.agent_refusal(command_str)
             if refusal:
@@ -281,26 +316,18 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
 
         plan_text = planner_result.get("answer", "").strip()
 
-        commands_to_execute_raw = [line.strip() for line in plan_text.splitlines() if re.match(r'^\d+\.\s*', line.strip())]
-
-        if not commands_to_execute_raw:
+        commands_to_execute = self.extract_plan(plan_text)
+        if not commands_to_execute:
             response = {"success": True, "data": plan_text}
             if warning: response["warning"] = warning
             return response
 
         executed_commands_output = ""
-        for command_line in commands_to_execute_raw:
-            command_str_from_plan = re.sub(r'^\d+\.\s*', '', command_line).strip()
-
-            # Sanitize the command string by removing markdown code fences
-            command_str = command_str_from_plan
-            if command_str.startswith('```') and command_str.endswith('```'):
-                command_str = command_str[3:-3].strip()
-                if '\n' in command_str:
-                    command_str = command_str.split('\n', 1)[1].strip()
-            elif command_str.startswith('`') and command_str.endswith('`'):
-                command_str = command_str[1:-1].strip()
-
+        for command_str in commands_to_execute:
+            command_str_from_plan = command_str
+            refusal = self.agent_refusal(command_str)
+            if refusal:
+                return {"success": False, "error": f"Execution HALTED: {refusal}."}
             command_parts = shlex.split(command_str)
             command_name = command_parts[0] if command_parts else ""
 

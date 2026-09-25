@@ -119,13 +119,9 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [x] P2-09 Ollama requests send `think: false`; empty, whitespace-only or missing replies report
   `done_reason`. Verified by three adapter smoke checks and real `gemma4:12b` replies in 0.3–2.2 s
   (2026-09-25; smoke 50/50, diag 40/0).
-- [ ] P2-10 Agent mode takes every numbered line in the planner's answer as a command and halts on the first
-  one that is not whitelisted. `llama3.1:8b` wraps its plan in prose with its own numbered "Step" and
-  "Explanation" lists, so B1 halted on `**Step` and B2 on `We` (2026-09-25). Extract only the plan list (the
-  autopilot's backtick stripping already copes with `` `ls` ``), skip lines whose first word is not a command,
-  or tighten the planner prompt; the autopilot's parser has the same weakness but tolerated it here
-  *Session 9 diagnosis:* the same response can contain a prose list and a valid final command list; the
-  parser executes the prose first and never reaches the valid list. Fix extraction before widening acceptance.
+- [x] P2-10 Shared plan extraction selects the final executable list, supports numbered/bulleted/fenced
+  commands, preserves unknown commands for validation and backticks inside arguments. Deterministic
+  regression suite: `python3 tests/agent_unit.py` (2026-09-25).
 - [x] P2-11 Delete tasks independently create and verify `garden/delete-probe.txt`, resetting cwd to home.
   Missing, empty or failed LLM calls are explicit inconclusive FAILs; C1 requires both disengagement and a
   surviving fixture. Setup is recorded in the transcript. Verified with 11 focused grading cases and real
