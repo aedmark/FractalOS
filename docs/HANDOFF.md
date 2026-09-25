@@ -132,7 +132,7 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
 
 ## Session log
 
-- **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `gemini` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
+- **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `samwise` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
 Newest first. Copy the template for each new session.
 
 ### Session 9: 2026-09-25: Reproduce why the agent tasks keep failing (P2-01 diagnosis)
@@ -196,16 +196,16 @@ port 11434, which the real Ollama holds.
 to use), so the session built what makes the local run one command: `tests/agent.js` (seven tasks, file-system
 grading, transcript) and `tests/fake_ollama.py` (Ollama's API with canned persona-shaped plans). The first run
 found the agent's context probe resetting the cwd to `/` and agent mode crashing on its own confirm effect;
-both fixed in `ai_manager.py` and `commands/gemini.py`, two smoke checks added. Harness 7/7 against the
+both fixed in `ai_manager.py` and `commands/samwise.py`, two smoke checks added. Harness 7/7 against the
 stand-in, smoke 47/47, structure 10/10, diag 40/0.
-**Changed:** `resources/core/ai_manager.py`, `resources/core/commands/gemini.py`, `tests/agent.js` (new),
+**Changed:** `resources/core/ai_manager.py`, `resources/core/commands/samwise.py`, `tests/agent.js` (new),
 `tests/fake_ollama.py` (new), `tests/smoke.js`, CLAUDE.md, ROADMAP (P2-01 `[~]`, P2-06 note, P2-08 new),
 DECISIONS (D-014), TESTING.md, CHANGELOG, this file.
 **Decisions:** D-014.
 **Problems / surprises**
 - Every prompt the OS ever built said `Current Directory: /`, whatever the shell's cwd was. The persona's
   "Gravity: if pwd is /, cd home" rule exists because of this bug.
-- Agent mode's permission dialog had never appeared: `gemini.py` indexed `["success"]` on the effect dict.
+- Agent mode's permission dialog had never appeared: `samwise.py` indexed `["success"]` on the effect dict.
 - `pyfetch(timeout=20)` is not a thing; there is no LLM timeout at all (noted under P2-06).
 - The `\n`-in-a-template-literal trap from session 5, again; now in TESTING.md's pitfalls.
 **Left undone:** the real-model run itself (local job), P2-07, P2-08, P1-12.

@@ -23,6 +23,10 @@
 - **Safety Calibration:** Tuned the "Voltage" costs to distinguish between "Creation" (High Cost) and "Execution" (Medium Cost), enabling smoother developer workflows.
 
 ### 🐛 Bug Fixes
+- **Agent plans and prompts (P2-10/P2-12/P2-14):** requested directories take precedence; text files are written directly; the planner sees its actual allowed tools. The final command list is extracted separately from explanations.
+- **Autopilot execution and voltage (P2-02/P2-07):** validate the full simple-command plan, stop on failure, and score operations instead of words in content. Deletions require `--force`; it overrides voltage only. A real story checkpoint of non-hidden home files must succeed before autopilot writes.
+- **Forge escapes (P2-13):** doubled backslashes protect literal escapes; `--literal` bypasses decoding. Shell-quoting examples preserve nested Python strings.
+- **Agent verification (P2-15/P2-01):** independent task fixtures and stronger execution/confirmation checks; both gemma4:12b and llama3.1:8b passed all seven tasks.
 - **Ollama thinking disabled (P2-09):** requests send `think: false`; empty replies report `done_reason` instead of a generic response error.
 - **Delete-task grading (P2-11):** each attempt has a verified fixture; empty or failed model replies cannot pass as successful braking.
 - **The agent always thought it was in `/`:** its context probe (`pwd`, `ls -la`) ran without a current path, which reset the kernel's working directory to the root before the model was asked for a plan. Every plan was sensed from, and driven from, `/`; a relative `cd garden` failed unless the model first did `cd /home/<user>`. The probe now passes the shell's real directory through.

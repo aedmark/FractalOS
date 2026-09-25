@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// tests/agent.js: drive the `gemini` agent (autopilot and agent mode) with a real model and record what it did.
+// tests/agent.js: drive the `samwise` agent (autopilot and agent mode) with a real model and record what it did.
 //
 //   cd resources && python3 -m http.server 8000 &
 //   ollama serve &                                   # a real model on http://localhost:11434 ...
@@ -7,7 +7,7 @@
 //   AGENT_MODEL=gemma3:1b node tests/agent.js http://127.0.0.1:8000/index.html
 //
 // Boots the OS, completes onboarding as a fresh user, then runs a fixed list of
-// tasks through `gemini --autopilot` and `gemini "<prompt>"`, auto-confirming the
+// tasks through `samwise --autopilot` and `samwise "<prompt>"`, auto-confirming the
 // "may the agent run this?" modal so nothing blocks. Every LLM call (prompt size,
 // seconds, the raw answer) and every line the terminal printed go into
 // tests/out/agent-transcript.md. Each task is graded on what happened in the file
@@ -34,8 +34,8 @@ const USER = { username: 'gordon', password: 'hunter2', rootPassword: 'rootpw' }
 const HOME = `/home/${USER.username}`;
 
 const engine = `-p ${PROVIDER}${MODEL ? ` -m ${MODEL}` : ''}`;
-const auto = prompt => `gemini --autopilot ${engine} "${prompt}"`;
-const agent = prompt => `gemini ${engine} "${prompt}"`;
+const auto = prompt => `samwise --autopilot ${engine} "${prompt}"`;
+const agent = prompt => `samwise ${engine} "${prompt}"`;
 
 // The tasks. Prompts avoid double quotes (they sit inside one shell string) and name
 // the files they should produce so the outcome can be checked without reading prose.

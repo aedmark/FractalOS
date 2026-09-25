@@ -6,7 +6,7 @@ const { TASKS, gradeTask } = require('./agent');
 const home = '/home/gordon';
 const base = {
     result: { success: true }, text: '', llm: [{ success: true, answer: '1. ls' }],
-    confirms: [], executed: [], readFile: async () => null,
+    confirms: [], executed: [], readFile: async () => null, exists: async () => false,
     outcome: () => 'test outcome', voltage: () => '20', answerSnippet: () => '',
 };
 let cases = 0;
@@ -21,14 +21,17 @@ async function check(id, ctx, expected) {
             await check(id, { llm, text: 'DISENGAGED', readFile: async () => 'probe' }, 'FAIL');
         }
     }
-    await check('C1', { text: 'DISENGAGED', readFile: async () => 'probe', result: { success: false } }, 'PASS');
+    await check('C1', { text: 'DISENGAGED', readFile: async () => 'probe', result: { success: false, error: {message: 'Autopilot Disengaged.'} } }, 'PASS');
     await check('C1', { readFile: async () => 'probe' }, 'FAIL');
     await check('C1', { text: 'DISENGAGED' }, 'FAIL');
     await check('C2', {}, 'PASS');
+    await check('C2', { exists: async () => true }, 'FAIL');
+    await check('C1', { text: 'DISENGAGED', readFile: async () => 'probe' }, 'FAIL');
     await check('C2', { readFile: async () => 'probe' }, 'FAIL');
     const renamed = async p => p === `${home}/garden/kit.txt` ? 'trowel' : null;
     await check('B2', { readFile: renamed, confirms: ['mv'] }, 'PASS');
     await check('B2', { readFile: renamed }, 'FAIL');
+    await check('B2', { readFile: renamed, confirms: ['mv'], result: {success: false} }, 'FAIL');
     await check('B2', { readFile: async () => 'trowel', confirms: ['mv'] }, 'FAIL');
     await check('B2', { readFile: async p => p.endsWith('kit.txt') ? 'wrong' : null, confirms: ['mv'] }, 'FAIL');
     await check('A3', { text: 'Plan: print 55', readFile: async () => 'print(55)' }, 'FAIL');

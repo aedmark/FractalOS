@@ -1,10 +1,10 @@
-# gem/core/commands/gemini.py
+# gem/core/commands/samwise.py
 
 import asyncio
 import json
 
 def define_flags():
-    """Declares the flags that the gemini command accepts."""
+    """Declares the flags that the samwise command accepts."""
     return {
         'flags': [
             {'name': 'chat', 'short': 'c', 'long': 'chat', 'takes_value': False},
@@ -27,7 +27,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         return {
             "success": False,
             "error": {
-                "message": "gemini: AI Manager is not available.",
+                "message": "samwise: AI Manager is not available.",
                 "suggestion": "This is an internal system error. Please try again later."
             }
         }
@@ -70,7 +70,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         try:
             state = json.loads(flags.get('resume-agent'))
         except json.JSONDecodeError as e:
-            return {"success": False, "error": {"message": "gemini: failed to decode resume state", "suggestion": str(e)}}
+            return {"success": False, "error": {"message": "samwise: failed to decode resume state", "suggestion": str(e)}}
         
         result = await ai_manager.resume_agentic_search(state, provider, model, {"apiKey": api_key})
         if result.get("effect"):
@@ -85,7 +85,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
             return {
                 "success": False,
                 "error": {
-                    "message": "gemini: The AI agent failed to complete the request.",
+                    "message": "samwise: The AI agent failed to complete the request.",
                     "suggestion": f"Reason: {result.get('error', 'Unknown error')}"
                 }
             }
@@ -94,8 +94,8 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         return {
             "success": False,
             "error": {
-                "message": "gemini: insufficient arguments.",
-                "suggestion": "Try 'gemini \"<prompt>\"' or 'gemini --autopilot \"<task>\"'."
+                "message": "samwise: insufficient arguments.",
+                "suggestion": "Try 'samwise \"<prompt>\"' or 'samwise --autopilot \"<task>\"'."
             }
         }
 
@@ -165,7 +165,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         return {
             "success": False,
             "error": {
-                "message": "gemini: The AI agent failed to complete the request.",
+                "message": "samwise: The AI agent failed to complete the request.",
                 "suggestion": f"Reason: {result.get('error', 'Unknown error')}"
             }
         }
@@ -173,13 +173,13 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
 def man(args, flags, user_context, **kwargs):
     return """
 NAME
-    gemini - The AI Interface for FractalOS.
+    samwise - The AI Interface for FractalOS.
 
 SYNOPSIS
-    gemini [OPTIONS] "<prompt>"
+    samwise [OPTIONS] "<prompt>"
 
 DESCRIPTION
-    The gemini command is the bridge to the AI Kernel. It has two primary modes:
+    The samwise command is the bridge to the AI Kernel. It has two primary modes:
     1. **Agent Mode (Default):** A helpful assistant that answers questions.
     2. **Autopilot Mode (--autopilot):** A kinetic driver (BoneAmanita) that EXECUTES tasks.
 
@@ -196,7 +196,7 @@ OPTIONS
         actions (like mass deletion) without braking.
 
     -p, --provider <name>
-        Specify the AI provider (e.g., 'gemini', 'ollama').
+        Specify the AI provider (e.g., 'samwise', 'ollama').
 
     -m, --model <name>
         Specify the exact model name.
@@ -205,10 +205,10 @@ OPTIONS
         Display the command plan without executing it.
 
 EXAMPLES
-    gemini "how do I list files?"
-    gemini --autopilot "create a folder named 'Void' and put a readme in it"
-    gemini --autopilot --force "delete the 'Void' folder"
+    samwise "how do I list files?"
+    samwise --autopilot "create a folder named 'Void' and put a readme in it"
+    samwise --autopilot --force "delete the 'Void' folder"
 """
 
 def help(args, flags, user_context, **kwargs):
-    return 'Usage: gemini [-c | --autopilot] [OPTIONS] "<prompt>"'
+    return 'Usage: samwise [-c | --autopilot] [OPTIONS] "<prompt>"'

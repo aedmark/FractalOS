@@ -16,7 +16,7 @@ These break ties when a feature is debatable.
    returns and the front end performs (D-002).
 3. **No build step, no install.** Clone, serve `resources/`, open a browser. Vendored dependencies stay small
    enough that the repo clones in seconds (D-004, D-005).
-4. **The AI is a user, not root.** Whatever the `gemini` agent runs goes through the same executor, whitelist,
+4. **The AI is a user, not root.** Whatever the `samwise` agent runs goes through the same executor, whitelist,
    permissions and audit log as a typed command, and a risky plan needs a snapshot or a `--force`.
 5. **Verified means observed.** A feature is done when the smoke test or the in-OS suite has seen it work, not
    when the code reads right.
@@ -43,13 +43,13 @@ IDs exist; the code is the evidence, not a test run.
 - [x] P0-05 123 commands (`ls`, `grep`, `sed`, `awk`, `zip`, `diff`, `patch`, `bc`, `nc`, `binder`, `agenda`, ...)
 - [x] P0-06 Apps on the `App` base class: editor, paint, text adventure (with a creator), Chidi document
   assistant, Gemini chat, log, top, BASIC interpreter, onboarding
-- [x] P0-07 `gemini` command: planner → whitelisted commands → synthesizer loop, chat mode, `remix`, `forge`,
+- [x] P0-07 `samwise` command: planner → whitelisted commands → synthesizer loop, chat mode, `remix`, `forge`,
   `storyboard`, `planner`, `chidi`; providers Gemini (API key in localStorage) and Ollama (localhost)
 - [x] P0-08 `story`: snapshot versioning inside the VFS
 - [x] P0-09 Cinematic mode, themes, Tone.js sounds, `printscreen`, pager, BroadcastChannel "networking" (`nc`,
   `netstat`, `post_message`), disabled by default
 - [x] P0-10 Neutralinojs portable mode with a storage HAL that swaps IndexedDB for real files
-- [x] P0-11 BoneAmanita autopilot: `gemini --autopilot` / `--force`, `bone_driver.py` persona and voltage audit,
+- [x] P0-11 BoneAmanita autopilot: `samwise --autopilot` / `--force`, `bone_driver.py` persona and voltage audit,
   `forge` command (CHANGELOG "Unreleased")
 
 ## Phase 1: Foundations and hygiene
@@ -84,7 +84,7 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 
 ## Phase 2: The agent
 
-Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to leave running.
+Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to leave running.
 
 - [x] P2-01 Verified end to end against local Ollama after repairs: gemma4:12b **7/7** and llama3.1:8b
   **7/7** (2026-09-25, session 10). Both created files, honored cd, ran Python with output 55, answered a
@@ -95,7 +95,7 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   missing story-save text no longer blocks creation (2026-09-25).
 - [x] P2-03 The agent has `python`: whitelisted, confirmed-first in agent mode, `--steps` refused, persona
   rewritten. On the way, agent mode's plan regex was found never to have matched (doubled backslashes across
-  `ai_manager.py`) and fixed, so default `gemini` mode executes plans for the first time (D-013, 2026-09-25)
+  `ai_manager.py`) and fixed, so default `samwise` mode executes plans for the first time (D-013, 2026-09-25)
 - [ ] P2-04 Chidi and `remix` / `storyboard` verified against Gemini and Ollama with a recorded transcript
 - [ ] P2-05 Gemini model and endpoint are hard-coded (`gemini-1.5-flash`, `v1beta`); make the model configurable
   through `/etc/ai.conf` for Gemini as it already is for Ollama, and pick a current default
@@ -133,7 +133,7 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   --force deletion has a real verdict. Setup and executed commands appear in transcripts. Nineteen
   Node-only grading checks protect these criteria (2026-09-25).
 
-- [ ] P2-16 `gemini --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
+- [ ] P2-16 `samwise --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
   a confirmation effect despite promising not to execute. Separate planning from execution before treating
   this flag as a safe preview (found while tracing the command entry point, session 10).
 

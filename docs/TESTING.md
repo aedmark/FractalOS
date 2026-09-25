@@ -12,7 +12,7 @@ There are four layers. The first three are automated.
 | Structure | `tests/structure.js` | Every Python file is in `core/manifest.json`; every script and stylesheet is in `asset_manifest.js`; nothing listed is missing | a second, Node only |
 | Smoke | `tests/smoke.js` | Pyodide boots, kernel comes up, accounts and hashing work, the executor runs commands | ~40 s, headless Chromium |
 | In-OS suite | `tests/diag.js` running `extras/diag.sh` | 40+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links, scripting | ~2 min, headless Chromium, inside the OS as root |
-| Agent | `tests/agent.js` (+ `tests/fake_ollama.py`) | The `gemini` agent plans and acts against a real Ollama: seven tasks graded on the file system, transcript recorded | ~1 min with the stand-in, model-bound with Ollama; needs a machine with a model |
+| Agent | `tests/agent.js` (+ `tests/fake_ollama.py`) | The `samwise` agent plans and acts against a real Ollama: seven tasks graded on the file system, transcript recorded | ~1 min with the stand-in, model-bound with Ollama; needs a machine with a model |
 | Manual | CONTRIBUTING.md checklist | UI, apps, sounds, portable mode | a person |
 
 ## The structure test
@@ -135,7 +135,7 @@ python3 tests/fake_ollama.py &                   # the stand-in (plumbing only, 
 AGENT_MODEL=gemma3:1b node tests/agent.js http://127.0.0.1:8000/index.html
 ```
 
-Boots the OS, onboards as `gordon`, then runs seven tasks in order: three through `gemini --autopilot`
+Boots the OS, onboards as `gordon`, then runs seven tasks in order: three through `samwise --autopilot`
 (make `garden/seeds.txt`; `cd garden` then make `tools.txt` there, which checks the cd memory; forge and run
 `sum.py`), two through agent mode (a read-only question, then `mv garden/tools.txt garden/kit.txt`, which needs
 the confirmation dialog: the harness answers "yes" and records it), and a delete request twice, without and with
@@ -182,7 +182,7 @@ regression check for the agent loop.
 
 The CONTRIBUTING.md checklist, made concrete:
 
-- Browser mode in Chrome and Firefox: onboarding, login, `edit`, `paint`, `top`, `adventure`, `basic`, `gemini`
+- Browser mode in Chrome and Firefox: onboarding, login, `edit`, `paint`, `top`, `adventure`, `basic`, `samwise`
   with an Ollama running, `printscreen`, `theme`, `cinematic`, `beep` and `play` (needs a click first for audio).
 - Portable mode: the Neutralino binary in the repo root, `data/` created on first run, state survives closing the
   window (the localStorage export on `windowClose`).

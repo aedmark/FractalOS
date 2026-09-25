@@ -189,7 +189,7 @@ messages carried a literal `\n`), evidently from a paste through an escaping lay
    `forge`/`python`, `python -c` one-liners), says `open()` and `input()` work, and tells the model never to
    pass `--steps`. The planner's read-only manifest is unchanged: it does not get `python`.
 4. The doubled backslashes in `ai_manager.py` are undone (58 → 0), which is what makes agent mode run at all.
-**Consequences:** `gemini "<prompt>"` now executes its plan, which it never did before; anyone who relied on
+**Consequences:** `samwise "<prompt>"` now executes its plan, which it never did before; anyone who relied on
 it being harmless should know that (it still confirms dangerous commands and halts on anything not
 whitelisted). The autopilot itself still checks nothing but voltage (P2-07). Nine checks in `tests/smoke.js`
 drive both paths with a fake `_call_llm_api`; a real model has still not been observed (P2-01).
@@ -210,7 +210,7 @@ network policy), and the smoke test replaces `_call_llm_api` wholesale, so the O
 never run either. A model is also non-deterministic, so a test that asserts on its wording is a coin toss.
 
 **Decision.**
-1. `tests/agent.js` runs seven fixed tasks through `gemini --autopilot` and `gemini "<prompt>"` in headless
+1. `tests/agent.js` runs seven fixed tasks through `samwise --autopilot` and `samwise "<prompt>"` in headless
    Chromium as a normal user, auto-confirms the "may the agent run this?" modal, and grades each task on a fact
    about the file system afterwards (`garden/seeds.txt` exists with three lines; `tools.txt` landed in `garden/`
    and not in `$HOME`; `garden/` survived a delete request). Anything that depends on how the model phrased
@@ -223,7 +223,7 @@ never run either. A model is also non-deterministic, so a test that asserts on i
    against it says nothing about a model.** The harness prints the model name so nobody mistakes one for the other.
 3. Two bugs the first run found are fixed in the kernel rather than worked around in the harness: the agent's
    context probe passes the shell's real `current_path` through the nested `execute()` calls (a context without
-   one resets the kernel cwd to `/`, so every plan was sensed and driven from the root); and `gemini.py` passes a
+   one resets the kernel cwd to `/`, so every plan was sensed and driven from the root); and `samwise.py` passes a
    `confirm_ai_command` effect through instead of indexing `["success"]` on it.
 
 **Consequences.** A real-model run is a local job (`AGENT_MODEL=<model> node tests/agent.js`); its transcript and

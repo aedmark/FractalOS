@@ -2,7 +2,7 @@
 
 A browser-based, Unix-flavoured virtual operating system with a Python kernel that runs inside the page under
 Pyodide (WebAssembly) and a JavaScript front end that draws the terminal, plays sounds and hosts the apps. It
-runs as a static site over any web server, or as a desktop app under Neutralinojs. An LLM (`gemini` command:
+runs as a static site over any web server, or as a desktop app under Neutralinojs. An LLM (`samwise` command:
 Gemini API or a local Ollama) sits inside the shell as a user-facing agent. No build step, no npm dependencies.
 
 The code still calls itself **OopisOS** in many places (`OopisOS_Kernel`, the `oopisOs*` localStorage keys, the
@@ -59,7 +59,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `extras/diag.sh`, `extras/inflate.sh` | In-OS shell scripts: a 1,400-line command test suite and a demo-world generator (see `docs/TESTING.md`) |
 | `tests/structure.js` | Node-only, instant: the manifest and `asset_manifest.js` match the files on disk (D-010) |
 | `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |
-| `tests/agent.js`, `tests/fake_ollama.py` | Headless run of the `gemini` agent (autopilot and agent mode) through seven tasks against a real Ollama, graded on the file system, transcript to `tests/out/`; and a stand-in Ollama that proves the plumbing without a model (D-014) |
+| `tests/agent.js`, `tests/fake_ollama.py` | Headless run of the `samwise` agent (autopilot and agent mode) through seven tasks against a real Ollama, graded on the file system, transcript to `tests/out/`; and a stand-in Ollama that proves the plumbing without a model (D-014) |
 | `ROADMAP.md` | The plan, with stable item IDs |
 | `docs/HANDOFF.md` | Current state, next steps, session log |
 | `docs/DECISIONS.md` | Append-only decision record |

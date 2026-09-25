@@ -11,7 +11,7 @@ from bone_driver import BoneDriver
 class AIManager:
     """
     Manages all interactions with external Large Language Models (LLMs)
-    and orchestrates the tool-use for the gemini command.
+    and orchestrates the tool-use for the samwise command.
     """
     def __init__(self, fs_manager, command_executor):
         self.fs_manager = fs_manager
