@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-25, session 9 (root-cause diagnosis reproduced; runtime unchanged, P2-01 still open)._
+_Last updated: 2026-09-25, session 10 (P2-08 Agentic Search Continuation implemented)._
 
 **What works / verified now**
 - Pyodide 314.0.7 / Python 3.14.2 boots from the trimmed vendored runtime. Structure PASS (10 checks),
@@ -132,6 +132,7 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
 
 ## Session log
 
+- **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `gemini` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
 Newest first. Copy the template for each new session.
 
 ### Session 9: 2026-09-25: Reproduce why the agent tasks keep failing (P2-01 diagnosis)

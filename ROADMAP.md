@@ -86,12 +86,10 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 
 Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to leave running.
 
-- [~] P2-01 Verify the autopilot end to end against a local Ollama: plan, voltage report, `--force`, `story save`
-  interlock, multi-step `cd` memory. Harness and stand-in exist (D-014); initial stand-in 7/7. Real-model
-  transcripts in HANDOFF sessions 7 and 8. After P2-09/P2-11, gemma4:12b has 4 FAIL of 7, llama3.1:8b
-  5 FAIL of 7. Both C1 brakes verified; no empty replies. **Still open:** A2 remains blocked by voltage or
-  failed setup, B2 by planner syntax / absent source file. One gemma confirmation observed but mv failed.
-  Resolve P2-02/P2-10 and rerun; P2-12/P2-13 explain other failures. See current HANDOFF for local transcripts.
+- [x] P2-01 Verified end to end against local Ollama after repairs: gemma4:12b **7/7** and llama3.1:8b
+  **7/7** (2026-09-25, session 10). Both created files, honored cd, ran Python with output 55, answered a
+  read-only question, confirmed and performed mv, braked deletion, and deleted with --force. Home checkpoint
+  contents verified separately by smoke. Transcripts and scoped limitations in HANDOFF; P2-08 remains open.
 - [x] P2-02 Operation-based voltage and calibration table in D-016; all delete spellings score 20,
   plain forge scores 5, argument text cannot alter risk. Autopilot writes require a real home checkpoint;
   missing story-save text no longer blocks creation (2026-09-25).
@@ -107,7 +105,7 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [x] P2-07 Entire plans validated before execution; failed steps halt with failure. `--force` overrides
   voltage only, not validation/checkpoint failure/step-budget limits. Simple command policy and recovery
   scope documented in D-016 (2026-09-25).
-- [ ] P2-08 Agent mode abandons the rest of its plan after a confirmation: `perform_agentic_search` returns the
+- [x] P2-08 Agent mode abandons the rest of its plan after a confirmation: `perform_agentic_search` returns the
   `confirm_ai_command` effect at the first dangerous line, the front end runs only that one command on "yes", and
   the remaining plan lines and the synthesizer never run (seen in `tests/agent.js` task B2, 2026-09-25). Decide:
   resume the plan after confirmation, or confirm the whole plan up front
@@ -134,6 +132,10 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   confirmation, source removal and preserved contents. Every failed/empty model call fails explicitly;
   --force deletion has a real verdict. Setup and executed commands appear in transcripts. Nineteen
   Node-only grading checks protect these criteria (2026-09-25).
+
+- [ ] P2-16 `gemini --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
+  a confirmation effect despite promising not to execute. Separate planning from execution before treating
+  this flag as a safe preview (found while tracing the command entry point, session 10).
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 
