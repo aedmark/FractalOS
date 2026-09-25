@@ -44,7 +44,7 @@ class AuditManager:
 
         try:
             timestamp = datetime.utcnow().isoformat() + "Z"
-            log_entry = f"{timestamp} | USER: {actor} | ACTION: {action} | DETAILS: {details}\\n"
+            log_entry = f"{timestamp} | USER: {actor} | ACTION: {action} | DETAILS: {details}\n"
 
             # Append to the log file
             log_node = fs_manager.get_node(LOG_PATH)

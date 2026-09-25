@@ -64,7 +64,7 @@ def run(args, flags, user_context, **kwargs):
             return {"success": False, "error": {"message": "character: missing journal entry text", "suggestion": f'Usage: character journal {char_name} "Your entry here"'}}
 
         # We'll tag the log entry to make it searchable
-        tagged_message = f"# {char_name}\\n\\n{message}"
+        tagged_message = f"# {char_name}\n\n{message}"
 
         return {
             "effect": "execute_commands",

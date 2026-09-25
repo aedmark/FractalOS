@@ -132,10 +132,10 @@ def run(args, flags, user_context, **kwargs):
         return {
             "effect": "execute_commands",
             "commands": commands_to_exec,
-            "output": "\\n".join(output_lines)
+            "output": "\n".join(output_lines)
         }
 
-    return "\\n".join(output_lines)
+    return "\n".join(output_lines)
 
 def man(args, flags, user_context, **kwargs):
     return """

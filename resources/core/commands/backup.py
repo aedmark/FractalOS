@@ -68,7 +68,7 @@ def run(args, flags, user_context, **kwargs):
 
     except Exception as e:
         import traceback
-        return {"success": False, "error": f"Backup failed in Python kernel: {repr(e)}\\n{traceback.format_exc()}"}
+        return {"success": False, "error": f"Backup failed in Python kernel: {repr(e)}\n{traceback.format_exc()}"}
 
 
 def man(args, flags, user_context, **kwargs):

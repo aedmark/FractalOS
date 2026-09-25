@@ -22,6 +22,7 @@
 - **Safety Calibration:** Tuned the "Voltage" costs to distinguish between "Creation" (High Cost) and "Execution" (Medium Cost), enabling smoother developer workflows.
 
 ### 🐛 Bug Fixes
+- **Literal `\n` in command output:** the same doubled-backslash paste bug in `find` (all results on one line), `jobs`, `story log`, `character journal`, the audit log (`/var/log/audit.log` was one line) and `backup`'s error text. Fixed; `find` now prints one path per line.
 - **Agent mode never ran its plan:** the numbered-line regexes in `ai_manager.py` had doubled backslashes (`\\d`, `\\.`, `\\s` in raw strings), so no plan line ever matched and `gemini "<prompt>"` returned the plan as the answer. The same doubling put literal `\n` into every Ollama prompt and error message. All 58 undone.
 - **JS `null` reached commands as `jsnull`, not `None`:** with no pipe, the bridge passes `null` for stdin and Pyodide delivers `pyodide.ffi.jsnull`, which is not `None`. Commands testing `stdin_data is not None` misbehaved; `wc` with no input crashed with `'JsNull' object has no attribute 'split'`. `kernel.execute_command` now normalises it once for every command. Pre-existing (same on the old Pyodide build), found by the new `python` command's tests.
 - **Ghost Limb Fix:** Resolved `ModuleNotFoundError` for `bone_driver` by correctly registering it in the Kernel Manifest.

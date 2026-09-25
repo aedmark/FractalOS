@@ -27,7 +27,7 @@ def run(args, flags, user_context, jobs=None, **kwargs):
         command = job_details.get('command', '')
         output_lines.append(f"[{job_id}]  {status.ljust(8)}  {command}")
 
-    return "\\n".join(output_lines)
+    return "\n".join(output_lines)
 
 def man(args, flags, user_context, **kwargs):
     return """

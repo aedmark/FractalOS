@@ -137,6 +137,15 @@ The CONTRIBUTING.md checklist, made concrete:
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
 
+- **Doubled backslashes in Python source** (`"\\n"` in a normal string, `r'\\d'` in a raw one) made agent mode
+  never match a plan line and made `find` print one long line. Undone everywhere in `resources/core/` on
+  2026-09-25 (D-013). A grep for `\\\\n` over `resources/core` should hit only `forge`, `printf`, `echo`, `python`
+  and `bone_driver`, which document or expand escapes on purpose. If a new file shows the pattern, it was
+  pasted through something that escapes.
+- **The agent can be tested without a model.** Replace `kernel.ai_manager._call_llm_api` with an async fake
+  that returns a fixed plan (see the agent block in `tests/smoke.js`); `perform_autopilot` and
+  `perform_agentic_search` then run end to end against the real executor.
+
 - **`cd` takes effect after the line.** `cd /home/Guest && python -c "open('x','w')"` wrote to `/x`: the
   `change_directory` effect runs when the whole line is done (D-002). In tests, give `cd` its own command.
 - **No pipe means `jsnull`, not `None`, on the Python side** (D-012), now normalised in `kernel.execute_command`.

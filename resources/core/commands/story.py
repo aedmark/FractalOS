@@ -77,7 +77,7 @@ def run(args, flags, user_context, **kwargs):
             output.append(f"Date:   {date_str}")
             output.append(f"\n    {entry['message']}\n")
 
-        return "\\n".join(output)
+        return "\n".join(output)
 
     elif sub_command == "rewind":
         if len(args) < 2:

@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-24, session 4 (`python` command; JS null fixed at the bridge)._
+_Last updated: 2026-09-25, session 5 (the agent has `python`; agent mode runs plans for the first time)._
 
 **What works**
 - **The OS boots and runs on Pyodide 314.0.7 / Python 3.14.2** from a 16 MB vendored runtime (D-004). Smoke
@@ -29,6 +29,11 @@ _Last updated: 2026-09-24, session 4 (`python` command; JS null fixed at the bri
 - **The repo is small again, on `main`.** History was rewritten to drop the 415 MB of old Pyodide (D-005):
   pack 327 MB → 8.8 MB, same messages and dates, new hashes. The owner replaced `main` with the rewritten branch
   and deleted the two Aikido bot branches that still pinned the old blobs. A fresh `git clone` measured 9.1 MB.
+- **The agent has `python`** (P2-03, D-013): whitelisted, confirmed-first in agent mode, `--steps` refused in
+  both paths, the BoneAmanita persona rewritten for `.py` scripts. **Default `gemini "<prompt>"` mode executes
+  its plan now, which it never did before:** its plan-line regex had doubled backslashes and never matched.
+  The whole of `ai_manager.py` and six other kernel files had the same paste bug (literal `\n` in Ollama
+  prompts, `find` output, the audit log); all undone.
 - **`python` runs real Python inside the OS** (P1-09, D-011). `python script.py [args]`, `python -c "..."`,
   or piped code, in the kernel's own CPython 3.14: output captured, `open()` on the virtual file system with
   permissions, `input()` from the pipe, `sys.argv` / `sys.exit`, tracebacks from the script's frames, and a
@@ -43,7 +48,10 @@ _Last updated: 2026-09-24, session 4 (`python` command; JS null fixed at the bri
   `tests/smoke.js`, `.gitignore`. README and CONTRIBUTING point at them.
 
 **Verified**
-- `node tests/smoke.js`: 35/35 (17 of them exercise `python`: values, argv, piped `input()`, VFS read, write
+- `node tests/smoke.js`: 45/45. Nine drive the agent with a fake `_call_llm_api`: the autopilot runs a
+  `python -c` plan line and refuses `--steps`; agent mode asks before `python`, halts on `--steps`, and still
+  runs a read-only plan through to the synthesizer. One checks `find` prints one path per line.
+- (earlier) `node tests/smoke.js`: 35/35 (17 of them exercise `python`: values, argv, piped `input()`, VFS read, write
   on drop, append in a `with`, a permission denial on `/etc/sudoers`, a traceback after partial output, exit
   status, a syntax error, the step budget, python-to-python pipe, and the no-input case); bare `cat` and `wc`
   guard D-012.
@@ -62,7 +70,10 @@ _Last updated: 2026-09-24, session 4 (`python` command; JS null fixed at the bri
 **Not verified / not done**
 - **Nothing UI-level has been exercised by a session**: onboarding dialog, editor, paint, adventure, top, BASIC,
   Gemini chat, themes, sounds, `printscreen`. The smoke test stops at the kernel and executor.
-- **The autopilot has never been observed by a session** (P2-01). Needs an Ollama or a Gemini key.
+- **No real model has been observed** (P2-01). The agent paths are exercised only with a fake LLM. Needs an
+  Ollama or a Gemini key. Now that agent mode actually executes plans, this matters more than before.
+- **The autopilot has no brakes but voltage** (P2-07): no whitelist check, `--force` unread. Found while
+  doing P2-03, not changed.
 - **Portable (Neutralino) mode is untested here**: no binary in the container. The config pins Neutralino 6.2.0.
 - **Firefox and Safari**: untested. Pyodide 314's `pyodide.js` dynamic-imports `pyodide.asm.mjs`; that is fine
   in every evergreen browser but has only been seen in Chromium.
@@ -110,8 +121,10 @@ _Last updated: 2026-09-24, session 4 (`python` command; JS null fixed at the bri
 
 ## Next steps (in order)
 
-1. **P2-03: give the agent `python`** (whitelist, and the persona's "does not run Python" law is now false), after
-   or alongside **P2-01: watch the autopilot run** against Ollama with a transcript in the handoff.
+1. **P2-01: watch a real model drive it.** Both agent paths now run plans; the fake-LLM tests say the plumbing
+   works, not that a model produces usable plans. Ollama locally, transcript into this file.
+2. **P2-07: decide the autopilot's brakes** (whitelist? confirm? make `--force` real?). Until then
+   `gemini --autopilot` runs whatever the model numbers, stopped only by voltage ≥ 20.
 
 ## Open questions for the user
 
@@ -124,6 +137,26 @@ _Last updated: 2026-09-24, session 4 (`python` command; JS null fixed at the bri
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 5: 2026-09-25: The agent gets `python`; agent mode's plan regex fixed (P2-03, D-013)
+
+**Goal:** P2-03: let the agent use `python`, rewrite the persona's "cannot run Python" law, decide its step budget.
+**Done:** P2-03 (D-013). `python` in `COMMAND_WHITELIST` and `DANGEROUS_COMMANDS`; `AIManager.agent_refusal()`
+rejects `--steps` in both paths; persona rewritten for `.sh` and `.py`; planner manifest unchanged. Nine
+fake-LLM smoke checks. Then the paste bug: 58 doubled backslashes in `ai_manager.py` (agent mode never matched
+a plan line; literal `\n` in Ollama prompts) and 7 more in `find`, `jobs`, `story`, `character`, `audit`,
+`backup`, all undone, one `find` smoke check. Smoke 45/45, diag 40/0. P2-07 added to the roadmap.
+**Changed:** `ai_manager.py`, `bone_driver.py`, `commands/{find,jobs,story,character,backup}.py`, `audit.py`,
+`tests/smoke.js`, DECISIONS (D-013), ROADMAP, CHANGELOG, TESTING.md, this file.
+**Decisions:** D-013.
+**Problems / surprises**
+- The first fake-LLM test of agent mode "passed" for the wrong reason: the plan text was returned as the answer
+  and happened to contain the probe word. Only the `python` confirmation check exposed that no plan line had
+  ever matched. Lesson recorded in TESTING.md: assert on the executor's output, not on words in the answer.
+- Reading the autopilot for this item showed it enforces nothing but voltage and ignores `--force` (P2-07).
+- A `\n` inside a JS template literal feeding Python source became a real newline; raw-string edits fixed it.
+**Left undone:** P2-01 (a real model), P2-07 (autopilot brakes), P1-12 (jsnull audit).
+**Next session should start with:** "Next steps" above.
 
 ### Session 4: 2026-09-24: `python` command (P1-09, D-011) and the `jsnull` fix (D-012)
 

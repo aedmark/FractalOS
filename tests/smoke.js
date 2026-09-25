@@ -49,6 +49,8 @@ const CHECKS = [
     // No pipe means no stdin: JS null must reach Python as None, not as Pyodide's jsnull (D-011).
     { cmd: 'cat', expect: r => r.success && (r.output || '') === '' },
     { cmd: 'wc', expect: r => r.success && (r.output || '') === '' }, // crashed on JsNull before the fix
+    // find used to join its results with a literal backslash-n (one long line).
+    { cmd: 'find /home -name "*.txt"', expect: r => r.success && (r.output || '').split('\n').length >= 2 && !/\\n/.test(r.output) },
 ];
 
 function errorMessage(r) {
