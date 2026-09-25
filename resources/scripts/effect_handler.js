@@ -88,10 +88,39 @@ async function handleEffect(result, options) {
                     "Do you want to allow this action?"
                 ],
                 onConfirm: async () => {
-                    await CommandExecutor.processSingleCommand(result.command, { isInteractive: false });
+                    const execResult = await CommandExecutor.processSingleCommand(result.command, { isInteractive: false });
+                    
+                    if (!execResult.success) {
+                        let errorMessage = execResult.error ? (execResult.error.message || execResult.error) : "failed";
+                        await OutputManager.appendToOutput(`Execution HALTED at ${result.command}: ${errorMessage}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    } else if (execResult.output) {
+                        await OutputManager.appendToOutput(execResult.output);
+                    }
+                    
+                    if (result.continuation) {
+                        if (execResult.success) {
+                            const state = result.continuation;
+                            state.executed_commands_output += `--- Output of '${result.command}' ---\n${execResult.output || ""}\n\n`;
+                            const currentPath = FileSystemManager.getCurrentPath();
+                            state.current_path = currentPath;
+                            
+                            const stateJson = JSON.stringify(state).replace(/'/g, "'\\''");
+                            let resumeCmd = `gemini --resume-agent '${stateJson}'`;
+                            if (result.provider) resumeCmd += ` --provider ${result.provider}`;
+                            if (result.model) resumeCmd += ` --model ${result.model}`;
+                            
+                            const resumeResult = await CommandExecutor.processSingleCommand(resumeCmd, { isInteractive: false });
+                            if (resumeResult.success && resumeResult.output) {
+                                await OutputManager.appendToOutput(resumeResult.output);
+                            } else if (!resumeResult.success) {
+                                let errorMessage = resumeResult.error ? (resumeResult.error.message || resumeResult.error) : "failed";
+                                await OutputManager.appendToOutput(errorMessage, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                            }
+                        }
+                    }
                 },
-                onCancel: () => {
-                    OutputManager.appendToOutput('Execution cancelled by user.', { typeClass: Config.CSS_CLASSES.CONSOLE_LOG_MSG });
+                onCancel: async () => {
+                    await OutputManager.appendToOutput('Execution cancelled by user.', { typeClass: Config.CSS_CLASSES.CONSOLE_LOG_MSG });
                 },
                 options,
             });

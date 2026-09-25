@@ -13,6 +13,7 @@ def define_flags():
             {'name': 'provider', 'short': 'p', 'long': 'provider', 'takes_value': True},
             {'name': 'model', 'short': 'm', 'long': 'model', 'takes_value': True},
             {'name': 'chat-internal', 'long': 'chat-internal', 'takes_value': True, 'hidden': True},
+            {'name': 'resume-agent', 'long': 'resume-agent', 'takes_value': True, 'hidden': True},
             {'name': 'dry-run', 'long': 'dry-run', 'takes_value': False},
         ],
         'metadata': {}
@@ -63,6 +64,31 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
             return result.get("answer")
         else:
             return {"success": False, "error": result["error"]}
+
+    # --- MODE 2.5: RESUME AGENTIC SEARCH ---
+    if flags.get('resume-agent'):
+        try:
+            state = json.loads(flags.get('resume-agent'))
+        except json.JSONDecodeError as e:
+            return {"success": False, "error": {"message": "gemini: failed to decode resume state", "suggestion": str(e)}}
+        
+        result = await ai_manager.resume_agentic_search(state, provider, model, {"apiKey": api_key})
+        if result.get("effect"):
+            return result
+        if result.get("success"):
+            return {
+                "effect": "display_prose",
+                "header": "Gemini Response",
+                "content": result.get("data")
+            }
+        else:
+            return {
+                "success": False,
+                "error": {
+                    "message": "gemini: The AI agent failed to complete the request.",
+                    "suggestion": f"Reason: {result.get('error', 'Unknown error')}"
+                }
+            }
 
     if not args:
         return {

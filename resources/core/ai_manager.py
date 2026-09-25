@@ -374,12 +374,39 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
         refusal = self.validate_plan(commands_to_execute)
         if refusal:
             return {"success": False, "error": f"Execution HALTED: {refusal}."}
+            
         current_path = self.fs_manager.current_path
-        executed_commands_output = ""
-        for command_str in commands_to_execute:
+        
+        state = {
+            "prompt": prompt,
+            "commands_to_execute": commands_to_execute,
+            "current_path": current_path,
+            "executed_commands_output": "",
+        }
+        return await self.resume_agentic_search(state, provider, model, options)
+
+    async def resume_agentic_search(self, state, provider, model, options):
+        prompt = state.get("prompt")
+        commands_to_execute = state.get("commands_to_execute", [])
+        current_path = state.get("current_path")
+        executed_commands_output = state.get("executed_commands_output", "")
+        final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
+
+        for i, command_str in enumerate(commands_to_execute):
             command_name = shlex.split(command_str)[0]
             if command_name in self.DANGEROUS_COMMANDS:
-                return {"effect": "confirm_ai_command", "command": command_str}
+                return {
+                    "effect": "confirm_ai_command", 
+                    "command": command_str,
+                    "continuation": {
+                        "prompt": prompt,
+                        "commands_to_execute": commands_to_execute[i+1:],
+                        "current_path": current_path,
+                        "executed_commands_output": executed_commands_output,
+                    },
+                    "provider": provider,
+                    "model": model
+                }
 
             audit_manager.log(
                 self.command_executor.user_context.get('name'),
