@@ -42,7 +42,7 @@ async function handleEffect(result, options) {
                 break;
             }
 
-            const verifyResultJson = await OopisOS_Kernel.syscall("users", "verify_password", [currentUser.name, passwordToTry]);
+            const verifyResultJson = await FractalOS.syscall("users", "verify_password", [currentUser.name, passwordToTry]);
             const verifyResult = JSON.parse(verifyResultJson);
 
             if (verifyResult.success && verifyResult.data) {
@@ -108,7 +108,7 @@ async function handleEffect(result, options) {
                             state.current_path = currentPath;
                             
                             const stateJson = JSON.stringify(state).replace(/'/g, "'\\''");
-                            let resumeCmd = `gemini --resume-agent '${stateJson}'`;
+                            let resumeCmd = `samwise --resume-agent '${stateJson}'`;
                             if (result.provider) resumeCmd += ` --provider ${result.provider}`;
                             if (result.model) resumeCmd += ` --model ${result.model}`;
                             
