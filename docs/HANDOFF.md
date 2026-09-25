@@ -93,8 +93,8 @@ _Last updated: 2026-09-25, session 6 (agent harness built and proven against a s
 - **Portable (Neutralino) mode is untested here**: no binary in the container. The config pins Neutralino 6.2.0.
 - **Firefox and Safari**: untested. Pyodide 314's `pyodide.js` dynamic-imports `pyodide.asm.mjs`; that is fine
   in every evergreen browser but has only been seen in Chromium.
-- **`.idea/` and `neutralinojs.log` are still tracked** (P1-07). `.gitignore` now lists them but does not
-  untrack them.
+- **`neutralinojs.log` is still tracked** (P1-07). The owner removed `.idea/` from `main` on 2026-09-25;
+  `.gitignore` lists the log but does not untrack it.
 
 **Gotchas for the next session**
 - **Two names.** The code says OopisOS (`OopisOS_Kernel`, `oopisOs*` keys, `oopisos-network`); the product is
@@ -149,7 +149,7 @@ _Last updated: 2026-09-25, session 6 (agent harness built and proven against a s
 
 ## Open questions for the user
 
-- Untrack `.idea/` and `neutralinojs.log`? (P1-07)
+- Untrack `neutralinojs.log`? (P1-07; `.idea/` is gone)
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
 - Should the agent whitelist converge on "anything a user can do" with voltage as the brake? (Q-001)
 

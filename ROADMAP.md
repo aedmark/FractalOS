@@ -65,8 +65,9 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 - [x] P1-06 Run `extras/diag.sh` headlessly (`tests/diag.js`) and make its result the pass/fail gate. First run on
   Pyodide 314 / Python 3.14: 40 `check_fail` assertions pass, 0 fail, no command errors, script reaches its
   completion banner in about 100 s. Nothing needed fixing (2026-09-24)
-- [ ] P1-07 Untrack `.idea/` and `neutralinojs.log` (they are committed today; `.gitignore` alone does not remove
-  them). Owner's call, since `.idea/` is their PyCharm project.
+- [~] P1-07 Untrack `.idea/` and `neutralinojs.log` (they are committed today; `.gitignore` alone does not remove
+  them). Owner's call, since `.idea/` is their PyCharm project. *2026-09-25:* the owner deleted `.idea/` on
+  `main`; `neutralinojs.log` is still tracked.
 - [x] P1-08 `tools/gen_manifest.py` writes `resources/core/manifest.json` from the directories; `bridge.js`
   fetches it instead of carrying hand-typed lists; `tests/structure.js` fails when the manifest or
   `asset_manifest.js` drifts from disk (mutation-checked both ways) (D-010, 2026-09-24)
