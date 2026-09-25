@@ -54,12 +54,31 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         self.COMMAND_WHITELIST = [
             "ls", "cat", "grep", "find", "tree", "pwd", "head", "tail",
             "wc", "man", "help", "echo", "bc", "expr", "whoami", "date", "story",
-            "mkdir", "touch", "mv", "cp", "rm", "rmdir", "forge", "run", "chmod"
+            "mkdir", "touch", "mv", "cp", "rm", "rmdir", "forge", "run", "chmod",
+            "python"
         ]
+        # In agent mode these are run only after the user confirms. `python` is
+        # here because a script can write anything a script can write (D-013).
         self.DANGEROUS_COMMANDS = [
             "rm", "mv", "chown", "chgrp", "useradd", "usermod",
-            "passwd", "forge", "patch", "reset", "clearfs"
+            "passwd", "forge", "patch", "reset", "clearfs", "python"
         ]
+
+    @staticmethod
+    def agent_refusal(command_str):
+        """Why the agent may not run this command as written, or None (D-013).
+
+        The agent gets `python` with the default step budget and may not change
+        it: `--steps 0` would let a runaway loop freeze the page, and the budget
+        is the only thing that stops one.
+        """
+        try:
+            parts = shlex.split(command_str)
+        except ValueError:
+            return "unbalanced quotes"
+        if parts and parts[0] == "python" and any(p == "--steps" or p.startswith("--steps=") for p in parts[1:]):
+            return "the agent may not change python's step budget (--steps)"
+        return None
 
 
     def _get_ai_config(self):
@@ -121,7 +140,7 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         pwd_output = pwd_result.get("output", "(unknown)")
         ls_output = ls_result.get("output", "(empty)")
 
-        return f"## OopisOS Session Context ##\\nCurrent Directory:\\n{pwd_output}\\n\\nDirectory Listing:\\n{ls_output}"
+        return f"## OopisOS Session Context ##\nCurrent Directory:\n{pwd_output}\n\nDirectory Listing:\n{ls_output}"
 
     async def perform_autopilot(self, prompt, history, provider, model, options):
         """
@@ -198,6 +217,11 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             command_str = re.sub(r'^(\d+\.|-|\*)\s+', '', command_line).strip()
             command_str = command_str.replace('`', '')
 
+            refusal = self.agent_refusal(command_str)
+            if refusal:
+                execution_log += f"► {command_str}\nRefused: {refusal}\n"
+                continue
+
             # 7. KINETIC DISCHARGE
             # We explicitly tell the executor: "THIS IS WHERE WE ARE."
             js_context = {
@@ -234,7 +258,7 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
     async def perform_agentic_search(self, prompt, history, provider, model, options):
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
         planner_context = await self._get_terminal_context()
-        planner_prompt = f'User Prompt: "{prompt}"\\n\\n{planner_context}'
+        planner_prompt = f'User Prompt: "{prompt}"\n\n{planner_context}'
 
         planner_conversation = history + [{"role": "user", "parts": [{"text": planner_prompt}]}]
 
@@ -242,12 +266,12 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
 
         if not planner_result["success"]:
             error_msg = f"Planner stage failed: {planner_result.get('error')}"
-            if warning: error_msg = f"{warning}\\n{error_msg}"
+            if warning: error_msg = f"{warning}\n{error_msg}"
             return {"success": False, "error": error_msg}
 
         plan_text = planner_result.get("answer", "").strip()
 
-        commands_to_execute_raw = [line.strip() for line in plan_text.splitlines() if re.match(r'^\\d+\\.\\s*', line.strip())]
+        commands_to_execute_raw = [line.strip() for line in plan_text.splitlines() if re.match(r'^\d+\.\s*', line.strip())]
 
         if not commands_to_execute_raw:
             response = {"success": True, "data": plan_text}
@@ -256,26 +280,32 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
 
         executed_commands_output = ""
         for command_line in commands_to_execute_raw:
-            command_str_from_plan = re.sub(r'^\\d+\\.\\s*', '', command_line).strip()
+            command_str_from_plan = re.sub(r'^\d+\.\s*', '', command_line).strip()
 
             # Sanitize the command string by removing markdown code fences
             command_str = command_str_from_plan
             if command_str.startswith('```') and command_str.endswith('```'):
                 command_str = command_str[3:-3].strip()
-                if '\\n' in command_str:
-                    command_str = command_str.split('\\n', 1)[1].strip()
+                if '\n' in command_str:
+                    command_str = command_str.split('\n', 1)[1].strip()
             elif command_str.startswith('`') and command_str.endswith('`'):
                 command_str = command_str[1:-1].strip()
 
             command_parts = shlex.split(command_str)
             command_name = command_parts[0] if command_parts else ""
 
+            refusal = self.agent_refusal(command_str)
+            if refusal:
+                error_msg = f"Execution HALTED: {refusal} (plan line '{command_str_from_plan}')."
+                if warning: error_msg = f"{warning}\n{error_msg}"
+                return {"success": False, "error": error_msg}
+
             if command_name in self.DANGEROUS_COMMANDS:
                 return {"effect": "confirm_ai_command", "command": command_str}
 
             if command_name not in self.COMMAND_WHITELIST:
                 error_msg = f"Execution HALTED: AI attempted to run a non-whitelisted command: '{command_name}' from plan line '{command_str_from_plan}'."
-                if warning: error_msg = f"{warning}\\n{error_msg}"
+                if warning: error_msg = f"{warning}\n{error_msg}"
                 return {"success": False, "error": error_msg}
 
             audit_manager.log(
@@ -290,20 +320,20 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             exec_result = json.loads(exec_result_json)
 
             output = exec_result.get("output", "") if exec_result.get("success") else f"Error: {exec_result.get('error')}"
-            executed_commands_output += f"--- Output of '{command_str}' ---\\n{output}\\n\\n"
+            executed_commands_output += f"--- Output of '{command_str}' ---\n{output}\n\n"
 
-        synthesizer_prompt = f'Original user question: "{prompt}"\\n\\nContext from file system:\\n{executed_commands_output}'
+        synthesizer_prompt = f'Original user question: "{prompt}"\n\nContext from file system:\n{executed_commands_output}'
         synthesizer_result = await self._call_llm_api(final_provider, final_model, [{"role": "user", "parts": [{"text": synthesizer_prompt}]}], options.get("apiKey"), self.SYNTHESIZER_SYSTEM_PROMPT)
 
         if not synthesizer_result["success"]:
             error_msg = f"Synthesizer stage failed: {synthesizer_result.get('error')}"
-            if warning: error_msg = f"{warning}\\n{error_msg}"
+            if warning: error_msg = f"{warning}\n{error_msg}"
             return {"success": False, "error": error_msg}
 
         final_answer = synthesizer_result.get("answer")
         if not final_answer:
             error_msg = "AI failed to synthesize a final answer."
-            if warning: error_msg = f"{warning}\\n{error_msg}"
+            if warning: error_msg = f"{warning}\n{error_msg}"
             return {"success": False, "error": error_msg}
 
         response = {"success": True, "data": final_answer}
@@ -344,10 +374,10 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             ollama_model = model or provider_config["defaultModel"]
             full_prompt = ""
             if system_prompt:
-                full_prompt += f"{system_prompt}\\n\\n"
+                full_prompt += f"{system_prompt}\n\n"
             for turn in conversation:
                 content = " ".join([part.get("text", "") for part in turn.get("parts", [])])
-                full_prompt += f"**{turn['role'].title()}**: {content}\\n\\n"
+                full_prompt += f"**{turn['role'].title()}**: {content}\n\n"
 
             request_body_dict = {
                 "model": ollama_model,
@@ -410,12 +440,12 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         result = await self._call_llm_api(final_provider, final_model, conversation, api_key, self.REMIX_SYSTEM_PROMPT)
 
         if result.get("success"):
-            final_article = re.sub(r'(?<!\\n)\\n(?!\\n)', '\\n\\n', result.get("answer", ""))
+            final_article = re.sub(r'(?<!\n)\n(?!\n)', '\n\n', result.get("answer", ""))
             response = {"success": True, "data": final_article}
             if warning: response["warning"] = warning
             return response
         else:
-            if warning: result["error"] = f"{warning}\\n{result['error']}"
+            if warning: result["error"] = f"{warning}\n{result['error']}"
             return result
 
     async def perform_storyboard(self, files, mode, is_summary, question, provider, model, api_key):
@@ -425,8 +455,8 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
         STORYBOARD_SYSTEM_PROMPT = "You are a helpful AI Project Historian. Your task is to analyze a collection of files and explain their collective story, structure, and purpose based ONLY on the provided content."
 
-        file_context_string = "\\n\\n".join(
-            [f"--- START FILE: {f['path']} ---\\n{f['content']}\\n--- END FILE: {f['path']} ---" for f in files]
+        file_context_string = "\n\n".join(
+            [f"--- START FILE: {f['path']} ---\n{f['content']}\n--- END FILE: {f['path']} ---" for f in files]
         )
 
         if question:
@@ -436,7 +466,7 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         else:
             user_prompt = f"Based on the following files and their content, describe the story and relationship between them. Analyze them in '{mode}' mode to explain the project's architecture and purpose. Present your findings in clear, well-structured Markdown."
 
-        full_prompt = f"{user_prompt}\\n\\nFILE CONTEXT:\\n{file_context_string[:15000]}"
+        full_prompt = f"{user_prompt}\n\nFILE CONTEXT:\n{file_context_string[:15000]}"
         conversation = [{"role": "user", "parts": [{"text": full_prompt}]}]
         result = await self._call_llm_api(final_provider, final_model, conversation, api_key, STORYBOARD_SYSTEM_PROMPT)
 
@@ -445,7 +475,7 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             if warning: response["warning"] = warning
             return response
         else:
-            if warning: result["error"] = f"{warning}\\n{result['error']}"
+            if warning: result["error"] = f"{warning}\n{result['error']}"
             return result
 
     async def perform_forge(self, description, provider, model, api_key):
@@ -461,7 +491,7 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             if warning: response["warning"] = warning
             return response
         else:
-            if warning: result["error"] = f"{warning}\\n{result['error']}"
+            if warning: result["error"] = f"{warning}\n{result['error']}"
             return result
 
     async def perform_chidi_analysis(self, files_context, analysis_type, question=None, provider=None, model=None, api_key=None):
@@ -472,11 +502,11 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
         CHIDI_SYSTEM_PROMPT = "You are Chidi, an AI-powered document analyst. Your answers MUST be based *only* on the provided document context. If the answer is not in the documents, state that clearly. Be concise and helpful."
 
         if analysis_type == 'summarize':
-            user_prompt = f"Please provide a concise summary of the following document:\\n\\n---\\n\\n{files_context}"
+            user_prompt = f"Please provide a concise summary of the following document:\n\n---\n\n{files_context}"
         elif analysis_type == 'study':
-            user_prompt = f"Based on the following document, what are some insightful questions a user might ask?\\n\\n---\\n\\n{files_context}"
+            user_prompt = f"Based on the following document, what are some insightful questions a user might ask?\n\n---\n\n{files_context}"
         elif analysis_type == 'ask':
-            full_prompt = f"Based on the provided document context, answer the following question: \"{question}\"\\n\\n--- DOCUMENT CONTEXT ---\\n{files_context}\\n--- END DOCUMENT CONTEXT ---"
+            full_prompt = f"Based on the provided document context, answer the following question: \"{question}\"\n\n--- DOCUMENT CONTEXT ---\n{files_context}\n--- END DOCUMENT CONTEXT ---"
         else:
             return {"success": False, "error": "Invalid analysis type specified."}
 
@@ -491,5 +521,5 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             if warning: response["warning"] = warning
             return response
         else:
-            if warning: result["error"] = f"{warning}\\n{result['error']}"
+            if warning: result["error"] = f"{warning}\n{result['error']}"
             return result

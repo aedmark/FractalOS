@@ -89,14 +89,17 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   interlock, multi-step `cd` memory ("stateless memory injection"). Nothing in this phase has been observed by a
   session yet; the CHANGELOG entries are the owner's.
 - [ ] P2-02 Voltage calibration with evidence: a table of plans and their scores, and the thresholds justified
-- [ ] P2-03 Let the agent use `python` now that it exists: add it to `COMMAND_WHITELIST` in `ai_manager.py`
-  (the voltage table already prices it at 2.0) and rewrite the "THIS SYSTEM DOES NOT RUN PYTHON SCRIPTS
-  DIRECTLY" law in `bone_driver.py`, which is now false. Decide the step budget the agent gets. Not done with
-  P1-09 on purpose: it changes what the autopilot will do, and P2-01 (observe it at all) comes first.
+- [x] P2-03 The agent has `python`: whitelisted, confirmed-first in agent mode, `--steps` refused, persona
+  rewritten. On the way, agent mode's plan regex was found never to have matched (doubled backslashes across
+  `ai_manager.py`) and fixed, so default `gemini` mode executes plans for the first time (D-013, 2026-09-25)
 - [ ] P2-04 Chidi and `remix` / `storyboard` verified against Gemini and Ollama with a recorded transcript
 - [ ] P2-05 Gemini model and endpoint are hard-coded (`gemini-1.5-flash`, `v1beta`); make the model configurable
   through `/etc/ai.conf` for Gemini as it already is for Ollama, and pick a current default
 - [ ] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named
+- [ ] P2-07 The autopilot enforces nothing but voltage: `perform_autopilot` never checks `COMMAND_WHITELIST`
+  or `DANGEROUS_COMMANDS` (the whitelist is only used to *recognise* plan lines), and the `--force` flag is
+  passed in as `force_override` and never read. Decide what the autopilot's brakes are (whitelist? confirm?
+  voltage plus force?) and make `--force` mean something or remove it.
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 

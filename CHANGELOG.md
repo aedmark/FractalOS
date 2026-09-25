@@ -3,6 +3,7 @@
 ## [Unreleased] - BoneAmanita Integration
 
 ### 🚀 New Features (The Kinetic Engine)
+- **The agent can use `python`:** whitelisted; in agent mode the user confirms it first (like `forge` and `rm`); the autopilot persona now describes `.py` scripts and `python -c` one-liners; the agent may not pass `--steps`.
 - **New Command: `python`** (`resources/core/commands/python.py`): run real Python inside FractalOS. `python script.py [args]`, `python -c "code"`, or `... | python`. Runs in the kernel's own CPython 3.14 (Pyodide); stdout/stderr come back as command output; `open()` reads and writes the FractalOS file system with its permissions; `input()` reads the pipe; `sys.argv` and `sys.exit()` behave; a step budget (`--steps`, default 2,000,000) stops runaway loops so the page cannot freeze. Not a sandbox (same trust as any command).
 - **BoneAmanita Autopilot:** Integrated a state-aware, kinetic AI driver accessible via `gemini --autopilot`.
     - **The Switch:** Added `--autopilot` (`-a`) and `--force` (`-f`) flags to the `gemini` command.
@@ -21,6 +22,7 @@
 - **Safety Calibration:** Tuned the "Voltage" costs to distinguish between "Creation" (High Cost) and "Execution" (Medium Cost), enabling smoother developer workflows.
 
 ### 🐛 Bug Fixes
+- **Agent mode never ran its plan:** the numbered-line regexes in `ai_manager.py` had doubled backslashes (`\\d`, `\\.`, `\\s` in raw strings), so no plan line ever matched and `gemini "<prompt>"` returned the plan as the answer. The same doubling put literal `\n` into every Ollama prompt and error message. All 58 undone.
 - **JS `null` reached commands as `jsnull`, not `None`:** with no pipe, the bridge passes `null` for stdin and Pyodide delivers `pyodide.ffi.jsnull`, which is not `None`. Commands testing `stdin_data is not None` misbehaved; `wc` with no input crashed with `'JsNull' object has no attribute 'split'`. `kernel.execute_command` now normalises it once for every command. Pre-existing (same on the old Pyodide build), found by the new `python` command's tests.
 - **Ghost Limb Fix:** Resolved `ModuleNotFoundError` for `bone_driver` by correctly registering it in the Kernel Manifest.
 - **Amnesia Fix:** Patched `ai_manager.py` to inject `simulated_current_path` into the execution context, preventing the Autopilot from defaulting to `/` (Root) during multi-step plans.

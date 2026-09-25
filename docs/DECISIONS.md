@@ -172,6 +172,28 @@ One place, all commands. Values that arrive through `syscall_handler` are JSON a
 **Consequences:** Commands may keep testing `is not None`. Any new function that takes a raw JS value across
 the bridge (not JSON) must run it through `_from_js` or `to_py`; P1-12 audits the existing ones.
 
+## D-013 The agent may use `python`, asks first in agent mode, and cannot change the step budget  (2026-09-25, status: accepted)
+**Context:** P2-03. `python` exists (D-011); the autopilot persona still told the model the system could not run
+Python, and the whitelist did not name it. While testing this with a fake LLM, the default agent mode turned
+out never to have executed a plan line: its regexes were written `r'^\\d+\\.\\s*'` (a raw string with doubled
+backslashes matches a literal backslash), so numbered plan lines never matched and the plan text came back as
+the "answer". The whole of `ai_manager.py` had the same doubling in 58 places (Ollama prompts and error
+messages carried a literal `\n`), evidently from a paste through an escaping layer.
+**Decision:**
+1. `python` is in `COMMAND_WHITELIST` and in `DANGEROUS_COMMANDS`: in agent mode the user confirms it, like
+   `forge` and `rm`. The voltage table already prices it at 2.0 (kinetic), same as `run`.
+2. The agent runs `python` with the default 2,000,000-step budget and may not change it. `agent_refusal()`
+   rejects any `python` line carrying `--steps`; agent mode halts the plan, the autopilot logs "Refused" and
+   moves on. The budget is the only thing standing between an LLM-authored infinite loop and a frozen page.
+3. The BoneAmanita persona now describes both script kinds (`.sh` via `forge`/`chmod`/`run`, `.py` via
+   `forge`/`python`, `python -c` one-liners), says `open()` and `input()` work, and tells the model never to
+   pass `--steps`. The planner's read-only manifest is unchanged: it does not get `python`.
+4. The doubled backslashes in `ai_manager.py` are undone (58 → 0), which is what makes agent mode run at all.
+**Consequences:** `gemini "<prompt>"` now executes its plan, which it never did before; anyone who relied on
+it being harmless should know that (it still confirms dangerous commands and halts on anything not
+whitelisted). The autopilot itself still checks nothing but voltage (P2-07). Nine checks in `tests/smoke.js`
+drive both paths with a fake `_call_llm_api`; a real model has still not been observed (P2-01).
+
 ## Open questions
 
 - Q-001 Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the

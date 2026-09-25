@@ -118,6 +118,60 @@ json.dumps({"python": sys.version.split()[0], "pyodide": pyodide.__version__,
         report('verify_password accepts the right password', okPw.success && okPw.data === true, JSON.stringify(okPw));
         report('verify_password rejects the wrong password', badPw.success && badPw.data === false, JSON.stringify(badPw));
 
+        // 2b. The agent and python (P2-03, D-013), with the LLM replaced by a fake that returns a fixed plan.
+        const agent = JSON.parse(await page.evaluate(async () => {
+            const py = OopisOS_Kernel.pyodide;
+            return await py.runPythonAsync(`
+import json, kernel
+from bone_driver import BoneDriver
+am = kernel.ai_manager
+results = {}
+prompt = BoneDriver.get_system_prompt({"name": "gordon"})
+results["persona_mentions_python"] = "python script.py" in prompt and "DOES NOT RUN PYTHON" not in prompt
+results["python_whitelisted"] = "python" in am.COMMAND_WHITELIST
+results["python_dangerous"] = "python" in am.DANGEROUS_COMMANDS
+results["refuse_steps"] = am.agent_refusal('python --steps 0 -c "while True: pass"')
+results["refuse_steps_eq"] = am.agent_refusal('python --steps=0 -c "pass"')
+results["allow_plain"] = am.agent_refusal('python -c "print(1)"')
+
+async def fake_llm(provider, model, conversation, api_key, system_prompt=None):
+    text = conversation[-1]["parts"][0]["text"]
+    if "USER REQUEST:" in text:            # autopilot plan
+        return {"success": True, "answer": fake_llm.plan}
+    if "Original user question" in text:   # synthesizer
+        return {"success": True, "answer": "SYNTH:" + text.split("Context from file system:")[1].strip()[:80]}
+    return {"success": True, "answer": fake_llm.plan}   # planner
+am._call_llm_api = fake_llm
+
+fake_llm.plan = '1. python -c "print(6 * 7)"'
+r = await am.perform_autopilot("six times seven", [], "ollama", None, {"apiKey": None})
+results["autopilot_python"] = r.get("success") and "42" in r.get("data", "")
+fake_llm.plan = '1. python --steps 0 -c "print(1)"'
+r = await am.perform_autopilot("x", [], "ollama", None, {"apiKey": None})
+results["autopilot_refuses_steps"] = r.get("success") and "Refused: the agent may not change python" in r.get("data", "") and "\\n1\\n" not in r.get("data", "")
+fake_llm.plan = '1. python -c "print(6 * 7)"'
+r = await am.perform_agentic_search("six times seven", [], "ollama", None, {"apiKey": None})
+results["agent_asks_first"] = r.get("effect") == "confirm_ai_command" and r.get("command") == 'python -c "print(6 * 7)"'
+fake_llm.plan = '1. python --steps 0 -c "print(1)"'
+r = await am.perform_agentic_search("x", [], "ollama", None, {"apiKey": None})
+results["agent_halts_steps"] = r.get("success") is False and "step budget" in r.get("error", "")
+fake_llm.plan = '1. echo probe'
+r = await am.perform_agentic_search("x", [], "ollama", None, {"apiKey": None})
+results["agent_readonly_ok"] = r.get("success") and "probe" in r.get("data", "")
+json.dumps(results)
+`);
+        }));
+        report('autopilot persona knows about python', agent.persona_mentions_python === true);
+        report('python is whitelisted for the agent', agent.python_whitelisted === true);
+        report('python counts as dangerous (agent asks first)', agent.python_dangerous === true);
+        report('agent_refusal blocks --steps and --steps=', !!agent.refuse_steps && !!agent.refuse_steps_eq && agent.allow_plain === null,
+            JSON.stringify([agent.refuse_steps, agent.refuse_steps_eq, agent.allow_plain]));
+        report('autopilot runs a python plan line', agent.autopilot_python === true);
+        report('autopilot refuses a python --steps line', agent.autopilot_refuses_steps === true);
+        report('agent mode asks before running python', agent.agent_asks_first === true);
+        report('agent mode halts on python --steps', agent.agent_halts_steps === true);
+        report('agent mode still runs a read-only plan', agent.agent_readonly_ok === true);
+
         // 3. Shell commands through the executor.
         for (const { cmd, expect } of CHECKS) {
             const r = await page.evaluate(async c => await CommandExecutor.processSingleCommand(c, { isInteractive: false }), cmd);
