@@ -137,9 +137,8 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   source lines. Gemma4 A1 forged seeds.py with a nested f.write string; execution failed with an unterminated
   string literal (2026-09-25, session 8). Define escape handling that preserves nested source strings.
 
-- [ ] P2-14 Align the planner's advertised tools with its executable whitelist. Its prompt says ONLY the
-  manifest's read-oriented commands are allowed, omitting `mv`, `forge`, `python`, etc., while the executor
-  supports them. B2 requires a tool the planner is expressly told not to use (session 9 diagnosis).
+- [x] P2-14 Planner tool manifest is generated from the execution whitelist (including cd/mv/forge/python).
+  Prompt allows actions, explains mv, requires one command list and avoids speculative story commands (2026-09-25).
 - [ ] P2-15 Separate agent harness prerequisites from behavioral verdicts. A2 depends on A1 creating garden;
   B2 depends on A2 creating tools.txt. A failed prerequisite should be explicit, with independent fixture-based
   checks for cd and confirmation. A2 currently diagnoses any misplaced tools.txt as "cd was forgotten" even
