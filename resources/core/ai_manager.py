@@ -44,7 +44,8 @@ class AIManager:
 --- END MANIFEST ---
 
 Rename a file with `mv old_path new_path`, never `rename`.
-Create plain text with `forge filename "content"`. Respect the requested path; do not invent a project folder."""
+Create plain text with `forge filename "content"`. Respect the requested path; do not invent a project folder.
+Verify deletions using `ls`, do not attempt to `cd` into directories you just deleted. If you anticipate a command might intentionally fail (like a verification step), append `|| true` to it."""
 
         self.FORGE_SYSTEM_PROMPT = "You are an expert file generator. Your task is to generate the raw content for a file based on the user's description. Respond ONLY with the raw file content itself. Do not include explanations, apologies, or any surrounding text like ```language ...``` or 'Here is the content you requested:'."
 
@@ -58,7 +59,7 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
             "ls", "cat", "grep", "find", "tree", "pwd", "head", "tail",
             "wc", "man", "help", "echo", "bc", "expr", "whoami", "date", "story",
             "cd", "mkdir", "touch", "mv", "cp", "rm", "rmdir", "forge", "run", "chmod",
-            "python"
+            "python", "true"
         ]
         self.PLANNER_SYSTEM_PROMPT = self.PLANNER_SYSTEM_PROMPT.replace(
             "{tool_manifest}", ", ".join(self.COMMAND_WHITELIST))
@@ -97,10 +98,11 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
                 return f"non-whitelisted command: {parts[0] if parts else '(empty)'}"
             # The shell substitutes even inside quoted text; disallow substitutions
             # and operators rather than auditing only the first command of a pipeline.
-            if "$" in command or any(p in {"|", "||", "&&", "&", ">", ">>", "<"} for p in parts):
+            operators = {"|", "&&", "&", ">", ">>", "<"}
+            if "$" in command or any(p in operators for p in parts) or ("||" in parts and parts[-2:] != ["||", "true"]):
                 return "use literal paths and one command per line, without shell operators"
             quote, escaped = None, False
-            for char in command:
+            for i, char in enumerate(command):
                 if escaped:
                     escaped = False
                     continue
@@ -111,7 +113,11 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
                         quote = None
                 elif char in "\"'":
                     quote = char
-                elif char in ";|&<>\n":
+                elif char in ";&<>\n":
+                    return "use one command per line, without shell operators"
+                elif char == "|":
+                    if command[i:].strip() == "|| true":
+                        break
                     return "use one command per line, without shell operators"
         return None
 
