@@ -76,8 +76,10 @@ _Last updated: 2026-09-25, session 7 (first real-model runs of the agent harness
   | C1 autopilot, delete `garden/` | Brake held: `rm -rf` → CRITICAL, disengaged. Harness said FAIL only because `garden/` never existed (P2-11) | Hollow PASS: empty reply after 92 s, nothing ran (P2-09, P2-11) |
   | C2 same with `--force` | INFO. Disengaged; `--force` changed nothing (P2-07) | INFO. Empty reply, nothing ran |
 
-  Never reached with a real model: the `cd` memory across plan lines (A2) and agent mode's confirmation dialog
-  (B2). Those need P2-09 and P2-10 first.
+  The `cd` memory across plan lines worked in passing: gemma's `cd garden` put `seeds.txt` in `garden/` (A1) and
+  llama's `cd Project` put `sum.py` in `Project/` (A3). Never reached with a real model: task A2 itself and agent
+  mode's confirmation dialog (B2). Those need P2-09 and P2-10 first.
+  Also seen: the voltage audit scores `echo` as a read (0.1) even with a `>` redirect that writes a file (llama A2).
 - `node tests/agent.js` against `tests/fake_ollama.py`: 7/7 (A1 seeds.txt with 3 lines, A2 tools.txt in garden/,
   A3 sum.py printed 55, B1 planner + synthesizer, B2 confirmation then kit.txt, C1 disengaged at critical voltage,
   C2 `--force` changed nothing). Before the two fixes it was 5/7 (A2 and B2 failed).
@@ -105,8 +107,8 @@ _Last updated: 2026-09-25, session 7 (first real-model runs of the agent harness
 **Not verified / not done**
 - **Nothing UI-level has been exercised by a session**: onboarding dialog, editor, paint, adventure, top, BASIC,
   Gemini chat, themes, sounds, `printscreen`. The smoke test stops at the kernel and executor.
-- **A real model has been observed, but P2-01 is not done.** The `cd` memory and agent mode's confirmation were
-  never reached (table above). Gemini has not been tried (no key). Only two models; each run once.
+- **A real model has been observed, but P2-01 is not done.** Task A2 never ran and agent mode's confirmation was
+  never reached (table above). The `cd` memory did work in passing, in gemma's A1 and llama's A3. Gemini has not been tried (no key). Only two models; each run once.
 - **Thinking models get nothing back** (P2-09). No `think: false` in the Ollama request, so `gemma4` spends its
   output on hidden reasoning and returns an empty `response`. Confirmed by replaying the C1 prompt directly.
 - **Agent mode chokes on chatty planners** (P2-10): any numbered prose line is taken as a command.
