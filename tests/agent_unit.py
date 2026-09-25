@@ -149,6 +149,15 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(decode_content(r'café\t\q'), r'café\t\q')
         self.assertEqual(decode_content(r'one\ntwo'), 'one\ntwo')
 
+    def test_blank_lines_do_not_drop_earlier_steps(self):
+        self.assertEqual(self.am.extract_plan('1. cd garden\n\n2. forge tools.txt "trowel"'),
+                         ['cd garden', 'forge tools.txt "trowel"'])
+
+    def test_invalid_final_list_is_not_replaced_by_earlier_plan(self):
+        plan = self.am.extract_plan('1. ls\nFinal commands:\n1. forbidden x')
+        self.assertEqual(plan, ['forbidden x'])
+        self.assertIsNotNone(self.am.validate_plan(plan))
+
 
 if __name__ == '__main__':
     unittest.main()

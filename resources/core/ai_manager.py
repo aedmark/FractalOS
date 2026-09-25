@@ -143,6 +143,8 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
         fenced = False
         for raw in text.splitlines():
             line = raw.strip()
+            if not line:
+                continue  # Blank lines do not end a numbered plan.
             if line.startswith("```"):
                 if current:
                     candidates.append(current)
@@ -179,11 +181,8 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
             current.append(line)
         if current:
             candidates.append(current)
-        # Prefer the final list containing at least one recognizable command. Unknown
-        # lines in that list survive and will halt validation before any execution.
-        for candidate in reversed(candidates):
-            if any(line.split(maxsplit=1)[0] in self.COMMAND_WHITELIST for line in candidate):
-                return candidate
+        # The final explicit list wins even if every command in it is invalid.
+        # Validation must reject it instead of silently running an earlier list.
         return candidates[-1] if candidates else []
 
     def _get_ai_config(self):
@@ -378,26 +377,9 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
         current_path = self.fs_manager.current_path
         executed_commands_output = ""
         for command_str in commands_to_execute:
-            command_str_from_plan = command_str
-            refusal = self.agent_refusal(command_str)
-            if refusal:
-                return {"success": False, "error": f"Execution HALTED: {refusal}."}
-            command_parts = shlex.split(command_str)
-            command_name = command_parts[0] if command_parts else ""
-
-            refusal = self.agent_refusal(command_str)
-            if refusal:
-                error_msg = f"Execution HALTED: {refusal} (plan line '{command_str_from_plan}')."
-                if warning: error_msg = f"{warning}\n{error_msg}"
-                return {"success": False, "error": error_msg}
-
+            command_name = shlex.split(command_str)[0]
             if command_name in self.DANGEROUS_COMMANDS:
                 return {"effect": "confirm_ai_command", "command": command_str}
-
-            if command_name not in self.COMMAND_WHITELIST:
-                error_msg = f"Execution HALTED: AI attempted to run a non-whitelisted command: '{command_name}' from plan line '{command_str_from_plan}'."
-                if warning: error_msg = f"{warning}\n{error_msg}"
-                return {"success": False, "error": error_msg}
 
             audit_manager.log(
                 self.command_executor.user_context.get('name'),
