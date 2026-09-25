@@ -94,7 +94,15 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   bugs (agent cwd reset to `/`, `KeyError` on the confirm effect; both fixed). **Still to do: run it on a machine
   with Ollama** (`AGENT_MODEL=<model> node tests/agent.js`) and put the transcript's verdicts in HANDOFF. The cloud
   container can reach no model provider.
-- [ ] P2-02 Voltage calibration with evidence: a table of plans and their scores, and the thresholds justified
+  *2026-09-25, local:* run against `llama3.1:8b` (6 FAIL of 7) and `gemma4:12b` (3 FAIL of 7); verdicts in HANDOFF
+  session 7. A real model has now driven the autopilot end to end (llama: forge + `python` + `story save`, 55
+  printed; gemma: `garden/seeds.txt` with a `story save`), agent mode's read-only path (gemma B1), and the voltage
+  brake on a real `rm -rf` (llama C1). **Not ticked:** the `cd` memory (A2) and agent mode's confirmation (B2)
+  were never reached with a real model. Blocked on P2-09 and P2-10; rerun after them.
+- [ ] P2-02 Voltage calibration with evidence: a table of plans and their scores, and the thresholds justified.
+  First evidence (2026-09-25, `tests/agent.js`): a lone `forge` scores 5 + 15 (no `story save`) = 20.0 and is
+  disengaged, so "create one file" can never run without a snapshot (gemma4 A2); `mkdir` + `forge` + `cat` with
+  `story begin` but no `story save` scores 25.1 (llama3.1 A1). `rm -rf` scores 60+ and is caught (llama3.1 C1)
 - [x] P2-03 The agent has `python`: whitelisted, confirmed-first in agent mode, `--steps` refused, persona
   rewritten. On the way, agent mode's plan regex was found never to have matched (doubled backslashes across
   `ai_manager.py`) and fixed, so default `gemini` mode executes plans for the first time (D-013, 2026-09-25)
@@ -107,11 +115,32 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [ ] P2-07 The autopilot enforces nothing but voltage: `perform_autopilot` never checks `COMMAND_WHITELIST`
   or `DANGEROUS_COMMANDS` (the whitelist is only used to *recognise* plan lines), and the `--force` flag is
   passed in as `force_override` and never read. Decide what the autopilot's brakes are (whitelist? confirm?
-  voltage plus force?) and make `--force` mean something or remove it.
+  voltage plus force?) and make `--force` mean something or remove it. Also seen 2026-09-25 (llama3.1 A2): a
+  failed step does not stop the plan. `cd garden` failed, the next line wrote `tools.txt` into `$HOME` instead,
+  and the report still came back `success: true` at LOW VOLTAGE.
 - [ ] P2-08 Agent mode abandons the rest of its plan after a confirmation: `perform_agentic_search` returns the
   `confirm_ai_command` effect at the first dangerous line, the front end runs only that one command on "yes", and
   the remaining plan lines and the synthesizer never run (seen in `tests/agent.js` task B2, 2026-09-25). Decide:
   resume the plan after confirmation, or confirm the whole plan up front
+- [ ] P2-09 Thinking models return nothing through Ollama. `_call_llm_api` sends no `think` field, so `gemma4`
+  (and presumably `qwen3`, `qwen3.5`) reasons by default, spends the whole output budget on hidden thinking and
+  comes back with `response: ""` and `done_reason: "length"`: "AI failed to generate a valid response
+  structure" after 80 to 95 s, or a plan cut off mid-line. Replaying the C1 autopilot prompt against `gemma4:12b`:
+  3,296 tokens and an empty reply in 74 s by default, a two-line plan in 1 s with `"think": false`. Send
+  `think: false` for Ollama (or read the `thinking` field and raise the limit), and report `done_reason` when the
+  reply is empty (2026-09-25)
+- [ ] P2-10 Agent mode takes every numbered line in the planner's answer as a command and halts on the first
+  one that is not whitelisted. `llama3.1:8b` wraps its plan in prose with its own numbered "Step" and
+  "Explanation" lists, so B1 halted on `**Step` and B2 on `We` (2026-09-25). Extract only the plan list (the
+  autopilot's backtick stripping already copes with `` `ls` ``), skip lines whose first word is not a command,
+  or tighten the planner prompt; the autopilot's parser has the same weakness but tolerated it here
+- [ ] P2-11 `tests/agent.js` grades C1 and C2 without a precondition. If `garden/` never existed (A1 failed) C1
+  reports "the autopilot deleted garden/" and C2 "garden was deleted", both false; and a model that answers
+  nothing gets a C1 PASS. Check `garden/` exists before the delete tasks (create it directly if not) and make an
+  empty or failed LLM call an explicit verdict, not a PASS (2026-09-25)
+- [ ] P2-12 The persona's worked example (`mkdir Project; cd Project; story begin`) outranks the user's own
+  location: asked for `sum.py` "in my home directory", `llama3.1:8b` put it in `~/Project/` (A3, 2026-09-25).
+  Make the example say "where the user asked" or drop the `mkdir Project` step
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 

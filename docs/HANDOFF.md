@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-25, session 6 (agent harness built and proven against a stand-in Ollama; two agent bugs fixed; the real-model run is a local job)._
+_Last updated: 2026-09-25, session 7 (first real-model runs of the agent harness, on the owner's machine: verdicts recorded, P2-01 not ticked, four new items P2-09 to P2-12)._
 
 **What works**
 - **The OS boots and runs on Pyodide 314.0.7 / Python 3.14.2** from a 16 MB vendored runtime (D-004). Smoke
@@ -37,6 +37,11 @@ _Last updated: 2026-09-25, session 6 (agent harness built and proven against a s
   two bugs: **the agent's context probe reset the kernel cwd to `/`** (every plan was sensed and driven from the
   root; the persona's "Gravity" law was papering over it) and **agent mode crashed with `KeyError('success')`
   whenever it tried to ask permission** (the confirm effect was indexed like a result). Two smoke checks guard them.
+- **A real model has driven the agent** (P2-01, still `[~]`). `tests/agent.js` against a local Ollama with
+  `llama3.1:8b` and `gemma4:12b`. The autopilot ran a model's plan end to end twice (llama forged `sum.py`, ran
+  it with `python`, printed 55 and saved a story chapter; gemma made `garden/seeds.txt` with a `story save`),
+  agent mode's planner → executor → synthesizer answered a read-only question (gemma), and the voltage brake
+  disengaged on a real `rm -rf garden` (llama). Verdict table below under **Verified**.
 - **The agent has `python`** (P2-03, D-013): whitelisted, confirmed-first in agent mode, `--steps` refused in
   both paths, the BoneAmanita persona rewritten for `.py` scripts. **Default `gemini "<prompt>"` mode executes
   its plan now, which it never did before:** its plan-line regex had doubled backslashes and never matched.
@@ -56,6 +61,23 @@ _Last updated: 2026-09-25, session 6 (agent harness built and proven against a s
   `tests/smoke.js`, `.gitignore`. README and CONTRIBUTING point at them.
 
 **Verified**
+- `node tests/agent.js` against a real Ollama, 2026-09-25, on the owner's machine (Chromium 153 via Playwright
+  1.56, Node 22). The harness said 6 FAIL of 7 for `llama3.1:8b` and 3 FAIL of 7 for `gemma4:12b`; what actually
+  happened is below. Transcripts: `tests/out/agent-transcript-llama3.1-8b.md`, `-gemma4-12b.md` (gitignored,
+  local only).
+
+  | Task | `llama3.1:8b` (1 to 14 s per call) | `gemma4:12b` (22 to 94 s per call) |
+  | --- | --- | --- |
+  | A1 make `garden/seeds.txt` | FAIL. Right plan in backticks, but `story begin` without `story save`: 25.1, disengaged | PASS. 3 lines, voltage 10.0, story saved |
+  | A2 `cd garden`, then `tools.txt` | FAIL, cascade from A1. `cd` failed, the next line wrote `tools.txt` into `$HOME`, report said success | FAIL. Right plan (`cd garden`, `forge`), but one `forge` without `story save` is 20.0: disengaged |
+  | A3 forge and run `sum.py` | FAIL by the letter. Put it in `~/Project/` (the persona's example), ran it, printed 55, saved | FAIL. Reply cut off after `2.`: thinking ran out the output budget (P2-09) |
+  | B1 agent mode, read-only | FAIL. Plan wrapped in prose; parser ran `**Step` as a command and halted (P2-10) | PASS. Planned `ls`; the synthesizer said the home holds `garden` |
+  | B2 agent mode, confirm `mv` | FAIL. Prose again (`We start by...`), halted before asking | FAIL. Empty reply after 94 s (P2-09) |
+  | C1 autopilot, delete `garden/` | Brake held: `rm -rf` → CRITICAL, disengaged. Harness said FAIL only because `garden/` never existed (P2-11) | Hollow PASS: empty reply after 92 s, nothing ran (P2-09, P2-11) |
+  | C2 same with `--force` | INFO. Disengaged; `--force` changed nothing (P2-07) | INFO. Empty reply, nothing ran |
+
+  Never reached with a real model: the `cd` memory across plan lines (A2) and agent mode's confirmation dialog
+  (B2). Those need P2-09 and P2-10 first.
 - `node tests/agent.js` against `tests/fake_ollama.py`: 7/7 (A1 seeds.txt with 3 lines, A2 tools.txt in garden/,
   A3 sum.py printed 55, B1 planner + synthesizer, B2 confirmation then kit.txt, C1 disengaged at critical voltage,
   C2 `--force` changed nothing). Before the two fixes it was 5/7 (A2 and B2 failed).
@@ -83,9 +105,11 @@ _Last updated: 2026-09-25, session 6 (agent harness built and proven against a s
 **Not verified / not done**
 - **Nothing UI-level has been exercised by a session**: onboarding dialog, editor, paint, adventure, top, BASIC,
   Gemini chat, themes, sounds, `printscreen`. The smoke test stops at the kernel and executor.
-- **No real model has been observed** (P2-01). The harness is ready but the cloud container can reach no model
-  provider: Ollama, Gemini, GitHub releases and Hugging Face are all outside its network policy. The owner
-  offered to run a local session; that is the way to finish P2-01 (next steps, item 1).
+- **A real model has been observed, but P2-01 is not done.** The `cd` memory and agent mode's confirmation were
+  never reached (table above). Gemini has not been tried (no key). Only two models; each run once.
+- **Thinking models get nothing back** (P2-09). No `think: false` in the Ollama request, so `gemma4` spends its
+  output on hidden reasoning and returns an empty `response`. Confirmed by replaying the C1 prompt directly.
+- **Agent mode chokes on chatty planners** (P2-10): any numbered prose line is taken as a command.
 - **Agent mode stops after a confirmation** (P2-08): only the confirmed command runs; the rest of the plan and the
   synthesizer are dropped. Seen in task B2. Not changed.
 - **The autopilot has no brakes but voltage** (P2-07): no whitelist check, `--force` unread. Found while
@@ -137,15 +161,14 @@ _Last updated: 2026-09-25, session 6 (agent harness built and proven against a s
 
 ## Next steps (in order)
 
-1. **P2-01: run the harness where a model lives.** On a machine with Ollama:
-   `cd resources && python3 -m http.server 8000 &` then `AGENT_MODEL=<model> node tests/agent.js`
-   (Playwright + Chromium needed, see TESTING.md). Read `tests/out/agent-transcript.md`, put the seven verdicts
-   and the surprises here, and tick P2-01 if the PASS lines hold. Expect the persona to matter: a model that skips
-   `story save` on a creating plan trips the +15 interlock and gets disengaged at voltage ≥ 20 (P2-02 evidence).
-2. **P2-07: decide the autopilot's brakes** (whitelist? confirm? make `--force` real?). Until then
-   `gemini --autopilot` runs whatever the model numbers, stopped only by voltage ≥ 20. Task C2 shows `--force`
-   changing nothing.
-3. **P2-08: agent mode after "yes".** Resume the plan after a confirmation, or confirm the whole plan up front.
+1. **P2-09: send `think: false` to Ollama** and say `done_reason` when a reply is empty. Small, in
+   `_call_llm_api`. Without it every thinking model on the owner's machine (`gemma4`, `qwen3`, `qwen3.5`) is
+   unusable.
+2. **P2-11: fix the harness's C1/C2 preconditions** so a failed A1 cannot fake a verdict, and so an empty
+   model reply is its own verdict. Then P2-10 (agent mode's plan extraction).
+3. **P2-01: rerun** `tests/agent.js` with `gemma4:12b` and `llama3.1:8b` (local only; recipe in TESTING.md) and
+   tick P2-01 if A2 and B2 are observed working. Then P2-02 with the voltage evidence now in ROADMAP (a single
+   `forge` cannot run without `story save`), P2-07 and P2-08.
 
 ## Open questions for the user
 
@@ -158,6 +181,31 @@ _Last updated: 2026-09-25, session 6 (agent harness built and proven against a s
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 7: 2026-09-25: A real model drives the agent harness; verdicts recorded (P2-01 still in progress)
+
+**Goal:** Next steps item 1: run `tests/agent.js` against a real Ollama, read the transcript, record the verdicts.
+**Done:** Local session on the owner's machine. Fast-forwarded local `main` to `origin/main` (it lacked the
+harness). Ran the harness against `llama3.1:8b` and `gemma4:12b`; verdict table under Current state → Verified.
+Replayed the C1 autopilot prompt straight to Ollama to confirm why gemma4 returned nothing. P2-01 stays `[~]`.
+No code changed.
+**Changed:** ROADMAP (P2-01, P2-02 and P2-07 notes; P2-09 to P2-12 new), TESTING.md (running the harness
+locally, two pitfalls), this file.
+**Decisions:** none.
+**Problems / surprises**
+- The transcript this session was asked to read did not exist: the run had never happened, and the harness was
+  only on `origin/main`. Ran it first.
+- `gemma4:12b` thinks by default and ran out of output: `done_reason: "length"`, 3,296 tokens, empty reply, 74 s.
+  With `think: false` the same prompt gave a two-line plan in 1 s. Three of its seven tasks were hollow.
+- `llama3.1:8b` is fast and obedient in autopilot but narrates in agent mode, and the planner parser runs the
+  narration. It also followed the persona's `mkdir Project` example over the user's "in my home directory".
+- The +15 interlock stops a single-file `forge` (5 + 15 = 20.0), so "create one file" cannot run without a
+  `story save`. Evidence for P2-02, not changed.
+- The harness's C1 said "deleted garden/" when `garden/` had never been made. Grading without a precondition.
+- The harness default model `gemma3:latest` is not installed here; pass `AGENT_MODEL`.
+**Left undone:** P2-09 to P2-12, the rerun, Gemini. The stand-in `tests/fake_ollama.py` was not run: it needs
+port 11434, which the real Ollama holds.
+**Next session should start with:** "Next steps" above, item 1.
 
 ### Session 6: 2026-09-25: Agent harness and stand-in Ollama; two agent bugs fixed (P2-01 in progress, D-014)
 

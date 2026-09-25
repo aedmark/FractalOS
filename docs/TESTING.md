@@ -155,6 +155,19 @@ with `GEMINI_API_KEY` stores the key in the OS first (written, never run: no key
 (default 10 min) bounds one task; a CPU model with a 2,500-character persona prompt can take a minute per call,
 and `pyfetch` has no timeout at all (P2-06).
 
+On the owner's machine (first real run, 2026-09-25) Playwright is not installed globally and `gemma3` is not
+pulled. What worked: Playwright in a scratch directory, pointed at the system Chromium, and a model named
+explicitly. The run takes about 40 s with `llama3.1:8b` and about 8 minutes with `gemma4:12b`. Each run
+overwrites `agent-transcript.md`, so copy it to a per-model name before the next one.
+
+```bash
+cd /some/scratch && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm i playwright@1.56
+NODE_PATH=/some/scratch/node_modules CHROME=/usr/bin/chromium AGENT_MODEL=llama3.1:8b node tests/agent.js
+```
+
+Read every verdict against the transcript. A FAIL can be a cascade (C1 checks for `garden/`, which only A1
+creates), and a PASS can be hollow (a model that returned nothing "survived" the delete). P2-11 fixes the grading.
+
 The stand-in `tests/fake_ollama.py` answers `/api/generate` with canned plans chosen by keywords in the request
 (`seeds`, `tools.txt`, `sum.py`, `rename`, `delete`) and logs each request as a JSON line
 (`--log tests/out/fake-ollama-requests.jsonl`, handy for seeing exactly what prompt the OS builds). Against it the
@@ -174,6 +187,11 @@ The CONTRIBUTING.md checklist, made concrete:
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
 
+- **Thinking models return an empty reply through Ollama** (P2-09, not fixed yet). The kernel sends no `think`
+  field, so `gemma4` reasons until `done_reason: "length"` and `response` is `""`. The OS reports "AI failed to
+  generate a valid response structure" after a minute or more. Check with `curl .../api/generate` and look at
+  `eval_count` and `done_reason` before blaming the prompt.
+- **The real Ollama and `tests/fake_ollama.py` both want port 11434.** Stop one to run the other.
 - **A `\n` inside a JS template literal that holds Python source is a real newline by the time Python sees it.**
   Hit twice now (sessions 5 and 6). Write `\\n` in the `.js` file. `node --check` cannot catch it; the smoke test
   aborts with `SyntaxError: unterminated string literal` inside `page.evaluate`.
