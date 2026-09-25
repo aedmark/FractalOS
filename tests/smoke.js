@@ -204,6 +204,18 @@ import commands.gemini as gemini_cmd
 fake_llm.plan = '1. python -c "print(6 * 7)"'
 r = await gemini_cmd.run(["x"], {"provider": "ollama"}, {"name": "gordon", "group": "gordon"}, ai_manager=am)
 results["gemini_passes_confirm_effect"] = r.get("effect") == "confirm_ai_command"
+# P2-02: verify the stored pre-write contents, not just a checkpoint message.
+user = am.command_executor.user_context
+home = f"/home/{user['name']}"
+probe = f"{home}/checkpoint_probe.txt"
+am.fs_manager.write_file(probe, "before", user)
+fake_llm.plan = f'1. forge {probe} "after"'
+r = await am.perform_autopilot("overwrite probe", [], "ollama", None, {"apiKey": None})
+from story_manager import story_manager
+chapter = story_manager.read_log(f"{home}/.story")["data"][0]["snapshot"]
+stored = am.fs_manager.get_node(f"{home}/.story/snapshots/{chapter}/checkpoint_probe.txt")
+results["checkpoint_before_write"] = r.get("success") and stored["content"] == "before" and am.fs_manager.get_node(probe)["content"] == "after"
+
 json.dumps(results)
 `);
         }));
@@ -219,6 +231,7 @@ json.dumps(results)
         report('agent mode still runs a read-only plan', agent.agent_readonly_ok === true);
         report('agent context probe keeps the shell cwd (D-014)', agent.context_keeps_cwd === true);
         report('gemini passes the confirm effect through (D-014)', agent.gemini_passes_confirm_effect === true);
+        report('autopilot stores a real checkpoint before writing', agent.checkpoint_before_write === true);
 
         // 3. Shell commands through the executor.
         for (const { cmd, expect } of CHECKS) {
