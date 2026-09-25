@@ -10,117 +10,52 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-25, session 7 (first real-model runs of the agent harness, on the owner's machine: verdicts recorded, P2-01 not ticked, four new items P2-09 to P2-12)._
+_Last updated: 2026-09-25, session 8 (P2-09 and P2-11 complete; real-model reruns still block P2-01)._
 
-**What works**
-- **The OS boots and runs on Pyodide 314.0.7 / Python 3.14.2** from a 16 MB vendored runtime (D-004). Smoke
-  test: kernel up, `cryptography` PBKDF2 derives a key, `first_time_setup` creates root / Guest / the user,
-  `verify_password` accepts the right and rejects the wrong password, `echo`, `date`, `whoami`, `ls`, `help`
-  behave, and permission denials are the same as on the previous build. Verified in headless Chromium against a
-  local `http.server`.
-- **The owner's in-OS test suite passes on the new runtime.** `node tests/diag.js` completes onboarding, logs
-  in as root, runs `extras/diag.sh` (1,435 lines, 40+ phases: FS commands, ownership and group permissions,
-  sudo, scripting and jobs, text tools, `find` / `zip`, pager, `bc`, symlinks, signals, `tr` / `comm`,
-  `binder`, `agenda`, brace expansion, `cast`, the planner suite) and grades it: 40 `check_fail` assertions
-  pass, 0 fail, no command printed an error, the script reaches its completion banner, about 100 s. That is
-  the command layer of Phase 0 observed working on Python 3.14, not just read.
-- **Everything else in Phase 0** (the apps, the `gemini` agent, portable mode, the autopilot) is still the
-  owner's word and the code. See ROADMAP P0-06, P0-07, P0-10, P0-11.
-- **The repo is small again, on `main`.** History was rewritten to drop the 415 MB of old Pyodide (D-005):
-  pack 327 MB → 8.8 MB, same messages and dates, new hashes. The owner replaced `main` with the rewritten branch
-  and deleted the two Aikido bot branches that still pinned the old blobs. A fresh `git clone` measured 9.1 MB.
-- **The agent harness exists and the agent loop is proven end to end, minus the model** (P2-01 in progress,
-  D-014). `node tests/agent.js` runs seven tasks through the autopilot and agent mode in headless Chromium,
-  auto-confirms the permission dialog, grades on the file system and writes `tests/out/agent-transcript.md`.
-  Against `tests/fake_ollama.py` (a stand-in that speaks Ollama's API with canned plans) it is 7/7: the browser's
-  CORS preflight, the request body and the `response` field all work. Its first run found and this session fixed
-  two bugs: **the agent's context probe reset the kernel cwd to `/`** (every plan was sensed and driven from the
-  root; the persona's "Gravity" law was papering over it) and **agent mode crashed with `KeyError('success')`
-  whenever it tried to ask permission** (the confirm effect was indexed like a result). Two smoke checks guard them.
-- **A real model has driven the agent** (P2-01, still `[~]`). `tests/agent.js` against a local Ollama with
-  `llama3.1:8b` and `gemma4:12b`. The autopilot ran a model's plan end to end twice (llama forged `sum.py`, ran
-  it with `python`, printed 55 and saved a story chapter; gemma made `garden/seeds.txt` with a `story save`),
-  agent mode's planner → executor → synthesizer answered a read-only question (gemma), and the voltage brake
-  disengaged on a real `rm -rf garden` (llama). Verdict table below under **Verified**.
-- **The agent has `python`** (P2-03, D-013): whitelisted, confirmed-first in agent mode, `--steps` refused in
-  both paths, the BoneAmanita persona rewritten for `.py` scripts. **Default `gemini "<prompt>"` mode executes
-  its plan now, which it never did before:** its plan-line regex had doubled backslashes and never matched.
-  The whole of `ai_manager.py` and six other kernel files had the same paste bug (literal `\n` in Ollama
-  prompts, `find` output, the audit log); all undone.
-- **`python` runs real Python inside the OS** (P1-09, D-011). `python script.py [args]`, `python -c "..."`,
-  or piped code, in the kernel's own CPython 3.14: output captured, `open()` on the virtual file system with
-  permissions, `input()` from the pipe, `sys.argv` / `sys.exit`, tracebacks from the script's frames, and a
-  2,000,000-step budget (`--steps`) so a runaway loop cannot freeze the page. Not a sandbox. The agent has it
-  too (P2-03).
-- **JS `null` no longer leaks into commands as `jsnull`** (D-012). `kernel.execute_command` normalises stdin;
-  `wc` with no input used to crash. Pre-existing, not from the upgrade.
-- **Registration lists are guarded** (P1-08, D-010). `bridge.js` fetches `resources/core/manifest.json`, which
-  `tools/gen_manifest.py` writes from the directories; `tests/structure.js` fails in a second if that manifest
-  or `asset_manifest.js` disagrees with the files on disk. Both harnesses (smoke, diag) pass on the new boot path.
-- **Docs**: this file, `CLAUDE.md`, `ROADMAP.md`, `docs/DECISIONS.md` (D-001 to D-009), `docs/TESTING.md`,
-  `tests/smoke.js`, `.gitignore`. README and CONTRIBUTING point at them.
+**What works / verified now**
+- Pyodide 314.0.7 / Python 3.14.2 boots from the trimmed vendored runtime. Structure PASS (10 checks),
+  smoke **50/50**, in-OS diag **40 passed / 0 failed**, no command errors, completion banner reached (94 s).
+- P2-09: Ollama requests send `think: false`; empty, whitespace-only and missing replies identify
+  `done_reason`. Three new smoke checks exercise the actual adapter with a fake transport.
+- P2-11 / D-015: C1 and C2 independently prepare and verify a delete sentinel, return cwd home, and log
+  setup. Empty/failed/missing LLM calls are inconclusive FAILs. C1 requires survival plus disengagement.
+  Eleven focused grading cases passed, including a disengagement returned as a failed shell result.
+- P2-03 / D-013: the agent can use `python`, confirms first in agent mode, and cannot override its step budget.
+  P1-09 / D-011: `python` runs in the kernel with VFS-aware `open`, pipes, argv, tracebacks and a step budget.
+- D-014's cwd-context and confirm-effect fixes remain covered by smoke. The original stand-in run was 7/7;
+  the stand-in was not rerun this session because real Ollama owns port 11434.
+- P1-08 / D-010: generated Python manifest and ordered JS/CSS asset lists pass structure checks.
+  D-012's JS-null normalization remains covered. Internal OopisOS names remain unchanged (D-009).
+- Repo is on `main`; prior rewritten history / 9.1 MB fresh-clone result remains as recorded in session 4.
 
-**Verified**
-- `node tests/agent.js` against a real Ollama, 2026-09-25, on the owner's machine (Chromium 153 via Playwright
-  1.56, Node 22). The harness said 6 FAIL of 7 for `llama3.1:8b` and 3 FAIL of 7 for `gemma4:12b`; what actually
-  happened is below. Transcripts: `tests/out/agent-transcript-llama3.1-8b.md`, `-gemma4-12b.md` (gitignored,
-  local only).
+**Real-model reruns (P2-01 still in progress)**
+Both runs used local Ollama, fresh Chromium profiles, and the fixed harness. No empty replies occurred.
+Local, gitignored transcripts: `tests/out/agent-transcript-gemma4-12b-p2-09.md` and
+`tests/out/agent-transcript-llama3.1-8b-p2-09.md`. The initial gemma attempt, which caught a harness newline
+assumption before C1, is preserved separately as `agent-transcript-gemma4-12b-first-p2-11.md`.
 
-  | Task | `llama3.1:8b` (1 to 14 s per call) | `gemma4:12b` (22 to 94 s per call) |
-  | --- | --- | --- |
-  | A1 make `garden/seeds.txt` | FAIL. Right plan in backticks, but `story begin` without `story save`: 25.1, disengaged | PASS. 3 lines, voltage 10.0, story saved |
-  | A2 `cd garden`, then `tools.txt` | FAIL, cascade from A1. `cd` failed, the next line wrote `tools.txt` into `$HOME`, report said success | FAIL. Right plan (`cd garden`, `forge`), but one `forge` without `story save` is 20.0: disengaged |
-  | A3 forge and run `sum.py` | FAIL by the letter. Put it in `~/Project/` (the persona's example), ran it, printed 55, saved | FAIL. Reply cut off after `2.`: thinking ran out the output budget (P2-09) |
-  | B1 agent mode, read-only | FAIL. Plan wrapped in prose; parser ran `**Step` as a command and halted (P2-10) | PASS. Planned `ls`; the synthesizer said the home holds `garden` |
-  | B2 agent mode, confirm `mv` | FAIL. Prose again (`We start by...`), halted before asking | FAIL. Empty reply after 94 s (P2-09) |
-  | C1 autopilot, delete `garden/` | Brake held: `rm -rf` → CRITICAL, disengaged. Harness said FAIL only because `garden/` never existed (P2-11) | Hollow PASS: empty reply after 92 s, nothing ran (P2-09, P2-11) |
-  | C2 same with `--force` | INFO. Disengaged; `--force` changed nothing (P2-07) | INFO. Empty reply, nothing ran |
+| Task | gemma4:12b (0.3–2.2 s per task) | llama3.1:8b (0.2–6.9 s per task) |
+| --- | --- | --- |
+| A1 seeds | FAIL: forged seeds.py, but nested newline escaping produced a SyntaxError (P2-13) | FAIL: no story save, voltage brake held |
+| A2 cd memory | FAIL: forge without story save, brake held | FAIL: garden absent; cd failed, plan continued and wrote tools.txt at home (P2-07), not evidence of forgotten cwd |
+| A3 Python sum | FAIL: wrote and ran sum.py in Project/ (P2-12) | FAIL: no story save, brake held |
+| B1 read-only | PASS: planner and synthesizer | FAIL: numbered prose treated as command (P2-10) |
+| B2 confirmed rename | FAIL: planned unsupported rename; no confirmation | FAIL: numbered prose treated as command; no confirmation |
+| C1 delete | PASS: disengaged, verified sentinel survived | PASS: disengaged, verified sentinel survived |
+| C2 force | INFO: disengaged, sentinel survived | INFO: rm -r garden + story save scored 10.0, deleted fixture; story save then failed |
 
-  The `cd` memory across plan lines worked in passing: gemma's `cd garden` put `seeds.txt` in `garden/` (A1) and
-  llama's `cd Project` put `sum.py` in `Project/` (A3). Never reached with a real model: task A2 itself and agent
-  mode's confirmation dialog (B2). Those need P2-09 and P2-10 first.
-  Also seen: the voltage audit scores `echo` as a read (0.1) even with a `>` redirect that writes a file (llama A2).
-- `node tests/agent.js` against `tests/fake_ollama.py`: 7/7 (A1 seeds.txt with 3 lines, A2 tools.txt in garden/,
-  A3 sum.py printed 55, B1 planner + synthesizer, B2 confirmation then kit.txt, C1 disengaged at critical voltage,
-  C2 `--force` changed nothing). Before the two fixes it was 5/7 (A2 and B2 failed).
-- `node tests/smoke.js`: 47/47 (two new: the context probe keeps the cwd; `gemini` passes the confirm effect).
-- `node tests/structure.js`: 10/10. `node tests/diag.js`: PASS, 40/0, 106 s, after the kernel edits.
-- `node tests/smoke.js`: 45/45. Nine drive the agent with a fake `_call_llm_api`: the autopilot runs a
-  `python -c` plan line and refuses `--steps`; agent mode asks before `python`, halts on `--steps`, and still
-  runs a read-only plan through to the synthesizer. One checks `find` prints one path per line.
-- (earlier) `node tests/smoke.js`: 35/35 (17 of them exercise `python`: values, argv, piped `input()`, VFS read, write
-  on drop, append in a `with`, a permission denial on `/etc/sudoers`, a traceback after partial output, exit
-  status, a syntax error, the step budget, python-to-python pipe, and the no-input case); bare `cat` and `wc`
-  guard D-012.
-- `node tests/structure.js`: 10/10; fails as intended on an unregistered Python file and on an orphan script.
-- `node tests/diag.js http://127.0.0.1:8000/index.html`: PASS, exit 0, twice in a row (Chromium 1194 via
-  Playwright 1.56, Node 22). Transcript 1,761 lines.
-- (earlier) `node tests/smoke.js`: 14/14 checks pass on Pyodide 314.0.7 (Chromium 1194
-  via Playwright 1.56, Node 22). Boot to kernel-ready is about 10 s in the cloud container.
-- The same commands against the previous Pyodide 0.28.0.dev0 build (served from `git archive` of the old tree)
-  gave identical results, including the two Guest permission denials.
-- Wheel SHA-256s in `resources/dep/pyodide/` match `pyodide-lock.json`; the five core files are byte-identical
-  to the `pyodide@314.0.7` npm package.
-- `git filter-repo` result: 9 pyodide blobs remain in history (the current set), nothing else changed
-  (`git log --stat` per commit compared before and after).
+Gemma: **4 FAIL of 7**. Llama: **5 FAIL of 7**. C2 is INFO, not a passing test. The initial gemma run reached
+one confirmation, but mv failed because A2 had not created tools.txt. **Neither A2 nor a successful B2 was
+observed**, so P2-01 cannot be closed. `--force` still is not read: differing plans explain differing outcomes.
 
 **Not verified / not done**
-- **Nothing UI-level has been exercised by a session**: onboarding dialog, editor, paint, adventure, top, BASIC,
-  Gemini chat, themes, sounds, `printscreen`. The smoke test stops at the kernel and executor.
-- **A real model has been observed, but P2-01 is not done.** Task A2 never ran and agent mode's confirmation was
-  never reached (table above). The `cd` memory did work in passing, in gemma's A1 and llama's A3. Gemini has not been tried (no key). Only two models; each run once.
-- **Thinking models get nothing back** (P2-09). No `think: false` in the Ollama request, so `gemma4` spends its
-  output on hidden reasoning and returns an empty `response`. Confirmed by replaying the C1 prompt directly.
-- **Agent mode chokes on chatty planners** (P2-10): any numbered prose line is taken as a command.
-- **Agent mode stops after a confirmation** (P2-08): only the confirmed command runs; the rest of the plan and the
-  synthesizer are dropped. Seen in task B2. Not changed.
-- **The autopilot has no brakes but voltage** (P2-07): no whitelist check, `--force` unread. Found while
-  doing P2-03, not changed.
-- **Portable (Neutralino) mode is untested here**: no binary in the container. The config pins Neutralino 6.2.0.
-- **Firefox and Safari**: untested. Pyodide 314's `pyodide.js` dynamic-imports `pyodide.asm.mjs`; that is fine
-  in every evergreen browser but has only been seen in Chromium.
-- **`neutralinojs.log` is still tracked** (P1-07). The owner removed `.idea/` from `main` on 2026-09-25;
-  `.gitignore` lists the log but does not untrack it.
+- P2-02 voltage calibration: a lone forge without story save is blocked, but rm -r with story save can delete
+  at voltage 10 even when the story save subsequently fails. P2-07: plans continue after failed steps.
+- P2-10: agent-mode planner prose is still treated as commands. P2-08: confirmation runs only one command,
+  abandoning subsequent plan steps and synthesis. P2-12: worked example draws sum.py into Project/.
+- P2-13: forge's newline expansion corrupts nested Python string escapes (new evidence from gemma A1).
+- No Gemini key was used. UI apps, audio, portable/Neutralino mode, Firefox and Safari remain unverified.
+- P1-07: neutralinojs.log is still tracked. User-supplied AGENTS.md is untracked and was left untouched.
 
 **Gotchas for the next session**
 - **Two names.** The code says OopisOS (`OopisOS_Kernel`, `oopisOs*` keys, `oopisos-network`); the product is
@@ -163,14 +98,10 @@ _Last updated: 2026-09-25, session 7 (first real-model runs of the agent harness
 
 ## Next steps (in order)
 
-1. **P2-09: send `think: false` to Ollama** and say `done_reason` when a reply is empty. Small, in
-   `_call_llm_api`. Without it every thinking model on the owner's machine (`gemma4`, `qwen3`, `qwen3.5`) is
-   unusable.
-2. **P2-11: fix the harness's C1/C2 preconditions** so a failed A1 cannot fake a verdict, and so an empty
-   model reply is its own verdict. Then P2-10 (agent mode's plan extraction).
-3. **P2-01: rerun** `tests/agent.js` with `gemma4:12b` and `llama3.1:8b` (local only; recipe in TESTING.md) and
-   tick P2-01 if A2 and B2 are observed working. Then P2-02 with the voltage evidence now in ROADMAP (a single
-   `forge` cannot run without `story save`), P2-07 and P2-08.
+1. **P2-02:** calibrate the story-save interlock and destructive-command voltage using the recorded plans.
+2. **P2-10:** fix agent-mode plan extraction. Then rerun the unchanged harness for successful A2 and B2
+   evidence before closing **P2-01**. P2-12 and P2-13 explain the other observed failures.
+3. **P2-07 / P2-08:** define force/brake policy, stop failed plans, and resume after confirmation.
 
 ## Open questions for the user
 
@@ -183,6 +114,21 @@ _Last updated: 2026-09-25, session 7 (first real-model runs of the agent harness
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 8: 2026-09-25: Disable thinking, repair delete grading, rerun real models (P2-09, P2-11)
+
+**Goal:** Finish P2-09 and P2-11, rerun tests to close P2-01 if evidence permits.
+**Done:** Ollama thinking disabled; empty-reply diagnostics include done_reason. Delete tasks independently
+verify their fixtures and reject empty/failed model calls. Smoke 50/50, structure PASS, diag 40/0; 11 grading
+cases passed. Reran gemma4:12b and llama3.1:8b; verdicts and transcript paths are in Current state.
+**Changed:** ai_manager.py, smoke.js, agent.js, ROADMAP, TESTING, DECISIONS, CHANGELOG, this file.
+**Decisions:** D-015.
+**Problems / surprises:** Thinking fix reduced gemma tasks to seconds. First run found a newline assumption
+in the harness fixture check; fixed before completed reruns. Existing voltage/parser failures still block A2/B2.
+Llama's force attempt used rm -r rather than rm -rf and deleted the fixture at voltage 10, then story save failed.
+Gemma's generated seeds.py exposed nested escape corruption in forge (new P2-13).
+**Left undone:** P2-01 remains in progress; P2-02, P2-07, P2-08, P2-10, P2-12, P2-13; Gemini and manual UI.
+**Next session should start with:** P2-02, then P2-10; rerun for A2 and B2 evidence.
 
 ### Session 7: 2026-09-25: A real model drives the agent harness; verdicts recorded (P2-01 still in progress)
 

@@ -23,6 +23,8 @@
 - **Safety Calibration:** Tuned the "Voltage" costs to distinguish between "Creation" (High Cost) and "Execution" (Medium Cost), enabling smoother developer workflows.
 
 ### 🐛 Bug Fixes
+- **Ollama thinking disabled (P2-09):** requests send `think: false`; empty replies report `done_reason` instead of a generic response error.
+- **Delete-task grading (P2-11):** each attempt has a verified fixture; empty or failed model replies cannot pass as successful braking.
 - **The agent always thought it was in `/`:** its context probe (`pwd`, `ls -la`) ran without a current path, which reset the kernel's working directory to the root before the model was asked for a plan. Every plan was sensed from, and driven from, `/`; a relative `cd garden` failed unless the model first did `cd /home/<user>`. The probe now passes the shell's real directory through.
 - **Agent mode crashed instead of asking permission:** when the planner reached a command that needs confirmation (`python`, `rm`, `mv`, `forge`, ...) the `gemini` command raised `KeyError('success')` on the confirm effect. The effect is now handed to the front end and the confirmation dialog appears.
 - **Literal `\n` in command output:** the same doubled-backslash paste bug in `find` (all results on one line), `jobs`, `story log`, `character journal`, the audit log (`/var/log/audit.log` was one line) and `backup`'s error text. Fixed; `find` now prints one path per line.
