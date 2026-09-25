@@ -88,6 +88,9 @@ async function handleEffect(result, options) {
                     "Do you want to allow this action?"
                 ],
                 onConfirm: async () => {
+                    if (result.continuation && result.continuation.current_path) {
+                        FileSystemManager.setCurrentPath(result.continuation.current_path);
+                    }
                     const execResult = await CommandExecutor.processSingleCommand(result.command, { isInteractive: false });
                     
                     if (!execResult.success) {

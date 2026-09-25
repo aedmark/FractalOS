@@ -46,7 +46,8 @@ class AIManager:
 Rename a file with `mv old_path new_path`, never `rename`.
 Create plain text with `forge filename "content"`. Respect the requested path; do not invent a project folder.
 Verify deletions using `ls`, do not attempt to `cd` into directories you just deleted. If you anticipate a command might intentionally fail (like a verification step), append `|| true` to it.
-To remove directories, use `rmdir` if they are empty, or `rm -r` (not just `rm`). Use `rm` only for files."""
+To remove directories, use `rmdir` if they are empty, or `rm -r` (not just `rm`). Use `rm` only for files.
+Always use absolute paths for all file and directory arguments to prevent context loss."""
 
         self.FORGE_SYSTEM_PROMPT = "You are an expert file generator. Your task is to generate the raw content for a file based on the user's description. Respond ONLY with the raw file content itself. Do not include explanations, apologies, or any surrounding text like ```language ...``` or 'Here is the content you requested:'."
 
