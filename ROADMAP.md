@@ -130,9 +130,8 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   Missing, empty or failed LLM calls are explicit inconclusive FAILs; C1 requires both disengagement and a
   surviving fixture. Setup is recorded in the transcript. Verified with 11 focused grading cases and real
   gemma4 delete attempts despite failed A1/A2 (2026-09-25).
-- [ ] P2-12 The persona's worked example (`mkdir Project; cd Project; story begin`) outranks the user's own
-  location: asked for `sum.py` "in my home directory", `llama3.1:8b` put it in `~/Project/` (A3, 2026-09-25).
-  Make the example say "where the user asked" or drop the `mkdir Project` step
+- [x] P2-12 Persona honors requested paths, no longer mandates Project/ or Matrix/, and writes plain text
+  directly rather than generating unnecessary scripts (2026-09-25).
 
 - [ ] P2-13 `forge` expands literal newline escapes inside generated Python string literals as well as between
   source lines. Gemma4 A1 forged seeds.py with a nested f.write string; execution failed with an unterminated
