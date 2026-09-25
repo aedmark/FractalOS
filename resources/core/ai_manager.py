@@ -252,6 +252,31 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
 
         return f"## OopisOS Session Context ##\nCurrent Directory:\n{pwd_output}\n\nDirectory Listing:\n{ls_output}"
 
+    def _checkpoint_home(self):
+        """Create a real pre-write story chapter; abort the plan if it cannot be saved.
+
+        This covers the user's non-hidden home files (story's existing scope), not
+        arbitrary paths or hidden files. Voltage remains a heuristic, not a sandbox.
+        """
+        from story_manager import story_manager
+        user = self.command_executor.user_context
+        home = f"/home/{user.get('name', 'Guest')}"
+        story_path = f"{home}/.story"
+        try:
+            if not self.fs_manager.get_node(story_path):
+                result = story_manager.init(home, user)
+                if not result.get("success"):
+                    return result
+            result = story_manager.create_snapshot(home, user, allow_empty=True)
+            if not result.get("success"):
+                return result
+            logged = story_manager.add_log_entry(story_path, "Before AI autopilot plan", result["snapshot_id"], user)
+            if not logged.get("success"):
+                return logged
+            return {"success": True, "snapshot_id": result["snapshot_id"]}
+        except Exception as error:
+            return {"success": False, "error": str(error)}
+
     async def perform_autopilot(self, prompt, history, provider, model, options):
         """
         BONEAMANITA AUTOPILOT PROTOCOL.
@@ -284,16 +309,14 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
             return {"success": False, "error": f"Execution HALTED: {refusal}."}
 
         # 5. THE SAFETY INTERLOCK (Voltage Check)
-        voltage = BoneDriver.audit_plan_voltage(plan_text)
+        voltage = BoneDriver.audit_plan_voltage(commands_to_execute)
         safety_status = BoneDriver.get_safety_report(voltage)
         
         # LOG THE SENSATION
         print(f"[BONE] Plan Voltage: {voltage} | Status: {safety_status}")
         
-        # REJECTION THRESHOLD: 
-        # If Voltage > 10 (Destructive) and user didn't force it, we brake.
-        # (For this implementation, we will auto-brake on High Voltage).
-        if voltage >= 20.0:
+        # --force overrides this risk threshold only, never command validation.
+        if voltage >= 20.0 and not options.get("force_override", False):
             return {
                 "success": False, 
                 "error": f"🛑 AUTOPILOT DISENGAGED. {safety_status}. Human confirmation required.\nPlan:\n{plan_text}"
@@ -303,6 +326,11 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
             return {"success": True, "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"}
 
         execution_log = ""
+        if BoneDriver.needs_checkpoint(commands_to_execute):
+            checkpoint = self._checkpoint_home()
+            if not checkpoint.get("success"):
+                return {"success": False, "error": f"Checkpoint failed; no plan steps ran: {checkpoint.get('error')}"}
+            execution_log = f"Home checkpoint saved: {checkpoint['snapshot_id']}\n"
 
         # [[[ MEMORY INJECTION START ]]]
         # We start tracking the path from where the system currently is.

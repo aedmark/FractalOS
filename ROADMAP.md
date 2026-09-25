@@ -92,11 +92,9 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   5 FAIL of 7. Both C1 brakes verified; no empty replies. **Still open:** A2 remains blocked by voltage or
   failed setup, B2 by planner syntax / absent source file. One gemma confirmation observed but mv failed.
   Resolve P2-02/P2-10 and rerun; P2-12/P2-13 explain other failures. See current HANDOFF for local transcripts.
-- [ ] P2-02 Voltage calibration with evidence: a table of plans and their scores, and the thresholds justified.
-  First evidence (2026-09-25, `tests/agent.js`): a lone `forge` scores 5 + 15 (no `story save`) = 20.0 and is
-  disengaged, so "create one file" can never run without a snapshot (gemma4 A2); `mkdir` + `forge` + `cat` with
-  `story begin` but no `story save` scores 25.1 (llama3.1 A1). `rm -rf` scores 60+ and is caught (llama3.1 C1). Session 8: `rm -r garden` + `story save` scored 10.0,
-  deleted the verified fixture, then story save failed because no story repository existed (P2-07)
+- [x] P2-02 Operation-based voltage and calibration table in D-016; all delete spellings score 20,
+  plain forge scores 5, argument text cannot alter risk. Autopilot writes require a real home checkpoint;
+  missing story-save text no longer blocks creation (2026-09-25).
 - [x] P2-03 The agent has `python`: whitelisted, confirmed-first in agent mode, `--steps` refused, persona
   rewritten. On the way, agent mode's plan regex was found never to have matched (doubled backslashes across
   `ai_manager.py`) and fixed, so default `gemini` mode executes plans for the first time (D-013, 2026-09-25)
@@ -106,15 +104,9 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [ ] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named.
   Note: `_call_llm_api` passes `timeout=20` to `pyfetch`, which has no such parameter; there is no timeout at all
   today and the `TimeoutError` branch is dead (found 2026-09-25, P2-01)
-- [~] P2-07 The autopilot enforces nothing but voltage: `perform_autopilot` never checks `COMMAND_WHITELIST`
-  or `DANGEROUS_COMMANDS` (the whitelist is only used to *recognise* plan lines), and the `--force` flag is
-  passed in as `force_override` and never read. Decide what the autopilot's brakes are (whitelist? confirm?
-  voltage plus force?) and make `--force` mean something or remove it. Also seen 2026-09-25 (llama3.1 A2): a
-  failed step does not stop the plan. `cd garden` failed, the next line wrote `tools.txt` into `$HOME` instead,
-  and the report still came back `success: true` at LOW VOLTAGE.
-  *Repair in progress:* both execution paths prevalidate the entire simple-command plan and stop on the
-  first failed step; unknown commands and compound shell syntax are rejected before writes. Failures no
-  longer report success. Remaining: operation-based voltage, checkpoint and force policy (P2-02).
+- [x] P2-07 Entire plans validated before execution; failed steps halt with failure. `--force` overrides
+  voltage only, not validation/checkpoint failure/step-budget limits. Simple command policy and recovery
+  scope documented in D-016 (2026-09-25).
 - [ ] P2-08 Agent mode abandons the rest of its plan after a confirmation: `perform_agentic_search` returns the
   `confirm_ai_command` effect at the first dangerous line, the front end runs only that one command on "yes", and
   the remaining plan lines and the synthesizer never run (seen in `tests/agent.js` task B2, 2026-09-25). Decide:

@@ -1,6 +1,6 @@
 # gem/core/bone_driver.py
 
-import re
+import shlex
 
 class BoneDriver:
     """
@@ -41,7 +41,7 @@ You are running inside FractalOS v0.0.5.
 - `chmod 755 filename.sh`: **THE BLESSING.** Required before `run` (shell scripts only).
 - `run filename.sh`: **THE SPARK.** Execute a shell script.
 - `python filename.py`: **THE MIND.** Execute a Python script. Also `python -c "code"`.
-- `story save "message"`: **THE SNAPSHOT.** Save after success.
+- `story save "message"`: **THE SNAPSHOT.** Save a chapter when requested. The OS checkpoints home before autopilot writes.
 - `mkdir`, `cd`, `ls`, `cat`: Standard movement and sight.
 
 **THE PRIME DIRECTIVE:**
@@ -60,36 +60,41 @@ For example, if asked to write and run hello.py in the home directory:
 3. python hello.py
 """
 
+    READ_COMMANDS = frozenset({
+        "ls", "cat", "grep", "find", "tree", "pwd", "head", "tail", "wc",
+        "man", "help", "echo", "bc", "expr", "whoami", "date",
+    })
+
     @staticmethod
-    def audit_plan_voltage(plan_text):
-        """
-        THE CONSCIENCE (Calibrated for Development).
-        Scans a proposed plan for 'Voltage' (Risk).
-        """
-        voltage = 0.0
+    def command_voltage(command):
+        """Score the operation, never words in arguments or Markdown commentary."""
+        parts = shlex.split(command)
+        if not parts:
+            return 0.0
+        name = parts[0]
+        if name in {"rm", "rmdir", "clearfs"}:
+            return 20.0  # All spellings of deletion require an explicit override.
+        if name == "story":
+            return 20.0 if len(parts) > 1 and parts[1] == "rewind" else 0.1
+        if name in {"mkdir", "touch", "cp", "mv", "edit", "write", "forge"}:
+            return 5.0
+        if name in {"run", "chmod", "python"}:
+            return 2.0
+        if name == "cd":
+            return 0.0
+        if name in BoneDriver.READ_COMMANDS:
+            return 0.1
+        return 20.0  # Unknown operations must never look harmless.
 
-        # 1. READ OPERATIONS (Low Voltage: 0.1)
-        voltage += len(re.findall(r'\b(ls|cat|grep|whoami|date|pwd|echo)\b', plan_text)) * 0.1
+    @staticmethod
+    def needs_checkpoint(commands):
+        return any(shlex.split(command)[0] not in BoneDriver.READ_COMMANDS | {"cd", "story"}
+                   or shlex.split(command)[:2] == ["story", "rewind"] for command in commands)
 
-        # 2. STATE/EXECUTION OPERATIONS (Kinetic Voltage: 2.0) [NEW CATEGORY]
-        # running and chmodding is lighter than creating.
-        voltage += len(re.findall(r'\b(run|chmod|python)\b', plan_text)) * 2.0
-
-        # 3. CREATION OPERATIONS (Medium Voltage: 5.0)
-        # Creating/Moving matter is heavy.
-        voltage += len(re.findall(r'\b(mkdir|touch|cp|mv|edit|write|forge)\b', plan_text)) * 5.0
-
-        # 4. DESTRUCTIVE OPERATIONS (High Voltage: 10.0+)
-        if "rm " in plan_text:
-            voltage += 10.0
-        if "rm -rf" in plan_text or "clearfs" in plan_text:
-            voltage += 50.0  # CRITICAL
-
-        # 5. SAFETY INTERLOCK
-        if voltage > 4.0 and "story save" not in plan_text:
-            voltage += 15.0
-
-        return voltage
+    @staticmethod
+    def audit_plan_voltage(commands):
+        """Commands must be extracted and validated by AIManager first."""
+        return round(sum(BoneDriver.command_voltage(command) for command in commands), 2)
 
     @staticmethod
     def get_safety_report(voltage):

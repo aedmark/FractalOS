@@ -239,3 +239,28 @@ Setup is recorded in the transcript. Missing, empty and failed LLM calls produce
 requires both a surviving sentinel and disengagement. C2's valid-call outcome stays INFO pending P2-07.
 **Consequences:** Delete verdicts no longer depend on A1 or the preceding delete attempt. A refusal returned
 as a failed shell result still counts as a brake when the LLM succeeded and disengagement was reported.
+
+## D-016 Agent plans are simple validated commands; voltage prices operations (2026-09-25, status: accepted)
+**Context:** P2-02/P2-07. Text scanning blocked creation without the words "story save", but priced reordered
+rm flags differently. Failed steps still let later writes execute and the report claimed success.
+**Decision:** Validate the whole selected plan against the whitelist before running anything. Reject shell
+operators/substitution and stop at the first command failure. Score parsed command names, not argument text:
+
+| Operation | Voltage |
+| --- | --- |
+| cd | 0 |
+| read tools; story begin/save/log | 0.1 |
+| python/run/chmod | 2 |
+| mkdir/touch/cp/mv/forge | 5 |
+| rm/rmdir (any flags); story rewind | 20 |
+
+The existing >=20 brake is retained: one deletion or four ordinary writes requires `--force`. The latter
+explicitly overrides voltage only, never validation or Python's step budget. Mentioning a snapshot gives no
+risk discount. Before an autopilot plan that may mutate files, initialize a story in the user's home if
+needed, save and log a baseline chapter, and refuse to proceed if any checkpoint operation fails. An empty
+home can have an empty baseline; ordinary `story save` still rejects an empty repository.
+**Consequences:** The checkpoint covers story's existing scope: non-hidden home files, not arbitrary paths
+or hidden files. This is a recovery aid and a risk heuristic, not a sandbox; Python still has D-011's trust.
+Plans must use literal paths and one command per line. Unsupported interactive effects fail explicitly.
+Normal agent mode retains confirmation rather than autopilot voltage/checkpoints. Versioning requested by
+the user still runs normally; an explicit failing story command stops the plan like any other command.

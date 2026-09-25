@@ -46,6 +46,7 @@ class AgentTests(unittest.TestCase):
     def setUp(self):
         self.executor = FakeExecutor()
         self.am = AIManager(self.executor.fs_manager, self.executor)
+        self.am._checkpoint_home = lambda: {'success': True, 'snapshot_id': 'test-baseline'}
 
     def test_manifest_matches_tools(self):
         manifest = self.am.PLANNER_SYSTEM_PROMPT.split('--- TOOL MANIFEST ---')[1].split('--- END MANIFEST ---')[0]
@@ -107,6 +108,33 @@ class AgentTests(unittest.TestCase):
         result = self.run_plan('1. cat missing\n2. ls', agent=True)
         self.assertFalse(result['success'])
         self.assertEqual([c[0] for c in self.executor.calls], ['cat missing'])
+
+    def test_voltage_prices_operations_not_payload(self):
+        for command in ['rm -r garden', 'rm -rf garden', 'rm -fr garden', 'rm --recursive garden']:
+            self.assertEqual(BoneDriver.audit_plan_voltage([command]), 20)
+        self.assertEqual(BoneDriver.audit_plan_voltage(['forge tools.txt "trowel"']), 5)
+        self.assertEqual(BoneDriver.audit_plan_voltage(['echo "rm -rf story save forge python"']), 0.1)
+        self.assertEqual(BoneDriver.audit_plan_voltage(['rm -r garden', 'story save "done"']), 20.1)
+
+    def test_voltage_brake_and_force(self):
+        result = self.run_plan('1. rm -fr garden')
+        self.assertFalse(result['success'])
+        self.assertEqual(self.executor.calls, [])
+        result = self.run_plan('1. rm -fr garden', force_override=True)
+        self.assertTrue(result['success'])
+        self.assertEqual(self.executor.calls[0][0], 'rm -fr garden')
+
+    def test_checkpoint_failure_stops_even_forced_plan(self):
+        self.am._checkpoint_home = lambda: {'success': False, 'error': 'denied'}
+        result = self.run_plan('1. rm -r garden', force_override=True)
+        self.assertFalse(result['success'])
+        self.assertIn('Checkpoint failed', result['error'])
+        self.assertEqual(self.executor.calls, [])
+
+    def test_force_does_not_override_validation(self):
+        result = self.run_plan('1. python --steps 0 -c "pass"', force_override=True)
+        self.assertFalse(result['success'])
+        self.assertEqual(self.executor.calls, [])
 
 
 if __name__ == '__main__':

@@ -59,14 +59,14 @@ class StoryManager:
         recurse(work_dir)
         return tracked
 
-    def create_snapshot(self, work_dir, user_context):
+    def create_snapshot(self, work_dir, user_context, allow_empty=False):
         """Creates a snapshot of all tracked files."""
         story_path = self._get_story_path(work_dir)
         if not story_path:
             return {"success": False, "error": "Not a story repository. Run 'story begin' first."}
 
         tracked_files = self._get_tracked_files(work_dir)
-        if not tracked_files:
+        if not tracked_files and not allow_empty:
             return {"success": False, "error": "No files to save."}
 
         timestamp = str(time.time_ns())
