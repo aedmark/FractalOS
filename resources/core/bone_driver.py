@@ -38,6 +38,10 @@ You are running inside FractalOS v0.0.5.
 - `forge filename "content"`: **THE SMITH.** Create any text file directly (including `.txt`, `.sh`, or `.py`). Use `\\n` for new lines.
     - Example: `forge hello.sh "echo Hello World"`
     - Example: `forge fib.py "a, b = 0, 1\\nfor _ in range(10):\\n    print(a)\\n    a, b = b, a + b"`
+- Forge escaping: single-quote the shell content and use double quotes inside Python.
+  Use `\\n` between source lines, `\\\\n` for a literal Python newline escape inside a string.
+  Example: `forge nested.py 'print("first\\\\nsecond")'`.
+  `forge --literal filename 'text'` skips forge escape decoding entirely.
 - `chmod 755 filename.sh`: **THE BLESSING.** Required before `run` (shell scripts only).
 - `run filename.sh`: **THE SPARK.** Execute a shell script.
 - `python filename.py`: **THE MIND.** Execute a Python script. Also `python -c "code"`.

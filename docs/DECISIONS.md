@@ -264,3 +264,13 @@ or hidden files. This is a recovery aid and a risk heuristic, not a sandbox; Pyt
 Plans must use literal paths and one command per line. Unsupported interactive effects fail explicitly.
 Normal agent mode retains confirmation rather than autopilot voltage/checkpoints. Versioning requested by
 the user still runs normally; an explicit failing story command stops the plan like any other command.
+
+## D-017 Forge decodes one explicit escape layer (2026-09-25, status: accepted)
+**Context:** P2-13. Replacing every backslash-n also changed escaped newlines inside Python source strings.
+**Decision:** After shell parsing, decode backslash-n to a newline and doubled backslash to one literal
+backslash, left to right; preserve every other escape and Unicode. `--literal` bypasses this layer. Document
+single-quoted shell arguments so the shell does not consume the extra backslash; double-quoted arguments
+need another level of escaping. The old ambiguous double-quoted nested example must be quoted correctly,
+not guessed from the file extension. Smoke compiles/runs the nested-string example through the real shell.
+**Consequences:** Ordinary one-line `forge` and single newline escapes continue to work. Doubled backslashes
+now deliberately protect literals; callers needing byte-for-byte text after shell parsing use `--literal`.

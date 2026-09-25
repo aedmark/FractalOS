@@ -124,9 +124,9 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [x] P2-12 Persona honors requested paths, no longer mandates Project/ or Matrix/, and writes plain text
   directly rather than generating unnecessary scripts (2026-09-25).
 
-- [ ] P2-13 `forge` expands literal newline escapes inside generated Python string literals as well as between
-  source lines. Gemma4 A1 forged seeds.py with a nested f.write string; execution failed with an unterminated
-  string literal (2026-09-25, session 8). Define escape handling that preserves nested source strings.
+- [x] P2-13 Forge decodes one explicit escape layer (newline and doubled backslash), preserves other
+  escapes/Unicode, and offers --literal. Single-quoted shell examples preserve nested Python escapes;
+  unit and browser checks compile and execute the resulting source (2026-09-25).
 
 - [x] P2-14 Planner tool manifest is generated from the execution whitelist (including cd/mv/forge/python).
   Prompt allows actions, explains mv, requires one command list and avoids speculative story commands (2026-09-25).

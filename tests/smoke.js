@@ -46,6 +46,11 @@ const CHECKS = [
     { cmd: 'python --steps 5000 -c "while True: pass"', expect: r => !r.success && /stopped after 5,000 steps/.test(errorMessage(r)) },
     { cmd: 'python -c "print(1)" | python -c "print(int(input()) + 1)"', expect: r => r.success && r.output === '2' },
     { cmd: 'python', expect: r => !r.success && /nothing to run/.test(errorMessage(r)) },
+    // P2-13: shell quoting + forge decoding + Python compilation, end to end.
+    { cmd: String.raw`forge /home/Guest/nested.py 'print("first\\nsecond")\nprint("done")'`, expect: r => r.success },
+    { cmd: 'python /home/Guest/nested.py', expect: r => r.success && r.output === 'first\nsecond\ndone' },
+    { cmd: String.raw`forge --literal /home/Guest/literal.txt 'keep \n café'`, expect: r => r.success },
+    { cmd: 'cat /home/Guest/literal.txt', expect: r => r.success && r.output === String.raw`keep \n café` },
     // No pipe means no stdin: JS null must reach Python as None, not as Pyodide's jsnull (D-011).
     { cmd: 'cat', expect: r => r.success && (r.output || '') === '' },
     { cmd: 'wc', expect: r => r.success && (r.output || '') === '' }, // crashed on JsNull before the fix

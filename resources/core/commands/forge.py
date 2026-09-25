@@ -1,6 +1,21 @@
 # gem/core/commands/forge.py
 
+import re
+
 from filesystem import fs_manager
+
+def define_flags():
+    return [{'name': 'literal', 'long': 'literal', 'takes_value': False}]
+
+
+def decode_content(content):
+    """Decode one forge layer: backslash-n is newline, doubled backslash is literal.
+
+    Other escapes remain unchanged; this is deliberately not unicode_escape.
+    Shell quoting is a separate earlier layer (single quotes preserve backslashes).
+    """
+    return re.sub(r"\\(\\|n)", lambda match: "\n" if match[1] == "n" else "\\", content)
+
 
 def run(args, flags, user_context, **kwargs):
     """
@@ -17,9 +32,9 @@ def run(args, flags, user_context, **kwargs):
         }
 
     target_file = args[0]
-    # Join all remaining args as content (in case quotes were weird), but usually args[1] is the string.
-    # We also replace literal '\n' with actual newlines to allow one-line writing of multi-line scripts.
-    content = " ".join(args[1:]).replace("\\n", "\n")
+    content = " ".join(args[1:])
+    if not flags.get('literal'):
+        content = decode_content(content)
 
     try:
         # We assume the user wants to OVERWRITE. To append, they should use 'append' flag (future).
@@ -35,21 +50,26 @@ def run(args, flags, user_context, **kwargs):
         }
 
 def man(args, flags, user_context, **kwargs):
-    return """
+    return r"""
 NAME
     forge - write content to a file
 
 SYNOPSIS
-    forge <filename> "<content>"
+    forge [--literal] <filename> "<content>"
 
 DESCRIPTION
-    Writes the provided string content to the specified file.
-    It automatically converts literal '\\n' characters into actual newlines,
-    allowing you to write multi-line scripts in a single command.
+    Writes the supplied text. After shell quoting, \n becomes a newline and
+    \\ becomes a literal backslash. Other escapes are preserved.
+    --literal disables this decoding and writes the argument exactly as received.
+    Single-quote shell content to preserve its backslashes. With double-quoted
+    shell content, double backslashes again for the shell layer.
 
 EXAMPLES
-    forge hello.py "print('Hello World')\\nprint('Done')"
+    forge hello.py 'print("Hello World")\nprint("Done")'
+    forge nested.py 'print("first\\nsecond")'
+    forge --literal note.txt 'Keep this \n literally'
 """
 
+
 def help(args, flags, user_context, **kwargs):
-    return 'Usage: forge <filename> "<content>"'
+    return 'Usage: forge [--literal] <filename> "<content>"'

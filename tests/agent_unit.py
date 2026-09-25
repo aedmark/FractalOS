@@ -21,6 +21,7 @@ audit.audit_manager = types.SimpleNamespace(log=lambda *args: None)
 with patch.dict(sys.modules, {'pyodide': pyodide, 'pyodide.http': http, 'audit': audit}):
     from ai_manager import AIManager
 from bone_driver import BoneDriver
+from commands.forge import decode_content
 
 
 class FakeFS:
@@ -135,6 +136,18 @@ class AgentTests(unittest.TestCase):
         result = self.run_plan('1. python --steps 0 -c "pass"', force_override=True)
         self.assertFalse(result['success'])
         self.assertEqual(self.executor.calls, [])
+
+    def test_forge_nested_python_escape_survives(self):
+        import shlex
+        command = r'''forge nested.py 'print("first\\nsecond")\nprint("done")' '''
+        # Use actual shell syntax, not an already-decoded argument.
+        source = decode_content(shlex.split(command)[2])
+        compile(source, 'nested.py', 'exec')
+        self.assertEqual(source, 'print("first\\nsecond")\nprint("done")')
+
+    def test_forge_preserves_unicode_and_unknown_escapes(self):
+        self.assertEqual(decode_content(r'café\t\q'), r'café\t\q')
+        self.assertEqual(decode_content(r'one\ntwo'), 'one\ntwo')
 
 
 if __name__ == '__main__':
