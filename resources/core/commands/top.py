@@ -1,5 +1,3 @@
-# gem/core/commands/top.py
-
 def run(args, flags, user_context, **kwargs):
     """
     Returns an effect to launch the Top UI (process viewer).

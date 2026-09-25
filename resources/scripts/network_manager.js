@@ -3,7 +3,7 @@
 class NetworkManager {
     constructor() {
         this.instanceId = `oos-${Date.now()}-${Math.floor(Math.random() * 100)}`;
-        this.channel = new BroadcastChannel('oopisos-network');
+        this.channel = new BroadcastChannel('fractal-network');
         this.dependencies = {};
         this.isNetworkingEnabled = false;
         this.listenCallback = null;
@@ -167,7 +167,7 @@ class NetworkManager {
             let peerConnection = this.peers.get(targetId);
             if (!peerConnection || peerConnection.connectionState !== 'connected') {
                 peerConnection = await this._createPeerConnection(targetId);
-                const dataChannel = peerConnection.createDataChannel('oopisos-datachannel');
+                const dataChannel = peerConnection.createDataChannel('fractal-datachannel');
                 this._setupDataChannel(dataChannel, targetId);
 
                 const offer = await peerConnection.createOffer();
@@ -182,7 +182,7 @@ class NetworkManager {
                         if (transport && transport.transport) {
                             const dataChannels = transport.transport.dataChannels;
                             if (dataChannels) {
-                                const dc = Array.from(dataChannels).find(c => c.label === 'oopisos-datachannel');
+                                const dc = Array.from(dataChannels).find(c => c.label === 'fractal-datachannel');
                                 if (dc) return dc;
                             }
                         }

@@ -1,5 +1,3 @@
-# gem/core/commands/kill.py
-
 def define_flags():
     """Declares the flags that the kill command accepts."""
     return {

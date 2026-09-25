@@ -1,4 +1,3 @@
-# gem/core/commands/basic.py
 from filesystem import fs_manager
 import os
 
@@ -40,13 +39,13 @@ def run(args, flags, user_context, **kwargs):
 def man(args, flags, user_context, **kwargs):
     return """
 NAME
-    basic - The Oopis Basic Integrated Development Environment.
+    basic - The Fractal Basic Integrated Development Environment.
 
 SYNOPSIS
     basic [filename.bas]
 
 DESCRIPTION
-    Launches a full-screen IDE for Oopis Basic. If a filename is
+    Launches a full-screen IDE for Fractal Basic. If a filename is
     provided, that file will be loaded into the editor buffer.
 """
 

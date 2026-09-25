@@ -1,5 +1,3 @@
-// scripts/apps/onboarding/onboarding_ui.js
-
 window.OnboardingUI = class OnboardingUI {
     constructor(initialState, callbacks, dependencies) {
         this.elements = {};
@@ -26,7 +24,7 @@ window.OnboardingUI = class OnboardingUI {
     }
 
     update(state) {
-        this.elements.card.innerHTML = ''; // Clear previous content
+        this.elements.card.innerHTML = '';
         switch (state.step) {
             case 1: this._renderStep1(state); break;
             case 2: this._renderStep2(state); break;

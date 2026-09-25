@@ -55,10 +55,10 @@ window.TopManager = class TopManager extends App {
     }
 
     async _updateProcessList() {
-        if (!OopisOS_Kernel || !OopisOS_Kernel.isReady) return;
+        if (!FractalOS_Kernel || !FractalOS_Kernel.isReady) return;
 
         const jobs = this.dependencies.CommandExecutor.getActiveJobs();
-        const resultJson = await OopisOS_Kernel.syscall("top", "get_process_list", [jobs]);
+        const resultJson = await FractalOS_Kernel.syscall("top", "get_process_list", [jobs]);
         const result = JSON.parse(resultJson);
 
         if (this.ui && result.success) {

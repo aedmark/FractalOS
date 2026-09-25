@@ -16,7 +16,7 @@ window.GeminiChatManager = class GeminiChatManager extends App {
         this.isActive = true;
         this.state = {
             isActive: true,
-            conversationHistory: [], // Re-added history
+            conversationHistory: [],
             provider: options.provider || "gemini",
             model: options.model || null,
             options,
@@ -66,7 +66,7 @@ window.GeminiChatManager = class GeminiChatManager extends App {
                 const command = `gemini --chat-internal="${userInput}"`;
                 const result = await CommandExecutor.processSingleCommand(command, {
                     isInteractive: false,
-                    stdinContent: JSON.stringify(this.state.conversationHistory.slice(0, -1)) // Pass history BEFORE the new message
+                    stdinContent: JSON.stringify(this.state.conversationHistory.slice(0, -1))
                 });
 
                 this.ui.toggleLoader(false);
@@ -81,7 +81,7 @@ window.GeminiChatManager = class GeminiChatManager extends App {
                         "ai",
                         true
                     );
-                    this.state.conversationHistory.pop(); // Remove the user message that failed
+                    this.state.conversationHistory.pop();
                 }
             },
             onExit: this.exit.bind(this),

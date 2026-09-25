@@ -1,6 +1,3 @@
-// main.js
-
-// --- Dependency Injection ---
 const dependencies = {};
 
 window.onload = async () => {
@@ -18,7 +15,6 @@ window.onload = async () => {
         appLayer: document.getElementById("app-layer"),
     };
 
-    // Instantiate all manager classes
     const configManager = new ConfigManager();
     const storageManager = new StorageManager();
     const storageHAL = new StorageHAL();
@@ -43,7 +39,6 @@ window.onload = async () => {
     const themeManager = new ThemeManager();
     const uiStateManager = new UIStateManager();
 
-    // Populate the global dependencies object
     Object.assign(dependencies, {
         Config: configManager, StorageManager: storageManager, FileSystemManager: fsManager,
         SessionManager: sessionManager, SudoManager: sudoManager, GroupManager: groupManager,
@@ -58,7 +53,6 @@ window.onload = async () => {
         UIStateManager: uiStateManager,
         StorageHAL: storageHAL,
         CommandExecutor: CommandExecutor,
-        // App classes
         PagerManager: window.PagerManager,
         TextAdventureModal: window.TextAdventureModal, Adventure_create: window.Adventure_create,
         BasicUI: window.BasicUI, ChidiUI: window.ChidiUI, EditorUI: window.EditorUI,
@@ -71,13 +65,11 @@ window.onload = async () => {
     const userManager = new UserManager(dependencies);
     dependencies.UserManager = userManager;
 
-    // Set dependencies for all managers
     Object.values(dependencies).forEach(dep => {
         if (dep && typeof dep.setDependencies === 'function') {
             dep.setDependencies(dependencies);
         }
     });
-    // Special cases
     userManager.setDependencies(sessionManager, sudoManager, CommandExecutor, modalManager);
     sudoManager.setDependencies(fsManager, groupManager, configManager);
     outputManager.initialize(domElements);
@@ -88,13 +80,11 @@ window.onload = async () => {
 
     await storageHAL.init();
 
-    // Load persisted localStorage if in portable mode
     const persistedLocalStorage = await storageHAL.loadLocalStorage();
     if (persistedLocalStorage) {
         storageManager.importLocalStorage(persistedLocalStorage);
     }
 
-    // Set up exit handler for portable mode
     if (window.NL_PORT && typeof Neutralino !== 'undefined' && Neutralino.app) {
         Neutralino.events.on("windowClose", async () => {
             await storageHAL.saveLocalStorage(storageManager.exportLocalStorage());
@@ -102,8 +92,7 @@ window.onload = async () => {
         });
     }
 
-    // Await the kernel initialization
-    await OopisOS_Kernel.initialize(dependencies);
+    await FractalOS_Kernel.initialize(dependencies);
 
     const onboardingComplete = storageManager.loadItem(configManager.STORAGE_KEYS.ONBOARDING_COMPLETE, "Onboarding Status", false);
     if (!onboardingComplete) {
@@ -111,18 +100,17 @@ window.onload = async () => {
         return;
     }
 
-    // --- Post-Onboarding Initialization ---
     try {
         const fsJsonFromStorage = await storageHAL.load();
         if (fsJsonFromStorage) {
-            await OopisOS_Kernel.syscall("filesystem", "load_state_from_json", [JSON.stringify(fsJsonFromStorage)]);
+            await FractalOS_Kernel.syscall("filesystem", "load_state_from_json", [JSON.stringify(fsJsonFromStorage)]);
             await fsManager.setFsData(fsJsonFromStorage);
         } else {
             await outputManager.appendToOutput("No file system found. Initializing new one.", { typeClass: configManager.CSS_CLASSES.CONSOLE_LOG_MSG });
             await fsManager.initialize(configManager.USER.DEFAULT_NAME);
             const initialFsData = await fsManager.getFsData();
-            await OopisOS_Kernel.syscall("filesystem", "load_state_from_json", [JSON.stringify(initialFsData)]);
-            await storageHAL.save(initialFsData); // Save the initial state
+            await FractalOS_Kernel.syscall("filesystem", "load_state_from_json", [JSON.stringify(initialFsData)]);
+            await storageHAL.save(initialFsData);
         }
 
         await userManager.initializeDefaultUsers();
@@ -130,22 +118,18 @@ window.onload = async () => {
         await aliasManager.initialize();
         await sessionManager.initializeStack();
 
-        // Check if we just created a user during onboarding.
         let initialUser = storageManager.loadItem(configManager.STORAGE_KEYS.LAST_CREATED_USER, "Last Created User", configManager.USER.DEFAULT_NAME);
 
-        // If we found a newly created user, we need to add them to the session stack.
         if (initialUser !== configManager.USER.DEFAULT_NAME) {
             await sessionManager.pushUserToStack(initialUser);
         }
 
         const sessionStatus = await sessionManager.loadAutomaticState(initialUser);
 
-        // Clean up the temporary user key so we don't use it again.
         if (initialUser !== configManager.USER.DEFAULT_NAME) {
             storageManager.removeItem(configManager.STORAGE_KEYS.LAST_CREATED_USER);
         }
 
-        // Initialize environment if it's a new session state
         if (sessionStatus.newStateCreated) {
         }
 

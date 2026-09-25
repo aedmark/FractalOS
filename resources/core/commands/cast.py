@@ -1,5 +1,3 @@
-# gemini/core/commands/cast.py
-
 import os
 from filesystem import fs_manager
 from datetime import datetime, timedelta
@@ -50,7 +48,7 @@ def run(args, flags, user_context, **kwargs):
                 }
             }
         target_path = args[1]
-        duration_str = args[2] if len(args) > 2 else "5m" # Default to 5 minutes
+        duration_str = args[2] if len(args) > 2 else "5m"
 
         target_node = fs_manager.get_node(target_path)
         if not target_node:
@@ -73,12 +71,11 @@ def run(args, flags, user_context, **kwargs):
             }
 
         original_mode = target_node.get('mode', 0o755)
-        ward_mode = original_mode & 0o555  # Remove write permissions for everyone
+        ward_mode = original_mode & 0o555
 
         future_time = datetime.utcnow() + duration
         cron_string = f"{future_time.minute} {future_time.hour} {future_time.day} {future_time.month} *"
 
-        # Corrected command string for the agenda. No excessive escaping.
         unward_command = f'chmod {oct(original_mode)[2:]} "{target_path}"'
         schedule_command = f'agenda add "{cron_string}" "{unward_command}"'
         ward_command = f'chmod {oct(ward_mode)[2:]} "{target_path}"'

@@ -1,5 +1,3 @@
-# gem/core/executor.py
-
 import shlex
 import json
 from importlib import import_module
@@ -35,7 +33,6 @@ class CommandExecutor:
             py_files = [f for f in os.listdir(command_dir) if f.endswith('.py') and not f.startswith('__')]
             return sorted([os.path.splitext(f)[0] for f in py_files])
         except FileNotFoundError:
-            # Fallback for local development if /core isn't mounted in Pyodide
             local_command_dir = os.path.join(os.path.dirname(__file__), 'commands')
             if os.path.exists(local_command_dir):
                 py_files = [f for f in os.listdir(local_command_dir) if f.endswith('.py') and not f.startswith('__')]
@@ -75,7 +72,6 @@ class CommandExecutor:
         command_name = segment_parts[0]
         raw_args_and_flags = segment_parts[1:]
 
-        # Wildcard Expansion (Globbing)
         expanded_parts = []
         for part in raw_args_and_flags:
             if '*' in part or '?' in part or ('[' in part and ']' in part):
@@ -92,7 +88,7 @@ class CommandExecutor:
                         for name in sorted(matches):
                             expanded_parts.append(os.path.join(path_prefix, name) if path_prefix != '.' else name)
                     else:
-                        expanded_parts.append(part) # No match, pass the glob pattern literally
+                        expanded_parts.append(part)
                 else:
                     expanded_parts.append(part)
             else:
@@ -101,7 +97,6 @@ class CommandExecutor:
         parts_to_process = [command_name] + expanded_parts
         raw_definitions = self._get_command_flag_definitions(command_name)
 
-        # This handles the two different return types for define_flags()
         if isinstance(raw_definitions, dict):
             flag_definitions = raw_definitions.get('flags', [])
         else:
@@ -148,7 +143,7 @@ class CommandExecutor:
                 else:
                     flags[canonical_name] = True
                     i += 1
-            elif part.startswith('-') and not part.startswith('--') and len(part) > 2: # Combined short flags like -la
+            elif part.startswith('-') and not part.startswith('--') and len(part) > 2:
                 all_valid, temp_flags = True, {}
                 for char in part[1:]:
                     char_flag = f'-{char}'
@@ -197,7 +192,6 @@ class CommandExecutor:
         return [segment]
 
     async def _preprocess_command_string(self, command_string, js_context_json):
-        # Brace Expansion (quote-aware)
         if '{' in command_string and '}' in command_string:
             def _split_preserving_quotes(s):
                 tokens, buf = [], []
@@ -225,13 +219,11 @@ class CommandExecutor:
             for part in _split_preserving_quotes(command_string):
                 is_quoted = (len(part) >= 2 and ((part[0] == part[-1] == "'") or (part[0] == part[-1] == '"')))
                 if is_quoted:
-                    # Do not expand braces inside quoted strings
                     expanded_parts.append(part)
                 else:
                     expanded_parts.extend(self._expand_braces(part))
             command_string = ' '.join(expanded_parts)
 
-        # Alias Resolution
         try:
             parts = shlex.split(command_string)
         except ValueError as e:
@@ -245,7 +237,6 @@ class CommandExecutor:
                 remaining_args = ' '.join(parts[1:])
                 command_string = f"{alias_value} {remaining_args}".strip()
 
-        # Environment Variable Expansion
         def replace_var(match):
             var_name = match.group(1) or match.group(2)
             return env_manager.get(var_name) or ""
@@ -260,7 +251,6 @@ class CommandExecutor:
                 result_parts.append(part)
         command_string = "'".join(result_parts)
 
-        # Command Substitution
         pattern = re.compile(r'\$\((.*?)\)', re.DOTALL)
         match = pattern.search(command_string)
         while match:
@@ -268,18 +258,12 @@ class CommandExecutor:
             sub_result_json = await self.execute(sub_command, js_context_json)
             sub_result = json.loads(sub_result_json)
             if sub_result.get("success"):
-                # Shell-like behavior: strip trailing newlines; replace embedded newlines with spaces
                 output = str(sub_result.get("output", ""))
-                # Normalize Windows CRLF and Unix LF
                 output = output.replace('\r\n', '\n').replace('\r', '\n')
-                # Remove trailing newlines
                 output = output.rstrip('\n')
-                # Replace remaining newlines with spaces
                 output = output.replace('\n', ' ')
-                # If substitution occurs immediately after '=', treat as a single assignment value by quoting
                 before_idx = match.start() - 1
                 if before_idx >= 0 and command_string[before_idx] == '=':
-                    # Escape any double quotes in the output
                     safe_output = output.replace('"', '\\"')
                     replacement = f'"{safe_output}"'
                 else:
@@ -291,10 +275,7 @@ class CommandExecutor:
         return command_string
 
     def _parse_command_string(self, command_string):
-        # Use a negative lookbehind `(?<!\\)` to avoid splitting on escaped semicolons (`\;`),
-        # while still respecting quoted strings. This is the key fix.
         commands_raw = re.split(r'''(?<!\\);(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', command_string)
-        # After splitting, un-escape the semicolons that were intentionally kept.
         commands = [cmd.replace('\\;', ';') for cmd in commands_raw]
 
         command_sequence = []
@@ -317,8 +298,6 @@ class CommandExecutor:
                     sub_commands.append({'command_parts': parts[last_op_index:i], 'operator': part})
                     last_op_index = i + 1
 
-            # Only add the remaining parts if there are any.
-            # This prevents an empty sub-command when the line ends with an operator.
             remaining_parts = parts[last_op_index:]
             if remaining_parts:
                 sub_commands.append({'command_parts': remaining_parts, 'operator': None})
@@ -374,7 +353,6 @@ class CommandExecutor:
                 session_start_time=context.get("session_start_time"), session_stack=context.get("session_stack")
             )
             processed_command_string = await self._preprocess_command_string(command_string, js_context_json)
-            # Standalone variable assignment(s) handling (e.g., VAR=value [VAR2=value ...])
             try:
                 assign_parts = shlex.split(processed_command_string)
             except ValueError as e:
@@ -444,7 +422,6 @@ class CommandExecutor:
                         self.fs_manager.write_file(file_path, content_to_write, self.user_context)
                         last_result_obj['output'] = ""
                     except PermissionError as e:
-                        # This is the key change: catch the specific error
                         last_result_obj = {
                             "success": False,
                             "error": {
@@ -469,7 +446,6 @@ class CommandExecutor:
 
             return json.dumps(last_result_obj)
         except Exception as e:
-            # General exception handler for the entire execute function
             return json.dumps({
                 "success": False,
                 "error": {
@@ -557,8 +533,6 @@ class CommandExecutor:
             else:
                 return json.dumps({"success": True, "output": str(result)})
         except Exception as e:
-            # This is the final catch-all for errors within a command's `run` function.
-            # We format it nicely here.
             return json.dumps({
                 "success": False,
                 "error": {

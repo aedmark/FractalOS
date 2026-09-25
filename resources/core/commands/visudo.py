@@ -1,5 +1,3 @@
-# gem/core/commands/visudo.py
-
 def define_flags():
     """Declares the flags that the visudo command accepts."""
     return {
@@ -19,15 +17,12 @@ def run(args, flags, user_context, **kwargs):
             }
         }
 
-
-    # The actual editing and validation logic is handled by a special
-    # effect on the JavaScript side. Python just needs to launch it.
     return {
         "effect": "launch_app",
         "app_name": "Editor",
         "options": {
             "filePath": "/etc/sudoers",
-            "isVisudo": True # Special flag for the editor app
+            "isVisudo": True
         }
     }
 

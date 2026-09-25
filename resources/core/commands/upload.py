@@ -1,5 +1,3 @@
-# gem/core/commands/upload.py
-
 def run(args, flags, user_context, **kwargs):
     """
     Returns an effect to trigger the browser's file upload workflow.

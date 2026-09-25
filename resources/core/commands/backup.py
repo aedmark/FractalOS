@@ -1,4 +1,3 @@
-# gem/core/commands/backup.py
 import json
 import zlib
 from datetime import datetime
@@ -24,7 +23,6 @@ def run(args, flags, user_context, **kwargs):
         return {"success": False, "error": "backup: command takes no arguments"}
 
     try:
-        # 1. Gather all data from Python managers
         fs_data_str = fs_manager.save_state_to_json()
         fs_data = json.loads(fs_data_str)
 
@@ -34,7 +32,6 @@ def run(args, flags, user_context, **kwargs):
         session_state_str = session_manager.get_session_state_for_saving()
         session_data = json.loads(session_state_str)
 
-        # 2. Assemble the data package
         data_to_backup = {
             "dataType": "FractalOS_System_State_Backup_v5.0_Python",
             "osVersion": "0.1",
@@ -45,11 +42,9 @@ def run(args, flags, user_context, **kwargs):
             "sessionState": session_data
         }
 
-        # 3. Create a checksum for data integrity
         stringified_data = json.dumps(data_to_backup, sort_keys=True)
         checksum = zlib.crc32(stringified_data.encode('utf-8'))
 
-        # 4. Add checksum and create the final backup object
         final_backup_object = {
             "checksum": checksum,
             **data_to_backup
@@ -58,7 +53,6 @@ def run(args, flags, user_context, **kwargs):
         backup_json_string = json.dumps(final_backup_object, indent=2)
         default_filename = f"FractalOS_Backup_{user_context.get('name')}_{datetime.utcnow().isoformat().replace(':', '-')}.json"
 
-        # 5. Return an effect for the JS side to handle the download
         return {
             "effect": "backup_data",
             "content": backup_json_string,

@@ -1,5 +1,3 @@
-// scripts/apps/chidi/chidi_ui.js
-
 window.ChidiUI = class ChidiUI {
 
     constructor(initialState, callbacks, dependencies) {
@@ -22,11 +20,9 @@ window.ChidiUI = class ChidiUI {
         this.elements.main = appWindow.main;
         this.elements.footer = appWindow.footer;
 
-        // Get references to the standard header elements
         this.elements.mainTitle = appWindow.header.querySelector('.app-header__title');
         const exitBtn = appWindow.header.querySelector('.app-header__exit-btn');
 
-        // Clear the header to rebuild it in the correct order
         appWindow.header.innerHTML = '';
 
         const headerControlsLeft = Utils.createElement(
@@ -68,7 +64,6 @@ window.ChidiUI = class ChidiUI {
             ]
         );
 
-        // Re-append all elements to the header in a logical structure
         appWindow.header.append(headerControlsLeft, this.elements.mainTitle, headerControlsRight, exitBtn);
 
 

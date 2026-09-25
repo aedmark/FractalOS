@@ -1,5 +1,3 @@
-# gem/core/commands/tail.py
-
 from filesystem import fs_manager
 
 def define_flags():
@@ -47,7 +45,7 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
             }
         content = node.get('content', '')
     else:
-        return "" # No input, no output
+        return ""
 
     line_count_str = flags.get('lines')
     byte_count_str = flags.get('bytes')

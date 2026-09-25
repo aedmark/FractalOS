@@ -1,12 +1,10 @@
-// scripts/managers/sound_manager.js
-
 window.SoundManager = class SoundManager {
     constructor(dependencies) {
         this.dependencies = dependencies;
         this.synth = null;
         this.isInitialized = false;
         this.soundPack = {
-            beepNote: "G5" // Default sound
+            beepNote: "G5"
         };
     }
 

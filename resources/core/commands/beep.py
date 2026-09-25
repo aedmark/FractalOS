@@ -1,5 +1,3 @@
-# gem/core/commands/beep.py
-
 def run(args, flags, user_context, stdin_data=None, **kwargs):
     """
     Returns a special dictionary to signal a beep effect.

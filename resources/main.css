@@ -1,5 +1,3 @@
-/* OopisOS v5.1 Main Style Sheet */
-/* Design Tokens (Root Variables) */
 
 :root {
     --color-text-primary: #00ff5b;
@@ -51,8 +49,6 @@
     --shadow-drop-medium: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* 2. Base & Reset Styles */
-
 *,
 *::before,
 *::after {
@@ -75,8 +71,6 @@ body {
     width: 100vw;
     overflow: hidden;
 }
-
-/* 3. Layout Architecture */
 
 #app-container {
     display: flex;
@@ -130,8 +124,6 @@ body {
     padding: var(--spacing-lg);
     position: relative;
 }
-
-/* 4. Terminal Component (BEM-like) */
 
 .terminal {
     width: 100%;
@@ -187,8 +179,6 @@ body {
     word-break: break-word;
     white-space: pre-wrap;
 }
-
-/* 5. App Layer & Modals */
 
 #app-layer {
     position: absolute;

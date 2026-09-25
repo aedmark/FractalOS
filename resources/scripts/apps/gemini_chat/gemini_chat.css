@@ -1,5 +1,3 @@
-/* gemini/scripts/apps/gemini_chat/gemini_chat.css */
-/* Gemini Chat Application Style Sheet */
 
 #gemini-chat-app-container .app-main {
     padding: var(--spacing-md);
@@ -40,15 +38,14 @@
     color: var(--color-text-primary);
     align-self: flex-start;
     border-bottom-left-radius: var(--border-radius-sm);
-    position: relative; /* New: Make this the positioning parent */
-    padding-right: 4rem; /* New: Add space for the copy button */
+    position: relative;
+    padding-right: 4rem;
 }
 
 .gemini-chat-message.ai p:last-child {
     margin-bottom: 0;
 }
 
-/* New: Styles for the copy button */
 .gemini-chat__copy-btn {
     position: absolute;
     top: var(--spacing-sm);

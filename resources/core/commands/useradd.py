@@ -1,5 +1,3 @@
-# gem/core/commands/useradd.py
-
 from users import user_manager
 from filesystem import fs_manager
 from groups import group_manager

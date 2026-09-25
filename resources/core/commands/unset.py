@@ -1,5 +1,3 @@
-# gem/core/commands/unset.py
-
 from session import env_manager
 
 def run(args, flags, user_context, stdin_data=None):

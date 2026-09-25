@@ -1,5 +1,3 @@
-# gemini/core/time_utils.py
-
 import re
 from datetime import datetime, timedelta
 
@@ -14,19 +12,15 @@ class TimeUtils:
         if not isinstance(date_str, str):
             return None
 
-        # Try parsing relative time strings like "2 days ago"
         relative_match = re.match(r'(\d+)\s+(day|hour|minute|second)s?\s+ago', date_str, re.IGNORECASE)
         if relative_match:
             amount, unit = int(relative_match.group(1)), relative_match.group(2).lower()
-            # Correctly create timedelta arguments like {'days': 2} or {'seconds': 30}
             delta_args = {f"{unit}s": amount}
             return datetime.utcnow() - timedelta(**delta_args)
 
-        # Handle a simple integer as "seconds ago"
         if date_str.isdigit():
             return datetime.utcnow() - timedelta(seconds=int(date_str))
 
-        # Fallback for ISO 8601 format dates
         try:
             return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
         except ValueError:
@@ -38,9 +32,9 @@ class TimeUtils:
             main_part, seconds_str = (stamp_str.split('.') + ['0'])[:2]
             seconds = int(seconds_str)
 
-            if len(main_part) == 12:  # CCYYMMDDhhmm
+            if len(main_part) == 12:
                 year, month, day, hour, minute = int(main_part[0:4]), int(main_part[4:6]), int(main_part[6:8]), int(main_part[8:10]), int(main_part[10:12])
-            elif len(main_part) == 10:  # YYMMDDhhmm
+            elif len(main_part) == 10:
                 yy = int(main_part[0:2])
                 year = (1900 if yy >= 69 else 2000) + yy
                 month, day, hour, minute = int(main_part[2:4]), int(main_part[4:6]), int(main_part[6:8]), int(main_part[8:10])
@@ -74,5 +68,5 @@ class TimeUtils:
 
         return {"timestamp_iso": datetime.utcnow().isoformat() + "Z", "error": None}
 
-# Create a singleton instance for the kernel to use
+
 time_utils = TimeUtils()

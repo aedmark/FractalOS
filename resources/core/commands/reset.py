@@ -1,4 +1,3 @@
-# /core/commands/reset.py
 from audit import audit_manager
 
 def define_flags():

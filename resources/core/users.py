@@ -1,13 +1,10 @@
-# gem/core/users.py
-
 import base64
 import os
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import copy # For deepcopy
+import copy
 
-# We need to import our other managers to collaborate!
 from filesystem import fs_manager
 from groups import group_manager
 
@@ -15,7 +12,6 @@ class UserManager:
     """Manages user accounts, credentials, and properties."""
     def __init__(self):
         self.users = {}
-        # A simple list of reserved names. In a real system, this might be in a config file.
         self.RESERVED_USERNAMES = ["guest", "root", "admin", "system"]
         self.MIN_USERNAME_LENGTH = 3
         self.MAX_USERNAME_LENGTH = 20
@@ -101,26 +97,19 @@ class UserManager:
         user_entry = self.get_user(username)
 
         if not user_entry:
-            return False # User doesn't exist
+            return False
 
         password_data = user_entry.get('passwordData')
 
-        # Case 1: User has no password set (e.g., Guest).
         if not password_data:
-            # If no password is set, only an empty or null attempt is valid.
             return password_attempt is None or password_attempt == ""
 
-        # Case 2: User has a password, but none was provided in the attempt.
-        # This now explicitly checks for an empty string as well.
         if password_attempt is None or password_attempt == "":
             return False
 
-        # Case 3: Root must have a password after onboarding. This is a redundant
-        # safety check, as `password_data` would exist, but it's good practice.
         if username == 'root' and not password_data:
             return False
 
-        # Case 4: A password is set, and an attempt was made. Verify it.
         salt = password_data['salt']
         stored_hash = password_data['hash']
         return self._verify_password_with_salt(password_attempt, salt, stored_hash)
@@ -160,41 +149,32 @@ class UserManager:
             return {"success": False, "error": "Cannot remove the root user."}
 
         try:
-            # Remove from all groups
             group_manager.remove_user_from_all_groups(username)
 
-            # Remove home directory if requested
             if remove_home:
                 home_path = f"/home/{username}"
                 if fs_manager.get_node(home_path):
                     fs_manager.remove(home_path, recursive=True)
 
-            # Finally, remove the user account itself
             self.remove_user(username)
 
-            # Important: Save the state of the filesystem after potential deletion
             fs_manager._save_state()
 
             return {"success": True}
         except Exception as e:
-            # In a real system, we'd have a transaction to roll back group/file changes
-            # if the final user deletion failed. For now, we report the error.
             return {"success": False, "error": f"An error occurred during deletion: {str(e)}"}
 
     def first_time_setup(self, username, password, root_password):
         """
         Performs the initial system setup in a transactional manner.
         """
-        # Backup state for rollback
         original_users = copy.deepcopy(self.users)
         original_groups = copy.deepcopy(group_manager.groups)
         original_fs_data = copy.deepcopy(fs_manager.fs_data)
 
         try:
-            # 1. Initialize the default filesystem structure
             fs_manager._initialize_default_filesystem()
 
-            # 2. Ensure root group and user exist before anything else
             if not group_manager.group_exists('root'):
                 group_manager.create_group('root')
             if not self.user_exists('root'):
@@ -205,31 +185,25 @@ class UserManager:
             if not self.user_exists('Guest'):
                 self.register_user('Guest', None, 'Guest')
 
-            # 4. Create the new user's group
             if not group_manager.group_exists(username):
                 group_manager.create_group(username)
 
-            # 5. Register the new user
             registration_result = self.register_user(username, password, username)
             if not registration_result["success"]:
                 if "already exists" not in registration_result["error"]:
                     raise ValueError(registration_result["error"])
 
-            # 6. Add the user to their own primary group
             group_manager.add_user_to_group(username, username)
 
-            # 7. Create the user's home directory as root
             home_path = f"/home/{username}"
             if not fs_manager.get_node(home_path):
                 fs_manager.create_directory(home_path, {"name": "root", "group": "root"})
                 fs_manager.chown(home_path, username)
                 fs_manager.chgrp(home_path, username)
 
-            # 8. Set the root password
             if not self.change_password('root', root_password):
                 raise ValueError("Failed to set root password during setup.")
 
-            # 9. Persist changes to the filesystem
             fs_manager._save_state()
 
             return {
@@ -240,7 +214,6 @@ class UserManager:
                 }
             }
         except Exception as e:
-            # Rollback to original state on any failure
             self.users = original_users
             group_manager.groups = original_groups
             fs_manager.fs_data = original_fs_data

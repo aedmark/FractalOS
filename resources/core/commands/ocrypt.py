@@ -1,5 +1,3 @@
-# gem/core/commands/ocrypt.py
-
 import base64
 import os
 from cryptography.fernet import Fernet, InvalidToken
@@ -49,7 +47,7 @@ def run(args, flags, user_context, **kwargs):
 
     try:
         if is_decrypt:
-            if len(input_content_bytes) < 17: # 16 for salt + at least 1 for data
+            if len(input_content_bytes) < 17:
                 return {"success": False, "error": {"message": "ocrypt: input file is not a valid encrypted file (too short).", "suggestion": "Ensure you are decrypting a file that was encrypted with ocrypt."}}
             salt = input_content_bytes[:16]
             encrypted_data = input_content_bytes[16:]
@@ -57,7 +55,7 @@ def run(args, flags, user_context, **kwargs):
             f = Fernet(key)
             decrypted_content = f.decrypt(encrypted_data)
             fs_manager.write_file(output_path, decrypted_content.decode('utf-8'), user_context)
-            return "" # Success
+            return ""
         else:
             salt = os.urandom(16)
             key = _derive_key(password, salt)
@@ -66,7 +64,7 @@ def run(args, flags, user_context, **kwargs):
             encrypted_content = f.encrypt(content_to_encrypt_bytes)
             content_to_write = salt + encrypted_content
             fs_manager.write_file(output_path, content_to_write.decode('latin-1'), user_context)
-            return "" # Success
+            return ""
 
     except InvalidToken:
         return {

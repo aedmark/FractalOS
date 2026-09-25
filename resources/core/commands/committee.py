@@ -1,5 +1,3 @@
-# gem/core/commands/committee.py
-
 import json
 import os
 from filesystem import fs_manager
@@ -50,18 +48,15 @@ def run(args, flags, user_context, **kwargs):
         return {"success": False, "error": {"message": f"committee: directory '{project_path}' already exists", "suggestion": "A project directory for this committee name already exists."}}
 
     try:
-        # Create group and add members
         group_manager.create_group(committee_name)
         for member in members:
             group_manager.add_user_to_group(member, committee_name)
 
-        # Create project directory and set permissions
         fs_manager.create_directory(project_path, {"name": "root", "group": "root"})
         fs_manager.chown(project_path, "root")
         fs_manager.chgrp(project_path, committee_name)
-        fs_manager.chmod(project_path, "770") # rwxrwx---
+        fs_manager.chmod(project_path, "770")
 
-        # Create and pre-populate the planner file
         initial_plan = {
             "projectName": committee_name,
             "tasks": [
@@ -75,13 +70,11 @@ def run(args, flags, user_context, **kwargs):
         }
         planner_content = json.dumps(initial_plan, indent=2)
         fs_manager.write_file(planner_path, planner_content, user_context)
-        # Ensure the new planner file also has the correct group permissions
         fs_manager.chgrp(planner_path, committee_name)
-        fs_manager.chmod(planner_path, "660") # rw-rw----
+        fs_manager.chmod(planner_path, "660")
 
 
     except Exception as e:
-        # Rollback on failure
         group_manager.delete_group(committee_name)
         if fs_manager.get_node(project_path):
             fs_manager.remove(project_path, recursive=True)

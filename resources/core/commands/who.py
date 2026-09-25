@@ -1,5 +1,3 @@
-# gem/core/commands/who.py
-
 from datetime import datetime
 
 def run(args, flags, user_context, session_stack=None, **kwargs):

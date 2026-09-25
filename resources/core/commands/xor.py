@@ -1,5 +1,3 @@
-# gem/core/commands/xor.py
-
 from filesystem import fs_manager
 
 def run(args, flags, user_context, stdin_data=None, **kwargs):
@@ -68,7 +66,6 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
     try:
         return result_bytes.decode('utf-8')
     except UnicodeDecodeError:
-        # Fallback for binary data that doesn't decode cleanly to UTF-8
         return result_bytes.decode('latin-1')
 
 

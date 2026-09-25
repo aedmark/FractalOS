@@ -1,5 +1,3 @@
-# gem/core/commands/whoami.py
-
 def run(args, flags, user_context, stdin_data=None):
     """
     Returns the current user's name.

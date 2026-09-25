@@ -5,10 +5,6 @@ Pyodide (WebAssembly) and a JavaScript front end that draws the terminal, plays 
 runs as a static site over any web server, or as a desktop app under Neutralinojs. An LLM (`gemini` command:
 Gemini API or a local Ollama) sits inside the shell as a user-facing agent. No build step, no npm dependencies.
 
-The code still calls itself **OopisOS** in many places (`OopisOS_Kernel`, the `oopisOs*` localStorage keys, the
-`oopisos-network` BroadcastChannel, "OopisOS Python Kernel is online"). FractalOS is the product name; OopisOS is
-the internal one and is not being renamed (D-009).
-
 ## Session protocol
 
 Sessions are short-lived and context resets between them, so the repo carries the memory.
@@ -39,7 +35,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `resources/index.html` | The page. Loads `scripts/asset_manifest.js`, then every CSS and JS file it lists, in order |
 | `resources/scripts/asset_manifest.js` | The ordered load list. A new script file must be added here or it never loads |
 | `resources/main.js` | `window.onload`: builds every manager, wires dependencies, boots the kernel, runs onboarding or restores the session |
-| `resources/bridge.js` | `OopisOS_Kernel`: loads Pyodide, copies the files named in `core/manifest.json` into the Pyodide FS, exposes `syscall()` and `execute_command()` |
+| `resources/bridge.js` | `FractalOS_Kernel`: loads Pyodide, copies the files named in `core/manifest.json` into the Pyodide FS, exposes `syscall()` and `execute_command()` |
 | `resources/core/manifest.json`, `tools/gen_manifest.py` | Generated list of every kernel Python file. Regenerate after adding, renaming or deleting one (D-010) |
 | `resources/scripts/boot.js` | `executePythonCommand` (the one path a shell command takes), `createKernelContext`, terminal key handling |
 | `resources/scripts/effect_handler.js` | The front-end half of the effect contract (D-002): one `case` per effect name |
@@ -71,7 +67,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 1. Enter in the terminal (`boot.js`) → `executePythonCommand(text)` → `createKernelContext()` builds a JSON
    snapshot of the JS-side state (current user and group, all users and groups, cwd, jobs, config flags, API key,
    session stack) and syncs aliases and history into Python.
-2. `OopisOS_Kernel.execute_command(text, contextJson)` → `kernel.execute_command` → `command_executor.execute`.
+2. `FractalOS_Kernel.execute_command(text, contextJson)` → `kernel.execute_command` → `command_executor.execute`.
    The executor loads that context, parses the line, imports `commands.<name>` and calls its `run(...)`.
 3. The command returns `{"success": true, "output": ...}`, `{"success": false, "error": {"message", "suggestion"}}`,
    or an **effect** (`{"effect": "play_sound", ...}`) for anything the kernel cannot do itself (D-002).
@@ -85,7 +81,7 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
 ## Conventions
 
 - Vanilla JS, classic `<script>` files sharing one global scope, loaded in `asset_manifest.js` order (D-003).
-  Not ES modules. Top-level `const` objects (`OopisOS_Kernel`, `CommandExecutor`, `dependencies`) are globals
+  Not ES modules. Top-level `const` objects (`FractalOS_Kernel`, `CommandExecutor`, `dependencies`) are globals
   but are **not** `window` properties; tests reach them by bare name.
 - Python: PEP 8, standard library plus `cryptography` only. Anything else means adding a wheel to
   `resources/dep/pyodide/` **and** to `pyodide-lock.json` (D-004). Ask first.
@@ -97,7 +93,6 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
 - Effects apply after the whole line: `cd x && cmd` runs `cmd` in the old directory. Separate lines.
 - A JS value handed straight to Python (not as JSON) may be `pyodide.ffi.jsnull`, which is not `None`.
   `kernel.execute_command` normalises stdin with `_from_js`; do the same for any new raw crossing (D-012).
-- Keep the `oopisOs*` localStorage keys and the `FractalOS` / `FileSystemsStore` IndexedDB names (D-006).
 - The `MESSAGES` in `config.js` are in the OS's own voice (wry, in character). Match it in new user-facing text.
 
 ## Running and testing

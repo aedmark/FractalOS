@@ -1,8 +1,6 @@
-// --- Job Management Globals ---
 let backgroundProcessIdCounter = 0;
 const activeJobs = {};
 
-// --- Job Signal Handler ---
 function sendSignalToJob(jobId, signal) {
     const job = activeJobs[jobId];
     if (!job) return { success: false, error: `Job ${jobId} not found.` };

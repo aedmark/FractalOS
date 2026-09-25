@@ -1,5 +1,3 @@
-# gem/core/commands/unzip.py
-
 import io
 import zipfile
 import os
@@ -50,7 +48,6 @@ def run(args, flags, user_context, **kwargs):
             for member in file_list:
                 dest_path = fs_manager.get_absolute_path(os.path.join(target_dir, member.filename))
 
-                # Ensure parent directory exists before writing file
                 if not member.is_dir():
                     parent_dir = os.path.dirname(dest_path)
                     if not fs_manager.get_node(parent_dir):

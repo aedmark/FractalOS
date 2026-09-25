@@ -1,4 +1,3 @@
-// --- Effect Handler ---
 async function handleEffect(result, options) {
     const {
         FileSystemManager, TerminalUI, SoundManager, SessionManager, AppLayerManager,
@@ -55,9 +54,9 @@ async function handleEffect(result, options) {
         }
         case 'full_reset':
             await OutputManager.appendToOutput("Performing factory reset... The system will reboot.", { typeClass: Config.CSS_CLASSES.WARNING_MSG });
-            await StorageHAL.clear(); // Clears IndexedDB
-            localStorage.clear(); // Clears all local storage for this origin
-            setTimeout(() => window.location.reload(), 2000); // Give user time to read message
+            await StorageHAL.clear();
+            localStorage.clear();
+            setTimeout(() => window.location.reload(), 2000);
             break;
 
         case 'confirm':
@@ -231,7 +230,7 @@ async function handleEffect(result, options) {
             ModalManager.request({
                 context: 'terminal', type: 'confirm', messageLines: message,
                 onConfirm: async () => {
-                    const deleteResultJson = await OopisOS_Kernel.syscall("users", "delete_user_and_data", [username, remove_home]);
+                    const deleteResultJson = await FractalOS_Kernel.syscall("users", "delete_user_and_data", [username, remove_home]);
                     const deleteResult = JSON.parse(deleteResultJson);
                     if (deleteResult.success) {
                         await UserManager.syncUsersFromKernel();
@@ -270,7 +269,7 @@ async function handleEffect(result, options) {
 
         case 'login':
 
-        case 'su': { // 'su' and 'login' effects are functionally identical
+        case 'su': {
             const loginResult = await UserManager.loginUser(result.username, result.password);
             if (!loginResult.success) {
                 await OutputManager.appendToOutput(loginResult.error.message || loginResult.error, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
@@ -318,7 +317,7 @@ async function handleEffect(result, options) {
                 break;
             }
 
-            const changeResultJson = await OopisOS_Kernel.syscall("users", "change_password", [result.username, newPassword]);
+            const changeResultJson = await FractalOS_Kernel.syscall("users", "change_password", [result.username, newPassword]);
             const changeResult = JSON.parse(changeResultJson);
 
             if (changeResult.success) {
@@ -416,7 +415,7 @@ async function handleEffect(result, options) {
                         });
                     }));
                     const userContext = await createKernelContext();
-                    const uploadResult = JSON.parse(await OopisOS_Kernel.execute_command("_upload_handler", userContext, JSON.stringify(filesForPython)));
+                    const uploadResult = JSON.parse(await FractalOS_Kernel.execute_command("_upload_handler", userContext, JSON.stringify(filesForPython)));
                     await OutputManager.appendToOutput(uploadResult.output || uploadResult.error, { typeClass: uploadResult.success ? null : 'text-error' });
                     resolve({ success: uploadResult.success });
                 };
@@ -466,7 +465,6 @@ async function handleEffect(result, options) {
 
         case 'read_messages':
             const messages = MessageBusManager.getMessages(result.job_id);
-            // This implicitly becomes the command's output
             await OutputManager.appendToOutput(messages.join(" "));
             break;
 
@@ -483,11 +481,11 @@ async function handleEffect(result, options) {
 
         case 'sync_session_state':
             if (result.aliases) {
-                await OopisOS_Kernel.syscall("alias", "load_aliases", [result.aliases]);
+                await FractalOS_Kernel.syscall("alias", "load_aliases", [result.aliases]);
                 StorageManager.saveItem(Config.STORAGE_KEYS.ALIAS_DEFINITIONS, result.aliases, "Aliases");
             }
             if (result.env) {
-                await OopisOS_Kernel.syscall("env", "load", [result.env]);
+                await FractalOS_Kernel.syscall("env", "load", [result.env]);
                 await SessionManager.saveAutomaticState((await UserManager.getCurrentUser()).name);
             }
             break;
@@ -500,9 +498,8 @@ async function handleEffect(result, options) {
 
         case 'sync_user_and_group_state':
             if (result.users) {
-                await UserManager.syncUsersFromKernel(); // This fetches from Python kernel's memory
-                // After syncing, save the new state to JS localStorage
-                const allUsers = await OopisOS_Kernel.syscall("users", "get_all_users");
+                await UserManager.syncUsersFromKernel();
+                const allUsers = await FractalOS_Kernel.syscall("users", "get_all_users");
                 const parsedUsers = JSON.parse(allUsers);
                 if (parsedUsers.success) {
                     StorageManager.saveItem(Config.STORAGE_KEYS.USER_CREDENTIALS, parsedUsers.data, "User Credentials");

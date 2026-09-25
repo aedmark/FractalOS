@@ -1,4 +1,3 @@
-# gem/core/commands/cat.py
 from filesystem import fs_manager
 import json
 
@@ -18,11 +17,10 @@ def run(args, flags, user_context, stdin_data=None):
     output_content = []
     error_messages = []
 
-    # If no args and there is stdin, treat it as if '-' was passed.
     files_to_process = args if args else ['-'] if stdin_data is not None else []
 
     if not files_to_process:
-        return "" # True cat behavior: no input, no output
+        return ""
 
     for file_path in files_to_process:
         content_to_add = None
@@ -47,12 +45,10 @@ def run(args, flags, user_context, stdin_data=None):
 
     final_output = "".join(output_content)
 
-    # Standard cat behavior is to print successful content to stdout and errors to stderr.
-    # We can simulate this by returning a structured error that also contains the partial output.
     if error_messages:
         return {
             "success": False,
-            "output": final_output, # Still return partial output
+            "output": final_output,
             "error": {
                 "message": "\n".join(error_messages),
                 "suggestion": "Verify the file paths and ensure you have read permissions."
@@ -60,12 +56,10 @@ def run(args, flags, user_context, stdin_data=None):
         }
 
     if flags.get('number'):
-        # Only split into lines when numbering is needed
         lines = final_output.splitlines()
         numbered_lines = [f"     {i+1}  {line}" for i, line in enumerate(lines)]
         return "\n".join(numbered_lines)
     else:
-        # Return the raw, unaltered content
         return final_output
 
 

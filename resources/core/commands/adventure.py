@@ -1,8 +1,6 @@
-# gem/core/commands/adventure.py
 import json
 from filesystem import fs_manager
 
-# The default adventure is now enshrined in Python!
 default_adventure_data = {
     "title": "The Architect's Apprentice", "startingRoomId": "test_chamber", "maxScore": 50,
     "winCondition": {"type": "itemUsedOn", "itemId": "page", "targetId": "terminal"},
@@ -27,17 +25,15 @@ default_adventure_data = {
 
 def run(args, flags, user_context, **kwargs):
     if '--create' in flags:
-        # The JS CommandExecutor needs to know how to get dependencies for this to work
         return {
             "effect": "launch_interactive_app",
             "app_name": "Adventure_create",
             "options": {
                 "filename": args[0] if args else "new_adventure.json",
-                "initialData": {} # Start with a blank slate
+                "initialData": {}
             }
         }
 
-    # Play Mode
     adventure_to_load = None
     if args:
         file_path = args[0]

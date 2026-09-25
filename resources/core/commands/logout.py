@@ -1,5 +1,3 @@
-# gem/core/commands/logout.py
-
 def run(args, flags, user_context, **kwargs):
     if args:
         return {

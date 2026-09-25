@@ -1,5 +1,3 @@
-# gem/core/commands/tree.py
-
 import os
 from filesystem import fs_manager
 

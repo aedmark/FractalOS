@@ -1,5 +1,3 @@
-# /core/commands/removeuser.py
-
 from users import user_manager
 
 def define_flags():
@@ -45,10 +43,8 @@ def run(args, flags, user_context, **kwargs):
                 "groups": kwargs.get("groups")
             }
         else:
-            # Propagate the already-structured error from the user_manager
             return delete_result
 
-    # If not forced, return the confirmation effect for the UI to handle.
     return {
         "effect": "removeuser",
         "username": username,

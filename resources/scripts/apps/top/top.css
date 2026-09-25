@@ -1,6 +1,4 @@
-/* Top Style Sheet */
 
-/* NEW: Make the app container itself fill the entire screen */
 #fractalos-process-viewer-app-container {
     width: 98%;
     height: 98%;
@@ -14,7 +12,6 @@
     padding: var(--spacing-md);
     overflow-y: auto;
     align-items: flex-start;
-    /* The incorrect align-items rule from the last attempt has been removed */
 }
 
 .top-table {

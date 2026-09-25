@@ -1,5 +1,3 @@
-# gem/core/commands/more.py
-
 from filesystem import fs_manager
 
 def run(args, flags, user_context, stdin_data=None, **kwargs):
@@ -31,7 +29,6 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
 
         content = node.get('content', '')
     else:
-        # This case handles `more` with no args and no stdin. It should do nothing.
         return ""
 
     return {

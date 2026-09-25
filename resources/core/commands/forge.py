@@ -1,5 +1,3 @@
-# gem/core/commands/forge.py
-
 import re
 
 from filesystem import fs_manager
@@ -37,7 +35,6 @@ def run(args, flags, user_context, **kwargs):
         content = decode_content(content)
 
     try:
-        # We assume the user wants to OVERWRITE. To append, they should use 'append' flag (future).
         fs_manager.write_file(target_file, content, user_context)
         return f"Forged '{target_file}' ({len(content)} bytes)."
     except Exception as e:

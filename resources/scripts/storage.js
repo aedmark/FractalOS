@@ -1,7 +1,3 @@
-// /scripts/storage.js (Hybrid Portable & Web Version)
-
-// The StorageManager remains unchanged as it handles localStorage,
-// which is still useful for non-critical session state like API keys or UI settings.
 class StorageManager {
     constructor() {
         this.dependencies = {};
@@ -49,10 +45,6 @@ class StorageManager {
         }
     }
 
-    /**
-     * Exports all data from localStorage into a single JSON string.
-     * @returns {string} A JSON string representing all localStorage data.
-     */
     exportLocalStorage() {
         const data = {};
         for (let i = 0; i < localStorage.length; i++) {
@@ -62,10 +54,6 @@ class StorageManager {
         return JSON.stringify(data, null, 2);
     }
 
-    /**
-     * Imports data from a JSON string into localStorage, clearing existing data first.
-     * @param {string} jsonString - A JSON string representing localStorage data.
-     */
     importLocalStorage(jsonString) {
         try {
             const data = JSON.parse(jsonString);
@@ -82,12 +70,6 @@ class StorageManager {
 }
 
 
-// --- Storage Backends ---
-// The application will choose one of these based on the environment.
-
-/**
- * Storage backend for the standard web browser environment using IndexedDB.
- */
 class IndexedDBManager {
     constructor() {
         this.dbInstance = null;
@@ -156,9 +138,6 @@ class IndexedDBManager {
     }
 }
 
-/**
- * Storage backend for the Neutralinojs portable environment using the native file system.
- */
 class NeutralinoFSManager {
     constructor() {
         this.fsFilePath = null;
@@ -166,7 +145,6 @@ class NeutralinoFSManager {
     }
 
     setDependencies(dependencies) {
-        // This backend is self-contained and doesn't need dependencies from the main app.
     }
 
     async init() {
@@ -201,7 +179,7 @@ class NeutralinoFSManager {
             const jsonString = await Neutralino.filesystem.readFile(this.fsFilePath);
             return JSON.parse(jsonString);
         } catch (e) {
-            if (e.code === 'NE_FS_FILENOTF') return null; // File doesn't exist yet, which is normal on first run.
+            if (e.code === 'NE_FS_FILENOTF') return null;
             console.error("NeutralinoFS Load Error:", e);
             return null;
         }
@@ -212,7 +190,7 @@ class NeutralinoFSManager {
             await Neutralino.filesystem.removeFile(this.fsFilePath);
             return true;
         } catch (e) {
-            if (e.code === 'NE_FS_FILENOTF') return true; // Already gone.
+            if (e.code === 'NE_FS_FILENOTF') return true;
             console.error("NeutralinoFS Clear Error:", e);
             return false;
         }
@@ -230,20 +208,15 @@ class NeutralinoFSManager {
 
     async loadLocalStorage() {
         try {
-            // NEW: More robust loading logic.
-            // First, check if the file exists and has content before trying to read.
             const stats = await Neutralino.filesystem.getStats(this.localStorageFilePath);
             if (stats.size === 0) {
-                return null; // Treat an empty file as if it doesn't exist.
+                return null;
             }
-            // If it has content, read it.
             return await Neutralino.filesystem.readFile(this.localStorageFilePath);
         } catch (e) {
-            // If getStats fails because the file isn't found, that's perfectly normal on a first run.
             if (e.code === 'NE_FS_FILENOTF') {
                 return null;
             }
-            // For any other error, log it but don't crash the app.
             console.error("NeutralinoFS localStorage Load Error:", e);
             return null;
         }
@@ -251,11 +224,6 @@ class NeutralinoFSManager {
 }
 
 
-/**
- * The Hardware Abstraction Layer (HAL) for storage.
- * This class intelligently detects the environment (browser vs. Neutralinojs)
- * and selects the appropriate storage backend.
- */
 class StorageHAL {
     constructor() {
         this.dependencies = {};
@@ -267,7 +235,6 @@ class StorageHAL {
     }
 
     async init() {
-        // Detect if we are running inside Neutralinojs
         if (typeof Neutralino !== 'undefined' && window.NL_PORT) {
             console.log("Portable mode detected. Using native file system storage.");
             this.backend = new NeutralinoFSManager();
@@ -276,13 +243,9 @@ class StorageHAL {
             this.backend = new IndexedDBManager();
         }
 
-        // Pass dependencies down to the chosen backend and initialize it.
         this.backend.setDependencies(this.dependencies);
         return this.backend.init();
     }
-
-    // --- Delegated Methods ---
-    // These methods simply call the corresponding method on the active backend.
 
     async save(fsData) {
         if (!this.backend) throw new Error("StorageHAL not initialized.");

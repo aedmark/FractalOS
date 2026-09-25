@@ -1,5 +1,3 @@
-# gem/core/commands/samwise.py
-
 import asyncio
 import json
 
@@ -38,7 +36,6 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
     is_autopilot = flags.get('autopilot', False)
     force_override = flags.get('force', False)
 
-    # --- MODE 1: GRAPHICAL CHAT ---
     if flags.get('chat', False):
         return {
             "effect": "launch_app",
@@ -49,7 +46,6 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
             }
         }
 
-    # --- MODE 2: INTERNAL CHAT (Used by App) ---
     if flags.get('chat-internal'):
         user_prompt = flags.get('chat-internal')
         history = json.loads(stdin_data) if stdin_data else []
@@ -65,7 +61,6 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         else:
             return {"success": False, "error": result["error"]}
 
-    # --- MODE 2.5: RESUME AGENTIC SEARCH ---
     if flags.get('resume-agent'):
         try:
             state = json.loads(flags.get('resume-agent'))
@@ -101,9 +96,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
 
     user_prompt = " ".join(args)
 
-    # --- MODE 3: BONEAMANITA AUTOPILOT ---
     if is_autopilot:
-        # Route to the BoneDriver logic
         result = await ai_manager.perform_autopilot(
             user_prompt, 
             [], 
@@ -116,14 +109,12 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         )
         
         if result["success"]:
-            # Autopilot returns a pre-formatted report string in 'data'
             return {
                 "effect": "display_prose",
                 "header": "🍄 BoneAmanita Autopilot Report",
                 "content": result.get("data")
             }
         else:
-            # If Autopilot braked (High Voltage), we return the error
             return {
                 "success": False,
                 "error": {
@@ -132,7 +123,6 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
                 }
             }
 
-    # --- MODE 4: STANDARD AGENTIC SEARCH (Dry Run) ---
     if is_dry_run:
         plan_result = await ai_manager.perform_agentic_search(user_prompt, [], provider, model, {"apiKey": api_key})
         if plan_result.get("effect"):
@@ -148,11 +138,8 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         else:
             return plan_result
 
-    # --- MODE 5: STANDARD AGENTIC SEARCH (Execute) ---
     result = await ai_manager.perform_agentic_search(user_prompt, [], provider, model, {"apiKey": api_key})
 
-    # A dangerous plan line comes back as a confirm_ai_command effect, not a result
-    # with a "success" key; hand it to the front end to ask the user (D-014).
     if result.get("effect"):
         return result
     if result.get("success"):

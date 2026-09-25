@@ -1,5 +1,3 @@
-# gem/core/commands/wc.py
-
 from filesystem import fs_manager
 
 def define_flags():

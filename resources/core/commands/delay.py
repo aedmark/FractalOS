@@ -1,5 +1,3 @@
-# gem/core/commands/delay.py
-
 import time
 
 def run(args, flags, user_context, **kwargs):

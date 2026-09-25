@@ -1,5 +1,3 @@
-// scripts/apps/chidi/chidi_manager.js
-
 window.ChidiManager = class ChidiManager extends App {
     constructor() {
         super();
@@ -77,8 +75,7 @@ window.ChidiManager = class ChidiManager extends App {
             model: this.state.model
         };
 
-        // Using the backward-compatible stub is sufficient here.
-        const resultJson = OopisOS_Kernel.chidi_analysis(JSON.stringify(jsContext), context, analysisType, question);
+        const resultJson = FractalOS_Kernel.chidi_analysis(JSON.stringify(jsContext), context, analysisType, question);
 
         try {
             const result = JSON.parse(resultJson);

@@ -1,4 +1,3 @@
-# gem/core/commands/rename.py
 from filesystem import fs_manager
 import os
 
@@ -36,7 +35,7 @@ def run(args, flags, user_context, **kwargs):
         new_abs_path = os.path.join(current_path, new_name)
 
         fs_manager.rename_node(old_abs_path, new_abs_path)
-        return "" # Success
+        return ""
     except FileNotFoundError:
         return {
             "success": False,

@@ -1,4 +1,3 @@
-# gemini/core/commands/man.py
 from importlib import import_module
 
 def run(args, flags, user_context, **kwargs):

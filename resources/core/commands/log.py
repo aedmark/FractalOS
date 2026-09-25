@@ -1,5 +1,3 @@
-# /core/commands/log.py
-
 import os
 from filesystem import fs_manager
 from datetime import datetime
@@ -30,7 +28,6 @@ def run(args, flags, user_context, **kwargs):
                 return {"success": False, "error": f"log: failed to create log directory: {repr(e)}"}
 
         timestamp = datetime.utcnow()
-        # Example: '2025-08-17T21-45-01.123Z.md'
         filename = timestamp.isoformat()[:23].replace(':', '-') + "Z.md"
         full_path = os.path.join(log_dir_path, filename)
 

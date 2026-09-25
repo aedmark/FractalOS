@@ -1,9 +1,3 @@
-// scripts/apps/adventure/adventure_create.js
-
-/**
- * Adventure Creator - A thin client for the Python-based interactive tool
- * @namespace Adventure_create
- */
 window.Adventure_create = {
     state: {
         isActive: false,
@@ -20,8 +14,7 @@ window.Adventure_create = {
             commandContext: commandContext,
         };
 
-        // Initialize the creator on the Python side
-        const resultJson = OopisOS_Kernel.adventureCreatorInitialize(filename, JSON.stringify(initialData));
+        const resultJson = FractalOS_Kernel.adventureCreatorInitialize(filename, JSON.stringify(initialData));
         const result = JSON.parse(resultJson);
 
         this.dependencies.OutputManager.appendToOutput(result.message, {
@@ -36,7 +29,7 @@ window.Adventure_create = {
     _requestNextCommand() {
         if (!this.state.isActive) return;
 
-        const promptResultJson = OopisOS_Kernel.adventureCreatorGetPrompt();
+        const promptResultJson = FractalOS_Kernel.adventureCreatorGetPrompt();
         const promptResult = JSON.parse(promptResultJson);
         const prompt = promptResult.prompt || "(creator)> ";
 
@@ -45,7 +38,7 @@ window.Adventure_create = {
             type: "input",
             messageLines: [prompt],
             onConfirm: async (input) => {
-                const resultJson = OopisOS_Kernel.adventureCreatorProcessCommand(input);
+                const resultJson = FractalOS_Kernel.adventureCreatorProcessCommand(input);
                 const result = JSON.parse(resultJson);
 
                 if (result.output) {

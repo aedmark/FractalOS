@@ -1,4 +1,3 @@
-# gem/core/sudo.py
 from filesystem import fs_manager
 
 class SudoManager:
@@ -31,7 +30,6 @@ class SudoManager:
             entity = parts[0]
             permissions = parts[1:]
 
-            # This implementation supports the 'ALL' keyword for commands.
             allowed_commands = []
             all_found = False
             for part in permissions:
@@ -42,7 +40,6 @@ class SudoManager:
             if all_found:
                 allowed_commands = ["ALL"]
             else:
-                # The final part of the line is treated as a comma-separated list of commands.
                 allowed_commands = permissions[-1].split(',')
 
 
@@ -55,8 +52,6 @@ class SudoManager:
 
     def _get_config(self):
         """Returns the sudoers config, parsing every time to ensure freshness."""
-        # The configuration is re-parsed on every check to ensure that any
-        # dynamic changes to the /etc/sudoers file are immediately reflected.
         self._parse_sudoers()
         return self.sudoers_config
 
@@ -67,13 +62,11 @@ class SudoManager:
 
         config = self._get_config()
 
-        # Check user-specific rules first
         user_perms = config['users'].get(username)
         if user_perms:
             if "ALL" in user_perms or command_to_run in user_perms:
                 return True
 
-        # Check group rules
         for group in user_groups:
             group_perms = config['groups'].get(group)
             if group_perms:
@@ -82,5 +75,5 @@ class SudoManager:
 
         return False
 
-# This manager will be instantiated in the kernel, passing the fs_manager
+
 sudo_manager = SudoManager(fs_manager)

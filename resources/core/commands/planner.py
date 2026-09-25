@@ -1,9 +1,7 @@
-# gem/core/commands/planner.py
 import json
 import os
 from filesystem import fs_manager
 
-# Define user and system paths
 USER_PLANS_DIR_TEMPLATE = "/home/{username}/.plans"
 SYSTEM_PROJECTS_DIR = "/etc/projects"
 SCORE_PATH = "/var/log/scores.json"
@@ -44,7 +42,7 @@ def _write_json_file(path, data, user_context):
     try:
         parent_dir = os.path.dirname(path)
         if not fs_manager.get_node(parent_dir):
-            fs_manager.create_directory(parent_dir, user_context, parents=True) # Added parents=True
+            fs_manager.create_directory(parent_dir, user_context, parents=True)
         content = json.dumps(data, indent=2)
         fs_manager.write_file(path, content, user_context)
         return True, None

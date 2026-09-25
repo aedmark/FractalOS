@@ -1,5 +1,3 @@
-# /core/commands/patch.py
-
 import re
 from filesystem import fs_manager
 

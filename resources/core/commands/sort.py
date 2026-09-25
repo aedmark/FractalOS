@@ -1,5 +1,3 @@
-# /core/commands/sort.py
-
 from filesystem import fs_manager
 
 def define_flags():
@@ -37,7 +35,7 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
                 continue
             lines.extend(node.get('content', '').splitlines())
     else:
-        return "" # No input, no output
+        return ""
 
     if has_errors and not lines:
         return {
@@ -56,10 +54,8 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
     def sort_key(line):
         if is_numeric:
             try:
-                # Attempt to convert the beginning of the line to a float for sorting
                 return float(line.strip().split()[0])
             except (ValueError, IndexError):
-                # If it fails, fall back to a large number to sort non-numeric lines last
                 return float('inf')
         return line
 
@@ -76,7 +72,6 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
 
     final_output = "\n".join(lines)
     if error_output:
-        # This will likely not be hit due to the check above, but is kept for safety.
         return "\n".join(error_output) + "\n" + final_output
 
     return final_output

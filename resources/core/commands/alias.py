@@ -1,5 +1,3 @@
-# gem/core/commands/alias.py
-
 import shlex
 from session import alias_manager
 
@@ -17,7 +15,6 @@ def run(args, flags, user_context, stdin_data=None):
     if '=' in arg_string:
         try:
             name, value = arg_string.split('=', 1)
-            # This is the new, correct logic for handling quotes
             if (value.startswith('"') and value.endswith('"')) or \
                     (value.startswith("'") and value.endswith("'")):
                 value = value[1:-1]

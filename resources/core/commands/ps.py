@@ -1,5 +1,3 @@
-# /core/commands/ps.py
-
 def run(args, flags, user_context, jobs=None, **kwargs):
     if args:
         return {

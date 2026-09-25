@@ -1,5 +1,3 @@
-# gem/core/commands/zip.py
-
 import io
 import zipfile
 import os
@@ -20,15 +18,11 @@ def _add_to_zip(zipf, path, archive_path=""):
     if not node:
         return
 
-    # The archive name for the current node
     current_archive_name = os.path.join(archive_path, os.path.basename(path))
 
     if node['type'] == 'file':
         zipf.writestr(current_archive_name, node.get('content', '').encode('utf-8'))
     elif node['type'] == 'directory':
-        # For directories, recursively add their children.
-        # An explicit directory entry is often not needed if it contains files,
-        # but let's add it for empty directories.
         if not node.get('children'):
             zipf.writestr(current_archive_name + '/', b'')
 
@@ -52,14 +46,12 @@ def run(args, flags, user_context, **kwargs):
 
     with zipfile.ZipFile(in_memory_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for path in source_paths:
-            # We start with an empty archive path for the top-level items.
             _add_to_zip(zipf, path, archive_path="")
 
     zip_content_b64 = base64.b64encode(in_memory_zip.getvalue()).decode('utf-8')
 
     try:
         fs_manager.write_file(archive_name, zip_content_b64, user_context)
-        # Generate a more realistic output message.
         output_lines = [f"  adding: {p} (deflated 0%)" for p in source_paths]
         return "\n".join(output_lines)
     except Exception as e:

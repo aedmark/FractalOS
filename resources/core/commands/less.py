@@ -1,5 +1,3 @@
-# gem/core/commands/less.py
-
 from filesystem import fs_manager
 
 def run(args, flags, user_context, stdin_data=None, **kwargs):

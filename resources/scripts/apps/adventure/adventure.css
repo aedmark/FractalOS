@@ -1,5 +1,3 @@
-/* Adventure Style Sheet */
-
 #adventure-container {
     display: flex;
     flex-direction: column;

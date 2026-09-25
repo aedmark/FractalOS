@@ -1,5 +1,3 @@
-# gem/core/commands/tr.py
-
 import string
 
 def define_flags():

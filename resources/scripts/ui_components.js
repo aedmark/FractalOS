@@ -1,5 +1,3 @@
-// scripts/ui_components.js
-
 class UIComponents {
   constructor() {
     this.dependencies = {};

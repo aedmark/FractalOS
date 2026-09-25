@@ -1,5 +1,3 @@
-# gem/core/commands/history.py
-
 from session import history_manager
 
 def define_flags():

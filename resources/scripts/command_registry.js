@@ -1,5 +1,3 @@
-// scripts/command_registry.js
-
 class CommandRegistry {
     constructor() {
         this.commandDefinitions = {};
@@ -13,7 +11,6 @@ class CommandRegistry {
     register(commandInstance) {
         if (commandInstance && commandInstance.commandName) {
             this.commandDefinitions[commandInstance.commandName] = commandInstance;
-            // [MODIFIED] Automatically add to the manifest upon registration
             this.addCommandToManifest(commandInstance.commandName);
         } else {
             console.error(
@@ -27,7 +24,7 @@ class CommandRegistry {
         const { Config } = this.dependencies;
         if (Config && Config.COMMANDS_MANIFEST && !Config.COMMANDS_MANIFEST.includes(commandName)) {
             Config.COMMANDS_MANIFEST.push(commandName);
-            Config.COMMANDS_MANIFEST.sort(); // Keep it tidy!
+            Config.COMMANDS_MANIFEST.sort();
         }
     }
 

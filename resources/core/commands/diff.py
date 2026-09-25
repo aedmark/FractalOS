@@ -1,5 +1,3 @@
-# gem/core/commands/diff.py
-
 import difflib
 from filesystem import fs_manager
 

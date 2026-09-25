@@ -1,5 +1,3 @@
-# gem/core/commands/fg.py
-
 def run(args, flags, user_context, jobs=None, **kwargs):
     """
     Signals the front end to bring a job to the foreground.
@@ -43,7 +41,7 @@ def run(args, flags, user_context, jobs=None, **kwargs):
     return {
         "effect": "signal_job",
         "job_id": job_id,
-        "signal": "CONT" # Continue signal
+        "signal": "CONT"
     }
 
 def man(args, flags, user_context, **kwargs):

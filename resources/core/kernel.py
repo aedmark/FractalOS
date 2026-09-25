@@ -1,5 +1,3 @@
-# gem/core/kernel.py
-
 from executor import command_executor
 from filesystem import fs_manager
 from session import env_manager, history_manager, alias_manager, session_manager
@@ -7,7 +5,7 @@ from groups import group_manager
 from users import user_manager
 from sudo import SudoManager
 from ai_manager import AIManager
-from story_manager import story_manager # <-- ADDED
+from story_manager import story_manager
 from apps.editor import editor_manager
 from apps.paint import paint_manager
 from apps.adventure import adventure_manager
@@ -20,7 +18,6 @@ import traceback
 import inspect
 import asyncio
 
-# --- Module Initialization ---
 sudo_manager = SudoManager(fs_manager)
 ai_manager = AIManager(fs_manager, command_executor)
 command_executor.set_ai_manager(ai_manager)
@@ -80,7 +77,7 @@ async def syscall_handler(request_json):
 
 try:
     from pyodide.ffi import jsnull as _JS_NULL
-except ImportError:  # running outside Pyodide (tests, tooling)
+except ImportError:
     _JS_NULL = None
 
 
@@ -121,7 +118,6 @@ def rename_node(old_path, new_path, js_context_json):
     req = {"module": "filesystem", "function": "rename_node", "args": [old_path, new_path]}
     return asyncio.ensure_future(syscall_handler(json.dumps(req)))
 
-# --- App-specific Stubs ---
 
 def chidi_analysis(js_context_json, files_context, analysis_type, question=None):
     context = json.loads(js_context_json)

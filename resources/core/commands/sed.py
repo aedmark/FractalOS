@@ -1,5 +1,3 @@
-# gem/core/commands/sed.py
-
 import re
 from filesystem import fs_manager
 

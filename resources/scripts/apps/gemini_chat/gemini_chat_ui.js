@@ -1,4 +1,3 @@
-// gemini/scripts/apps/gemini_chat/gemini_chat_ui.js
 window.GeminiChatUI = class GeminiChatUI {
     constructor(callbacks, dependencies) {
         this.elements = {};

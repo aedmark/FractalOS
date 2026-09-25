@@ -1,5 +1,3 @@
-// gem/scripts/fs_manager.js
-
 class FileSystemManager {
     constructor(config) {
         this.config = config;
@@ -24,7 +22,6 @@ class FileSystemManager {
     }
 
     async initialize(guestUsername) {
-        // This function is now only for initial, first-boot setup.
         const nowISO = new Date().toISOString();
         this.fsData = {
             [this.config.FILESYSTEM.ROOT_PATH]: {
@@ -48,7 +45,6 @@ class FileSystemManager {
     }
 
     async createUserHomeDirectory(username) {
-        // This now only modifies the initial JS object before it's sent to Python.
         if (!this.fsData["/"]?.children?.home) {
             console.error("Cannot create user home directory, /home does not exist.");
             return;
@@ -69,9 +65,9 @@ class FileSystemManager {
 
     async save() {
         const { ErrorHandler } = this.dependencies;
-        if (OopisOS_Kernel && OopisOS_Kernel.isReady) {
+        if (FractalOS_Kernel && FractalOS_Kernel.isReady) {
             try {
-                const resultJson = await OopisOS_Kernel.syscall("filesystem", "save_state_to_json");
+                const resultJson = await FractalOS_Kernel.syscall("filesystem", "save_state_to_json");
                 const result = JSON.parse(resultJson);
                 if (!result.success) {
                     throw new Error(result.error || "Failed to get filesystem data from kernel.");
@@ -107,8 +103,8 @@ class FileSystemManager {
     }
 
     async getFsData() {
-        if (OopisOS_Kernel && OopisOS_Kernel.isReady) {
-            const resultJson = await OopisOS_Kernel.syscall("filesystem", "get_fs_data");
+        if (FractalOS_Kernel && FractalOS_Kernel.isReady) {
+            const resultJson = await FractalOS_Kernel.syscall("filesystem", "get_fs_data");
             const result = JSON.parse(resultJson);
             if (result.success) {
                 return result.data;
@@ -121,8 +117,8 @@ class FileSystemManager {
     }
 
     async setFsData(newData) {
-        if (OopisOS_Kernel && OopisOS_Kernel.isReady) {
-            await OopisOS_Kernel.syscall("filesystem", "load_state_from_json", [JSON.stringify(newData)]);
+        if (FractalOS_Kernel && FractalOS_Kernel.isReady) {
+            await FractalOS_Kernel.syscall("filesystem", "load_state_from_json", [JSON.stringify(newData)]);
         }
         this.fsData = newData;
     }
@@ -145,9 +141,9 @@ class FileSystemManager {
     }
 
     async getNodeByPath(absolutePath) {
-        if (!OopisOS_Kernel.isReady) return null;
+        if (!FractalOS_Kernel.isReady) return null;
         try {
-            const resultJson = await OopisOS_Kernel.syscall("filesystem", "get_node", [absolutePath]);
+            const resultJson = await FractalOS_Kernel.syscall("filesystem", "get_node", [absolutePath]);
             const result = JSON.parse(resultJson);
             return result.success ? result.data : null;
         } catch (e) {
@@ -158,13 +154,13 @@ class FileSystemManager {
 
     async validatePath(pathArg, options = {}) {
         const { ErrorHandler } = this.dependencies;
-        if (!OopisOS_Kernel.isReady) {
+        if (!FractalOS_Kernel.isReady) {
             return ErrorHandler.createError("Filesystem kernel not ready.");
         }
         try {
             const context = await this._createKernelContext();
             const optionsJson = JSON.stringify(options);
-            const resultJson = await OopisOS_Kernel.syscall("filesystem", "validate_path", [pathArg, context, optionsJson]);
+            const resultJson = await FractalOS_Kernel.syscall("filesystem", "validate_path", [pathArg, context, optionsJson]);
             const result = JSON.parse(resultJson);
             if (result.success) {
                 return ErrorHandler.createSuccess({ node: result.node, resolvedPath: result.resolvedPath });
@@ -200,16 +196,16 @@ class FileSystemManager {
     async createOrUpdateFile(absolutePath, content, context) {
         const { ErrorHandler } = this.dependencies;
         const { isDirectory = false } = context;
-        if (!OopisOS_Kernel.isReady) {
+        if (!FractalOS_Kernel.isReady) {
             return ErrorHandler.createError("Filesystem kernel not ready for write operation.");
         }
         try {
             const kernelContext = context ? { name: context.currentUser, group: context.primaryGroup } : await this._createKernelContext();
             let resultJson;
             if (isDirectory) {
-                resultJson = await OopisOS_Kernel.syscall("filesystem", "create_directory", [absolutePath, kernelContext]);
+                resultJson = await FractalOS_Kernel.syscall("filesystem", "create_directory", [absolutePath, kernelContext]);
             } else {
-                resultJson = await OopisOS_Kernel.syscall("filesystem", "write_file", [absolutePath, content, kernelContext]);
+                resultJson = await FractalOS_Kernel.syscall("filesystem", "write_file", [absolutePath, content, kernelContext]);
             }
             const result = JSON.parse(resultJson);
             if (result.success) {

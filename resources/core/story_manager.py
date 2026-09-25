@@ -1,5 +1,3 @@
-# gemini/resources/core/story_manager.py
-
 import json
 import os
 import time
@@ -16,7 +14,6 @@ class StoryManager:
             if fs_manager.get_node(story_dir):
                 return story_dir
             path = os.path.dirname(path)
-        # Check root last
         story_dir = os.path.join('/', '.story')
         if fs_manager.get_node(story_dir):
             return story_dir
@@ -47,7 +44,6 @@ class StoryManager:
                 return
 
             if node.get('type') == 'directory':
-                # Skip the .story directory itself
                 if os.path.basename(current_path) == '.story':
                     return
                 for child_name, child_node in node.get('children', {}).items():
@@ -79,7 +75,6 @@ class StoryManager:
                 relative_path = os.path.relpath(file_path, work_dir)
                 dest_path = os.path.join(snapshot_dir, relative_path)
 
-                # Ensure parent directory exists in snapshot
                 dest_parent = os.path.dirname(dest_path)
                 if not fs_manager.get_node(dest_parent):
                     fs_manager.create_directory(dest_parent, user_context, parents=True)
@@ -108,7 +103,7 @@ class StoryManager:
                 "author": user_context.get('name'),
                 "snapshot": snapshot_id
             }
-            log_data.insert(0, new_entry) # Prepend to keep newest first
+            log_data.insert(0, new_entry)
             fs_manager.write_file(log_path, json.dumps(log_data, indent=2), user_context)
             return {"success": True}
         except (json.JSONDecodeError, Exception) as e:
@@ -139,12 +134,10 @@ class StoryManager:
             return {"success": False, "error": f"Snapshot '{snapshot_id}' not found."}
 
         try:
-            # This is a destructive operation. First, we clear the tracked files.
             tracked_files = self._get_tracked_files(work_dir)
             for file_path in tracked_files:
                 fs_manager.remove(file_path)
 
-            # Now, copy files from snapshot to work_dir
             def recurse_copy(current_snapshot_path, current_work_path):
                 node = fs_manager.get_node(current_snapshot_path)
                 if not node: return
@@ -182,5 +175,5 @@ class StoryManager:
 
         return {"success": True, "data": "\n".join(summary)}
 
-# Instantiate a singleton for the kernel
+
 story_manager = StoryManager()

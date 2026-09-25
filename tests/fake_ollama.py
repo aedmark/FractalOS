@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """A stand-in for Ollama, for exercising the agent's wire path without a model.
 
     python3 tests/fake_ollama.py            # listens on http://127.0.0.1:11434
@@ -118,7 +117,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, {"model": body.get("model", MODEL), "response": answer, "done": True,
                          "done_reason": "stop", "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
 
-    def log_message(self, *args):  # keep stderr quiet; the print above is enough
+    def log_message(self, *args):
         pass
 
 

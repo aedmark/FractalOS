@@ -1,5 +1,3 @@
-// scripts/modal_manager.js
-
 class ModalManager {
     constructor() {
         this.isAwaitingTerminalInput = false;

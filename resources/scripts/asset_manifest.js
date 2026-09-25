@@ -1,7 +1,4 @@
-// scripts/asset_manifest.js
-
 window.FRACTAL_ASSET_MANIFEST = {
-    // CSS files can be loaded in parallel.
     css: [
         "./main.css",
         "./scripts/apps/apps.css",
@@ -15,16 +12,13 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/apps/top/top.css",
         "./scripts/apps/onboarding/onboarding.css"
     ],
-    // JavaScript files must be loaded in a specific order to respect dependencies.
     js: [
-        // External Libraries
         "./dep/marked.min.js",
         "./dep/purify.min.js",
         "./dep/html2canvas.min.js",
         "./dep/tone.js",
         "./dep/pyodide/pyodide.js",
 
-        // Core Utilities & Managers (Order is critical)
         "./scripts/utils.js",
         "./scripts/ui_components.js",
         "./scripts/ui_state_manager.js",
@@ -43,11 +37,9 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/sound_manager.js",
         "./scripts/message_bus_manager.js",
 
-        // App Base Class & Pager
         "./scripts/apps/app.js",
         "./scripts/pager.js",
 
-        // Application Modules (UI first, then Manager)
         "./scripts/apps/editor/editor_ui.js",
         "./scripts/apps/editor/editor_manager.js",
         "./scripts/apps/adventure/adventure_ui.js",
@@ -68,7 +60,6 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/apps/gemini_chat/gemini_chat_ui.js",
         "./scripts/apps/gemini_chat/gemini_chat_manager.js",
 
-        // High-level Managers and Core Logic
         "./scripts/theme_manager.js",
         "./scripts/command_registry.js",
         "./scripts/network_manager.js",

@@ -1,14 +1,3 @@
-#!/usr/bin/env node
-// tests/diag.js: run extras/diag.sh (the in-OS command test suite) headlessly and grade it.
-//
-//   cd resources && python3 -m http.server 8000 &
-//   node tests/diag.js http://127.0.0.1:8000/index.html [path/to/script.sh]
-//
-// Boots the OS, completes onboarding as a real user, logs in as root, writes the
-// script into the VFS, runs it with `run`, then counts its check_fail assertions
-// and any error lines. The full transcript is written to tests/out/diag-transcript.txt.
-// Exit code 0 = no CHECK_FAIL: FAILURE and no unexpected error lines. See docs/TESTING.md.
-
 'use strict';
 
 const fs = require('fs');
@@ -25,7 +14,7 @@ const USER = { username: 'gordon', password: 'hunter2', rootPassword: 'rootpw' }
 
 async function waitForKernel(page) {
     await page.waitForFunction(
-        () => typeof OopisOS_Kernel !== 'undefined' && OopisOS_Kernel.isReady === true,
+        () => typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.isReady === true,
         null, { timeout: BOOT_TIMEOUT_MS });
 }
 
@@ -36,13 +25,10 @@ async function waitForKernel(page) {
     const page = await browser.newPage();
     const consoleErrors = [];
     page.on('pageerror', e => consoleErrors.push(`[pageerror] ${e.message}`));
-    // beep/play at the end of diag.sh need an AudioContext, which headless Chromium
-    // never unlocks (no user gesture); that one console error is expected.
     page.on('console', m => { if (m.type() === 'error' && !m.text().includes('SoundManager not initialized')) consoleErrors.push(m.text()); });
 
     let exitCode = 1;
     try {
-        // 1. Boot and complete onboarding the way OnboardingManager.onFinish does, then reload.
         await page.goto(url);
         await waitForKernel(page);
         const loaded = new Promise(resolve => {
@@ -63,10 +49,9 @@ async function waitForKernel(page) {
         const who = await page.evaluate(() => dependencies.SessionManager.getCurrentUserFromStack());
         console.log(`booted; logged in as ${who}`);
 
-        // 2. Put the script in root's home and become root.
         const vfsPath = '/home/root/' + path.basename(scriptPath);
         await page.evaluate(async ([p, content]) => {
-            const r = JSON.parse(await OopisOS_Kernel.syscall('filesystem', 'write_file', [p, content, { name: 'root', group: 'root' }]));
+            const r = JSON.parse(await FractalOS_Kernel.syscall('filesystem', 'write_file', [p, content, { name: 'root', group: 'root' }]));
             if (r.success === false) throw new Error('write_file failed: ' + JSON.stringify(r));
         }, [vfsPath, script]);
         for (const cmd of [`login root ${USER.rootPassword}`, `chmod 755 ${vfsPath}`, 'cd /home/root', 'whoami']) {
@@ -76,8 +61,6 @@ async function waitForKernel(page) {
         }
         await page.evaluate(() => dependencies.OutputManager.clearOutput());
 
-        // Record every line as it is printed: su/logout restore a user's saved terminal
-        // state, which replaces the output div, so reading the DOM afterwards loses most of it.
         await page.evaluate(() => {
             const om = dependencies.OutputManager;
             const errClass = dependencies.Config.CSS_CLASSES.ERROR_MSG;
@@ -90,7 +73,6 @@ async function waitForKernel(page) {
             };
         });
 
-        // 3. Run it. execute_script awaits every line, so this returns when the script is done.
         const started = Date.now();
         const runResult = await Promise.race([
             page.evaluate(async p => await CommandExecutor.processSingleCommand(`run ${p}`, { isInteractive: false }), vfsPath),
@@ -99,7 +81,6 @@ async function waitForKernel(page) {
         const seconds = ((Date.now() - started) / 1000).toFixed(0);
         console.log(`run finished in ${seconds}s -> ${JSON.stringify(runResult).slice(0, 200)}`);
 
-        // 4. Grade the transcript.
         const { text, errorLines } = await page.evaluate(() => ({
             text: window.__diagLog.map(e => e.text).join('\n'),
             errorLines: window.__diagLog.filter(e => e.isError).map(e => e.text),
@@ -111,10 +92,8 @@ async function waitForKernel(page) {
         const lines = text.split('\n');
         const failures = lines.filter(l => l.includes('CHECK_FAIL: FAILURE'));
         const successes = lines.filter(l => l.includes('CHECK_FAIL: SUCCESS'));
-        // Lines starting with check_fail in the file are a floor: the script also writes
-        // child scripts that contain their own check_fail calls (38 in the file, 40 run).
         const expectedChecks = (script.match(/^\s*check_fail\b/gm) || []).length;
-        const finished = /ALL SYSTEMS OPERATIONAL/.test(text); // the closing banner's last line
+        const finished = /ALL SYSTEMS OPERATIONAL/.test(text);
 
         console.log(`\ncheck_fail: ${successes.length} passed, ${failures.length} failed, ${expectedChecks} at top level in the script`);
         console.log(`script reached its completion banner: ${finished}`);
@@ -136,7 +115,8 @@ async function waitForKernel(page) {
             fs.mkdirSync(OUT_DIR, { recursive: true });
             fs.writeFileSync(path.join(OUT_DIR, 'diag-transcript.txt'),
                 await page.evaluate(() => (window.__diagLog || []).map(e => e.text).join('\n')));
-        } catch (_) { /* nothing to save */ }
+        } catch (_) {
+        }
     } finally {
         await browser.close();
     }

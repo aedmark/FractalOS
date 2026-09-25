@@ -1,5 +1,3 @@
-# gem/core/bone_driver.py
-
 import shlex
 
 class BoneDriver:
@@ -77,7 +75,7 @@ For example, if asked to write and run hello.py in the home directory:
             return 0.0
         name = parts[0]
         if name in {"rm", "rmdir", "clearfs"}:
-            return 20.0  # All spellings of deletion require an explicit override.
+            return 20.0
         if name == "story":
             return 20.0 if len(parts) > 1 and parts[1] == "rewind" else 0.1
         if name in {"mkdir", "touch", "cp", "mv", "edit", "write", "forge"}:
@@ -88,7 +86,7 @@ For example, if asked to write and run hello.py in the home directory:
             return 0.0
         if name in BoneDriver.READ_COMMANDS:
             return 0.1
-        return 20.0  # Unknown operations must never look harmless.
+        return 20.0
 
     @staticmethod
     def needs_checkpoint(commands):

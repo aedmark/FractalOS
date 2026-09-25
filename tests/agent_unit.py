@@ -140,7 +140,6 @@ class AgentTests(unittest.TestCase):
     def test_forge_nested_python_escape_survives(self):
         import shlex
         command = r'''forge nested.py 'print("first\\nsecond")\nprint("done")' '''
-        # Use actual shell syntax, not an already-decoded argument.
         source = decode_content(shlex.split(command)[2])
         compile(source, 'nested.py', 'exec')
         self.assertEqual(source, 'print("first\\nsecond")\nprint("done")')

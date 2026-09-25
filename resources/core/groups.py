@@ -1,5 +1,3 @@
-# gem/core/groups.py
-
 class GroupManager:
     """Manages user groups and their memberships."""
     def __init__(self):
@@ -20,9 +18,7 @@ class GroupManager:
 
     def load_groups(self, groups_dict):
         """Loads groups from a dictionary, typically from storage."""
-        # [MODIFIED] Convert the incoming JsProxy to a native Python dictionary
         self.groups = groups_dict.to_py() if hasattr(groups_dict, 'to_py') else groups_dict
-        # Ensure default groups are present after loading
         if "root" not in self.groups:
             self.groups["root"] = {"members": ["root"]}
         if "Guest" not in self.groups:
@@ -62,5 +58,5 @@ class GroupManager:
                 changed = True
         return changed
 
-# Instantiate a singleton that will be exposed to JavaScript
+
 group_manager = GroupManager()

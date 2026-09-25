@@ -1,5 +1,3 @@
-# gem/core/commands/usermod.py
-
 from users import user_manager
 from groups import group_manager
 

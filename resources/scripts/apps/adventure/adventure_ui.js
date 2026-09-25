@@ -1,5 +1,3 @@
-// scripts/apps/adventure/adventure_ui.js
-
 window.TextAdventureModal = class TextAdventureModal {
   constructor(callbacks, dependencies, scriptingContext) {
     this.elements = {};
@@ -90,11 +88,6 @@ window.TextAdventureModal = class TextAdventureModal {
     }
   }
 
-  /**
-   * Request input from the player
-   * @param {string} _prompt - Input prompt (unused)
-   * @returns {Promise<string>} Promise resolving to player input
-   */
   requestInput(_prompt) {
     return new Promise((resolve) => {
       if (this.callbacks.onScriptedInput) {

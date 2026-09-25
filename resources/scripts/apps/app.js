@@ -1,5 +1,3 @@
-// scripts/apps/app.js
-
 window.App = class App {
   constructor() {
     if (this.constructor === App) {
@@ -20,7 +18,6 @@ window.App = class App {
   }
 
   handleKeyDown(event) {
-    // Default implementation provides a universal exit hatch.
     if (event.key === "Escape") {
       this.exit();
     }

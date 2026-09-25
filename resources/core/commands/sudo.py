@@ -1,4 +1,3 @@
-# gem/core/commands/sudo.py
 from sudo import sudo_manager
 from audit import audit_manager
 import shlex

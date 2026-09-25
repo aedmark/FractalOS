@@ -1,5 +1,3 @@
-# gem/core/commands/storyboard.py
-
 import os
 from filesystem import fs_manager
 
@@ -100,7 +98,6 @@ async def run(args, flags, user_context, stdin_data=None, ai_manager=None, api_k
             "content": result.get("data")
         }
     else:
-        # Propagate the already-formatted error from the AI Manager
         return result
 
 def man(args, flags, user_context, **kwargs):

@@ -27,7 +27,7 @@ window.EditorUI = class EditorUI {
             className: "editor-title-input",
             type: "text",
             value: initialState.currentFilePath || "Untitled",
-            readOnly: initialState.isReadOnly, // Make title read-only
+            readOnly: initialState.isReadOnly,
         });
 
         this.elements.saveBtn = UIComponents.createButton({ icon: "💾", text: "Save", onClick: () => this.managerCallbacks.onSaveRequest() });
@@ -37,7 +37,6 @@ window.EditorUI = class EditorUI {
         this.elements.redoBtn = UIComponents.createButton({ icon: "↪", text: "Redo", onClick: () => this.managerCallbacks.onRedo() });
         this.elements.wordWrapBtn = UIComponents.createButton({ text: "Wrap", onClick: () => this.managerCallbacks.onWordWrapToggle() });
 
-        // Hide buttons that don't apply in read-only mode
         if (initialState.isReadOnly) {
             this.elements.saveBtn.style.display = 'none';
             this.elements.undoBtn.style.display = 'none';

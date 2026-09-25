@@ -1,5 +1,3 @@
-# gem/core/ai_manager.py
-
 import json
 import re
 import shlex
@@ -17,15 +15,15 @@ class AIManager:
         self.fs_manager = fs_manager
         self.command_executor = command_executor
 
-        # This dictionary is now the single source of truth for provider info.
         self.provider_config = {
             "gemini": {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent", "defaultModel": "gemini-1.5-flash"},
-            "ollama": {"url": "http://localhost:11434/api/generate", "defaultModel": "gemma3:latest"}
+            "ollama": {"url": "http://localhost:11434/api/generate", "defaultModel": "gemma3:latest"},
+            "llamacpp": {"url": "http://localhost:8080/v1/chat/completions", "defaultModel": "Ternary-Bonsai"}
         }
 
         self.CHAT_SYSTEM_PROMPT = "You are a helpful assistant in the FractalOS environment. Be friendly and concise. Format your responses in Markdown."
         self.REMIX_SYSTEM_PROMPT = "You are an expert document synthesist. Your task is to generate a new, cohesive article in Markdown format that blends the key ideas from two source documents. Respond ONLY with the raw Markdown content for the new article. Do not include explanations or surrounding text."
-        self.PLANNER_SYSTEM_PROMPT = """You are a command-line Agent for OopisOS. Your goal is to formulate a plan of simple, sequential OopisOS commands to fulfill the user's request or gather information to answer it.
+        self.PLANNER_SYSTEM_PROMPT = """You are a command-line Agent for FractalOS. Your goal is to formulate a plan of simple, sequential FractalOS commands to fulfill the user's request or gather information to answer it.
 
 **Core Directives:**
 1.  **Analyze the Request:** Carefully consider the user's prompt and the provided system context (current directory, files, etc.).
@@ -65,8 +63,6 @@ Always use absolute paths for all file and directory arguments to prevent contex
         ]
         self.PLANNER_SYSTEM_PROMPT = self.PLANNER_SYSTEM_PROMPT.replace(
             "{tool_manifest}", ", ".join(self.COMMAND_WHITELIST))
-        # In agent mode these are run only after the user confirms. `python` is
-        # here because a script can write anything a script can write (D-013).
         self.DANGEROUS_COMMANDS = [
             "rm", "mv", "chown", "chgrp", "useradd", "usermod",
             "passwd", "forge", "patch", "reset", "clearfs", "python"
@@ -98,8 +94,6 @@ Always use absolute paths for all file and directory arguments to prevent contex
             parts = shlex.split(command)
             if not parts or parts[0] not in self.COMMAND_WHITELIST:
                 return f"non-whitelisted command: {parts[0] if parts else '(empty)'}"
-            # The shell substitutes even inside quoted text; disallow substitutions
-            # and operators rather than auditing only the first command of a pipeline.
             operators = {"|", "&&", "&", ">", ">>", "<"}
             if "$" in command or any(p in operators for p in parts) or ("||" in parts and parts[-2:] != ["||", "true"]):
                 return "use literal paths and one command per line, without shell operators"
@@ -152,7 +146,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
         for raw in text.splitlines():
             line = raw.strip()
             if not line:
-                continue  # Blank lines do not end a numbered plan.
+                continue
             if line.startswith("```"):
                 if current:
                     candidates.append(current)
@@ -172,7 +166,6 @@ Always use absolute paths for all file and directory arguments to prevent contex
             elif bullet:
                 line = bullet[1].strip()
             elif not fenced:
-                # Bare command lists are accepted, ordinary prose is not.
                 first = line.split(maxsplit=1)[0] if line else ""
                 if first not in self.COMMAND_WHITELIST:
                     if current:
@@ -182,15 +175,12 @@ Always use absolute paths for all file and directory arguments to prevent contex
                     continue
             if not line:
                 continue
-            # Only strip a whole inline-code wrapper; preserve backticks in arguments.
             wrapped = re.fullmatch(r"`([^`]+)`(?:\s+[-:]\s+.*)?", line)
             if wrapped:
                 line = wrapped[1]
             current.append(line)
         if current:
             candidates.append(current)
-        # The final explicit list wins even if every command in it is invalid.
-        # Validation must reject it instead of silently running an earlier list.
         return candidates[-1] if candidates else []
 
     def _get_ai_config(self):
@@ -204,7 +194,6 @@ Always use absolute paths for all file and directory arguments to prevent contex
                     "model": config_data.get("model")
                 }
             except json.JSONDecodeError:
-                # Silently fail and use defaults if the file is corrupt
                 pass
         return {"provider": None, "model": None}
 
@@ -216,13 +205,10 @@ Always use absolute paths for all file and directory arguments to prevent contex
         ai_conf = self._get_ai_config()
         warning_message = None
 
-        # Determine the source of the provider setting for better warnings
         provider_source = "flag" if provider_flag else "config file" if ai_conf.get("provider") else "system default"
 
-        # Priority: Flag -> Config File -> Hardcoded Default
         resolved_provider = provider_flag or ai_conf.get("provider") or "ollama"
 
-        # Validate the resolved provider
         if resolved_provider not in self.provider_config:
             warning_message = (
                 f"AI WARNING: Provider '{resolved_provider}' from {provider_source} is invalid. "
@@ -232,20 +218,14 @@ Always use absolute paths for all file and directory arguments to prevent contex
         else:
             final_provider = resolved_provider
 
-        # Determine the model
         if provider_flag and not model_flag:
-            # If provider is from a flag, ignore config model and use provider's default
             final_model = None
         else:
-            # Priority: Flag -> Config File -> Provider's Default
             final_model = model_flag or ai_conf.get("model")
 
         return final_provider, final_model, warning_message
 
     async def _get_terminal_context(self):
-        # The nested execute() calls load a fresh context, and a context with no
-        # current_path resets the kernel's cwd to "/". Pass the real one through,
-        # or every plan is sensed from, and driven from, the root directory (D-014).
         context = json.dumps({"user_context": self.command_executor.user_context,
                               "current_path": self.fs_manager.current_path})
         pwd_result_json = await self.command_executor.execute("pwd", context)
@@ -257,7 +237,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
         pwd_output = pwd_result.get("output", "(unknown)")
         ls_output = ls_result.get("output", "(empty)")
 
-        return f"## OopisOS Session Context ##\nCurrent Directory:\n{pwd_output}\n\nDirectory Listing:\n{ls_output}"
+        return f"## FractalOS Session Context ##\nCurrent Directory:\n{pwd_output}\n\nDirectory Listing:\n{ls_output}"
 
     def _checkpoint_home(self):
         """Create a real pre-write story chapter; abort the plan if it cannot be saved.
@@ -289,24 +269,18 @@ Always use absolute paths for all file and directory arguments to prevent contex
         BONEAMANITA AUTOPILOT PROTOCOL.
         Executes tasks using the BoneDriver persona and Safety Interlocks.
         """
-        # 1. RESOLVE ENGINE (Provider/Model)
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
-        
-        # 2. SUMMON THE DRIVER (System Prompt)
-        # We assume command_executor has the current user_context populated from the request
+
         driver_prompt = BoneDriver.get_system_prompt(self.command_executor.user_context)
-        
-        # 3. SENSE THE ROAD (Context)
+
         road_conditions = await self._get_terminal_context()
         full_prompt = f"{driver_prompt}\n\nCURRENT ROAD CONDITIONS:\n{road_conditions}\n\nUSER REQUEST: {prompt}"
-        
-        # 4. CALCULATE TRAJECTORY (The Plan)
-        # We treat this as a single-turn instruction for now to ensure strict adherence to the plan format
+
         conversation = [{"role": "user", "parts": [{"text": full_prompt}]}]
         plan_result = await self._call_llm_api(final_provider, final_model, conversation, options.get("apiKey"))
 
         if not plan_result["success"]:
-            return plan_result # Return error if API failed
+            return plan_result
 
         plan_text = plan_result.get("answer", "").strip()
         
@@ -315,14 +289,11 @@ Always use absolute paths for all file and directory arguments to prevent contex
         if refusal:
             return {"success": False, "error": f"Execution HALTED: {refusal}."}
 
-        # 5. THE SAFETY INTERLOCK (Voltage Check)
         voltage = BoneDriver.audit_plan_voltage(commands_to_execute)
         safety_status = BoneDriver.get_safety_report(voltage)
-        
-        # LOG THE SENSATION
+
         print(f"[BONE] Plan Voltage: {voltage} | Status: {safety_status}")
-        
-        # --force overrides this risk threshold only, never command validation.
+
         if voltage >= 20.0 and not options.get("force_override", False):
             return {
                 "success": False, 
@@ -339,10 +310,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
                 return {"success": False, "error": f"Checkpoint failed; no plan steps ran: {checkpoint.get('error')}"}
             execution_log = f"Home checkpoint saved: {checkpoint['snapshot_id']}\n"
 
-        # [[[ MEMORY INJECTION START ]]]
-        # We start tracking the path from where the system currently is.
         simulated_current_path = self.fs_manager.current_path
-        # [[[ MEMORY INJECTION END ]]]
 
         for command_str in commands_to_execute:
             exec_result, simulated_current_path = await self._execute_plan_step(command_str, simulated_current_path)
@@ -350,7 +318,6 @@ Always use absolute paths for all file and directory arguments to prevent contex
                 return {"success": False, "error": f"Execution HALTED at {command_str}: {exec_result.get('error')}\nCompleted steps:\n{execution_log}"}
             execution_log += f"► {command_str}\n{exec_result.get('output', '')}\n"
 
-        # 9. REPORT (The Aftermath)
         final_report = f"### 🍄 BONEAMANITA AUTOPILOT REPORT\n**Status:** {safety_status} (Voltage: {voltage})\n\n**Execution Log:**\n```\n{execution_log}\n```"
         
         response = {"success": True, "data": final_report}
@@ -463,7 +430,6 @@ Always use absolute paths for all file and directory arguments to prevent contex
         provider_config = self.provider_config.get(provider)
 
         if not provider_config:
-            # This case is now handled by _resolve_provider_and_model, but kept as a safeguard.
             return {"success": False, "error": f"LLM provider '{provider}' not configured."}
 
         url = provider_config["url"]
@@ -477,6 +443,20 @@ Always use absolute paths for all file and directory arguments to prevent contex
             request_body_dict = {"contents": [turn for turn in conversation if turn["role"] in ["user", "model"]]}
             if system_prompt:
                 request_body_dict["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+        elif provider == "llamacpp":
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            for turn in conversation:
+                content = " ".join([part.get("text", "") for part in turn.get("parts", [])])
+                messages.append({"role": turn["role"] if turn["role"] == "user" else "assistant", "content": content})
+            
+            request_body_dict = {
+                "model": provider_config["defaultModel"],
+                "messages": messages,
+                "temperature": 0.0,
+                "max_tokens": 512
+            }
         elif provider == "ollama":
             ollama_model = model or provider_config["defaultModel"]
             full_prompt = ""
@@ -512,6 +492,8 @@ Always use absolute paths for all file and directory arguments to prevent contex
             answer = None
             if provider == "gemini":
                 answer = response_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text")
+            elif provider == "llamacpp":
+                answer = response_data.get("choices", [{}])[0].get("message", {}).get("content")
             elif provider == "ollama":
                 answer = response_data.get("response")
 

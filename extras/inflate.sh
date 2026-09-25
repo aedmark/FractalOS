@@ -1,4 +1,4 @@
-#!/bin/oopis_shell
+#!/bin/fractal_shell
 
 # inflate.sh - The FractalOS Instant Universe Generator (v5.1)
 # Run this and watch a sterile, empty void blossom into a bustling digital ecosystem.
@@ -93,7 +93,7 @@ echo "/* The main component for rendering UI. Contains the secret 'make_pretty' 
 echo "body { font-family: VT323, monospace; color: #00FF00; background-color: #000000; }" > ./src/styles/theme.css
 echo "Creating evidence of a rival..."
 echo -e "config_option_a=true\nconfig_option_b=999\n# A shared line\nconfig_option_d=hello\n# Hacked by Morpheus" > src/config_v1.hacked
-echo "#!/bin/oopis_shell" > src/fix_me.sh
+echo "#!/bin/fractal_shell" > src/fix_me.sh
 echo "echo 'This script is supposed to list the contents of a directory.'" >> src/fix_me.sh
 echo "TARGET_DIR='/home/Guest/docs'" >> src/fix_me.sh
 echo "cd \$TARGET_DIR" >> src/fix_me.sh
@@ -102,7 +102,7 @@ echo "echo '...but this next part is broken.'" >> src/fix_me.sh
 echo "TARGET_FILE='/home/Guest/README.md'" >> src/fix_me.sh
 chmod 755 src/fix_me.sh
 delay 300
-echo '#!/bin/oopis_shell' > src/backup_docs.sh
+echo '#!/bin/fractal_shell' > src/backup_docs.sh
 echo '# Creates a timestamped zip of the docs directory' >> src/backup_docs.sh
 echo 'TIMESTAMP=\$(date | awk "{print \$2_\$3_\$6}")' >> src/backup_docs.sh
 echo 'FILENAME="docs_backup_\$TIMESTAMP.zip"' >> src/backup_docs.sh
@@ -116,7 +116,7 @@ echo -e "config_option_a=true\nconfig_option_b=123\n# A shared line\nconfig_opti
 echo -e "config_option_a=false\nconfig_option_c=456\n# A shared line\nconfig_option_d=world" > src/config_v2.txt
 echo 'echo "Hello from an executed script! Congratulations!"' > src/hello.sh
 chmod 744 src/hello.sh
-echo '#!/bin/oopis_shell' > src/sys_check.sh
+echo '#!/bin/fractal_shell' > src/sys_check.sh
 echo 'echo "--- System Check Initialized by '\$1' ---"' >> src/sys_check.sh
 echo 'echo "Checking system logs for critical errors..."' >> src/sys_check.sh
 echo 'grep "FATAL" /home/Guest/data/logs/system.log' >> src/sys_check.sh
@@ -185,7 +185,7 @@ echo "This is your portal to the 'real world'. Try not to download any viruses. 
 echo "# The 'wget' command is not available in this version. You can use 'upload' and 'export' to move files." >> ./net_practice/instructions.txt
 
 # --- Gemini AI Command Showcase ---
-echo "# Q2 Financial Report: OopisCorp" > ./reports/financials_q2.txt
+echo "# Q2 Financial Report: fractalCorp" > ./reports/financials_q2.txt
 echo "## Executive Summary" >> ./reports/financials_q2.txt
 echo "Q2 was a period of explosive growth. Revenue is up 150%, mostly from our strategic pivot to selling artisanal, gluten-free rubber ducks. The 'Unicorn Cursor' feature was also a minor success." >> ./reports/financials_q2.txt
 

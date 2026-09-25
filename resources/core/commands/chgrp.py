@@ -1,5 +1,3 @@
-# gem/core/commands/chgrp.py
-
 from filesystem import fs_manager
 
 def define_flags():
@@ -7,7 +5,7 @@ def define_flags():
     return {
         'flags': [
             {'name': 'recursive', 'short': 'r', 'long': 'recursive', 'takes_value': False},
-            {'name': 'recursive', 'short': 'R', 'takes_value': False}, # Alias for recursive
+            {'name': 'recursive', 'short': 'R', 'takes_value': False},
         ],
         'metadata': {}
     }
@@ -38,7 +36,6 @@ def run(args, flags, user_context, stdin_data=None, users=None, user_groups=None
 
     for path in paths:
         try:
-            # Security check is handled within fs_manager.chgrp
             fs_manager.chgrp(path, new_group, recursive=is_recursive)
         except PermissionError as e:
             return {
@@ -65,7 +62,8 @@ def run(args, flags, user_context, stdin_data=None, users=None, user_groups=None
                 }
             }
 
-    return "" # Success
+    return ""
+
 
 def man(args, flags, user_context, **kwargs):
     return """

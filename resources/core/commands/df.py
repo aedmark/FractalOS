@@ -1,5 +1,3 @@
-# gem/core/commands/df.py
-
 from filesystem import fs_manager
 
 def define_flags():
@@ -20,7 +18,6 @@ def _format_bytes(byte_count):
     while byte_count >= power and n < len(power_labels) -1 :
         byte_count /= power
         n += 1
-    # Use f-string formatting for cleaner output
     return f"{byte_count:.1f}{power_labels[n]}".replace(".0", "")
 
 
@@ -53,7 +50,6 @@ def run(args, flags, user_context, config=None, **kwargs):
         used_str = _format_bytes(used_size).rjust(8)
         avail_str = _format_bytes(available_size).rjust(8)
     else:
-        # 1K-blocks
         total_str = str(total_size // 1024).rjust(8)
         used_str = str(used_size // 1024).rjust(8)
         avail_str = str(available_size // 1024).rjust(8)

@@ -1,4 +1,3 @@
-# /core/commands/passwd.py
 from audit import audit_manager
 
 def run(args, flags, user_context, **kwargs):

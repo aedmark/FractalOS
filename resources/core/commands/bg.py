@@ -1,5 +1,3 @@
-# gem/core/commands/bg.py
-
 def run(args, flags, user_context, jobs=None, **kwargs):
     """
     Signals the front end to resume one or more stopped jobs in the background.
@@ -7,7 +5,6 @@ def run(args, flags, user_context, jobs=None, **kwargs):
     job_ids_to_resume = []
 
     if not args:
-        # If no args, find the most recently stopped job
         if not jobs:
             return {"success": False, "error": "bg: no current job"}
         stopped_jobs = [int(jid) for jid, details in jobs.items() if details.get('status') == 'paused']
@@ -15,7 +12,6 @@ def run(args, flags, user_context, jobs=None, **kwargs):
             return {"success": False, "error": "bg: no stopped jobs"}
         job_ids_to_resume.append(max(stopped_jobs))
     else:
-        # Process all provided job IDs, allowing for both %jobid and raw pid
         for job_id_str in args:
             job_id = None
             if job_id_str.startswith('%'):
@@ -25,10 +21,8 @@ def run(args, flags, user_context, jobs=None, **kwargs):
                     return {"success": False, "error": f"bg: invalid job spec: {job_id_str}"}
             else:
                 try:
-                    # Allow raw PIDs just like the 'kill' command
                     job_id = int(job_id_str)
                 except ValueError:
-                    # If it's not a number and doesn't start with %, it's invalid.
                     return {"success": False, "error": f"bg: job not found: {job_id_str}"}
 
             if job_id is not None:
@@ -39,10 +33,9 @@ def run(args, flags, user_context, jobs=None, **kwargs):
         effects.append({
             "effect": "signal_job",
             "job_id": job_id,
-            "signal": "CONT" # Continue signal
+            "signal": "CONT"
         })
 
-    # Return multiple effects if multiple jobs were specified
     if len(effects) == 1:
         return effects[0]
     return {"effects": effects}

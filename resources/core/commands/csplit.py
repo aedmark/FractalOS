@@ -1,5 +1,3 @@
-# gem/core/commands/csplit.py
-
 from filesystem import fs_manager
 
 def define_flags():
@@ -45,7 +43,8 @@ def run(args, flags, user_context, **kwargs):
     file2_name = f"{prefix}01"
     fs_manager.write_file(file2_name, content2, user_context)
 
-    return "" # Success
+    return ""
+
 
 def man(args, flags, user_context, **kwargs):
     return """

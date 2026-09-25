@@ -1,5 +1,3 @@
-# gem/core/commands/groupdel.py
-
 from groups import group_manager
 
 def define_flags():
@@ -32,7 +30,6 @@ def run(args, flags, user_context, users=None, **kwargs):
             }
         }
 
-    # Check if it's a primary group for any user
     if users:
         for user, details in users.items():
             if details.get('primaryGroup') == group_name:
@@ -52,7 +49,6 @@ def run(args, flags, user_context, users=None, **kwargs):
             "groups": group_manager.get_all_groups()
         }
     else:
-        # This case is unlikely if the existence check passed, but we handle it.
         return {
             "success": False,
             "error": {

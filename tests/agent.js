@@ -1,24 +1,3 @@
-#!/usr/bin/env node
-// tests/agent.js: drive the `samwise` agent (autopilot and agent mode) with a real model and record what it did.
-//
-//   cd resources && python3 -m http.server 8000 &
-//   ollama serve &                                   # a real model on http://localhost:11434 ...
-//   python3 tests/fake_ollama.py &                   # ... or the stand-in, to check the plumbing only
-//   AGENT_MODEL=gemma3:1b node tests/agent.js http://127.0.0.1:8000/index.html
-//
-// Boots the OS, completes onboarding as a fresh user, then runs a fixed list of
-// tasks through `samwise --autopilot` and `samwise "<prompt>"`, auto-confirming the
-// "may the agent run this?" modal so nothing blocks. Every LLM call (prompt size,
-// seconds, the raw answer) and every line the terminal printed go into
-// tests/out/agent-transcript.md. Each task is graded on what happened in the file
-// system and executed command outputs (docs/TESTING.md). Verdicts:
-//   PASS / FAIL  a fact about the outcome (the file exists, the directory survived)
-// Exit code 0 = no FAIL. A model is non-deterministic: read the transcript, not just the code.
-//
-// Env: AGENT_MODEL (passed as -m; unset = the provider's default), AGENT_PROVIDER (ollama | gemini,
-// default ollama), GEMINI_API_KEY (stored into the OS before the run when provider is gemini; untested),
-// AGENT_TIMEOUT_MS per task (default 10 min: CPU models are slow and pyfetch has no timeout), CHROME.
-
 'use strict';
 
 const fs = require('fs');
@@ -37,8 +16,6 @@ const engine = `-p ${PROVIDER}${MODEL ? ` -m ${MODEL}` : ''}`;
 const auto = prompt => `samwise --autopilot ${engine} "${prompt}"`;
 const agent = prompt => `samwise ${engine} "${prompt}"`;
 
-// The tasks. Prompts avoid double quotes (they sit inside one shell string) and name
-// the files they should produce so the outcome can be checked without reading prose.
 const TASKS = [
     {
         id: 'A1', title: 'autopilot creates a directory and a file',
@@ -123,7 +100,6 @@ const TASKS = [
     },
 ];
 
-// Provider failures cannot establish whether the delete brake worked.
 async function gradeTask(task, ctx) {
     const failedCall = ctx.llm.find(c => !c.success || typeof c.answer !== 'string' || !c.answer.trim());
     if (!ctx.llm.length || failedCall) {
@@ -137,7 +113,7 @@ const stripHtml = s => s.replace(/<[^>]+>/g, '').replace(/&gt;/g, '>').replace(/
 
 async function waitForKernel(page) {
     await page.waitForFunction(
-        () => typeof OopisOS_Kernel !== 'undefined' && OopisOS_Kernel.isReady === true,
+        () => typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.isReady === true,
         null, { timeout: BOOT_TIMEOUT_MS });
 }
 
@@ -156,7 +132,6 @@ async function main() {
     let exitCode = 1;
     let fails = 0;
     try {
-        // 1. Boot, onboard, reload (same as tests/diag.js).
         const t0 = Date.now();
         await page.goto(url);
         await waitForKernel(page);
@@ -185,7 +160,6 @@ async function main() {
             await page.evaluate(k => dependencies.StorageManager.saveItem(dependencies.Config.STORAGE_KEYS.GEMINI_API_KEY, k, 'Gemini API Key'), process.env.GEMINI_API_KEY);
         }
 
-        // 2. Hooks: record printed lines, auto-confirm the agent's modal, log every LLM call from inside Python.
         await page.evaluate(() => {
             const { OutputManager, ModalManager, Config } = dependencies;
             const errClass = Config.CSS_CLASSES.ERROR_MSG;
@@ -207,7 +181,7 @@ async function main() {
                 return request(options);
             };
         });
-        await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync(`
+        await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync(`
 import time, kernel, json
 am = kernel.ai_manager
 _orig_call = am._call_llm_api
@@ -232,7 +206,7 @@ am._call_llm_api = _logged_call
 `));
 
         const run = async cmd => {
-            await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync('exec_log.clear()'));
+            await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('exec_log.clear()'));
             const mark = await page.evaluate(() => ({ log: window.__log.length, confirms: window.__confirms.length }));
             const result = await Promise.race([
                 page.evaluate(async c => {
@@ -246,8 +220,8 @@ am._call_llm_api = _logged_call
                 lines: window.__log.slice(m.log),
                 confirms: window.__confirms.slice(m.confirms),
             }), mark);
-            const llm = JSON.parse(await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync('import json; _l = list(llm_log); llm_log.clear(); json.dumps(_l)')));
-            const executed = JSON.parse(await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync('json.dumps(exec_log)')));
+            const llm = JSON.parse(await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('import json; _l = list(llm_log); llm_log.clear(); json.dumps(_l)')));
+            const executed = JSON.parse(await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('json.dumps(exec_log)')));
             return { result, lines: after.lines, confirms: after.confirms, llm, executed };
         };
         const readFile = async p => {
@@ -256,11 +230,9 @@ am._call_llm_api = _logged_call
             return r.success ? String(r.output ?? '') : null;
         };
 
-        // 3. The tasks.
         for (const task of TASKS) {
             const setup = [...(task.setup || [])];
             if (task.deleteTask) {
-                // Each delete attempt gets its own checked fixture, independent of A1 or C1.
                 setup.push(`cd ${HOME}`, `mkdir -p ${HOME}/garden`,
                     `echo delete-probe > ${HOME}/garden/delete-probe.txt`);
             }
@@ -313,7 +285,8 @@ am._call_llm_api = _logged_call
         exitCode = fails ? 1 : 0;
     } catch (e) {
         console.error(`aborted: ${e.message}`);
-        try { fs.mkdirSync(OUT_DIR, { recursive: true }); fs.writeFileSync(path.join(OUT_DIR, 'agent-transcript.md'), md.join('\n') + `\n\naborted: ${e.message}\n`); } catch (_) { /* nothing to save */ }
+        try { fs.mkdirSync(OUT_DIR, { recursive: true }); fs.writeFileSync(path.join(OUT_DIR, 'agent-transcript.md'), md.join('\n') + `\n\naborted: ${e.message}\n`); } catch (_) {
+        }
     } finally {
         await browser.close();
     }

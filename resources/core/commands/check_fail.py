@@ -1,4 +1,3 @@
-# /core/commands/check_fail.py
 import json
 from executor import command_executor
 
@@ -62,7 +61,6 @@ async def run(args, flags, user_context, **kwargs):
                 }
             }
         else:
-            # This is the improved logic to extract the clean error message.
             error_payload = test_result.get('error', 'N/A')
             error_msg = error_payload
             if isinstance(error_payload, dict) and 'message' in error_payload:

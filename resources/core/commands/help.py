@@ -1,5 +1,3 @@
-# gem/core/commands/help.py
-
 from importlib import import_module
 
 def run(args, flags, user_context, stdin_data=None, commands=None, **kwargs):

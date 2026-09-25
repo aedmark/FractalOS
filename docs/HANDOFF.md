@@ -25,7 +25,7 @@ _Last updated: 2026-09-25, session 10 (P2-08 Agentic Search Continuation impleme
 - D-014's cwd-context and confirm-effect fixes remain covered by smoke. The original stand-in run was 7/7;
   the stand-in was not rerun this session because real Ollama owns port 11434.
 - P1-08 / D-010: generated Python manifest and ordered JS/CSS asset lists pass structure checks.
-  D-012's JS-null normalization remains covered. Internal OopisOS names remain unchanged (D-009).
+  D-012's JS-null normalization remains covered.
 - Repo is on `main`; prior rewritten history / 9.1 MB fresh-clone result remains as recorded in session 4.
 
 **Real-model reruns (P2-01 still in progress)**
@@ -72,11 +72,9 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
   abandoning subsequent plan steps and synthesis. P2-12: worked example draws sum.py into Project/.
 - P2-13: forge's newline expansion corrupts nested Python string escapes (new evidence from gemma A1).
 - No Gemini key was used. UI apps, audio, portable/Neutralino mode, Firefox and Safari remain unverified.
-- P1-07: neutralinojs.log is still tracked. AGENTS.md is now tracked; it was left untouched.
+  - P1-07: neutralinojs.log is still tracked. AGENTS.md is now tracked; it was left untouched.
 
 **Gotchas for the next session**
-- **Two names.** The code says OopisOS (`OopisOS_Kernel`, `oopisOs*` keys, `oopisos-network`); the product is
-  FractalOS. Do not rename either (D-009).
 - **`cd` is an effect and applies after the line.** `cd x && cmd` runs `cmd` in the old directory. One
   command per line in tests.
 - **Raw JS values can be `jsnull`.** Only stdin crosses raw today and is normalised (D-012). P1-12 audits the
@@ -84,7 +82,7 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
 - **Registration lists.** A new JS file must be in `resources/scripts/asset_manifest.js` (hand-ordered); a new
   Python file needs `python3 tools/gen_manifest.py`. `node tests/structure.js` catches both omissions (D-010).
   `core/manifest.json` is generated: never hand-edit it, and resolve a merge conflict in it by regenerating.
-- **`OopisOS_Kernel` is not on `window`.** Top-level `const`. Bare names in `page.evaluate`.
+- **`FractalOS_Kernel` is not on `window`.** Top-level `const`. Bare names in `page.evaluate`.
 - **`loadPackage(["ssl"])` throws on Pyodide 314.** `ssl` and `hashlib` are in the core now; only
   `cryptography` is loaded. `ssl` is a stub (`OPENSSL_VERSION` = "OpenSSL (stub)"); HTTPS goes through the
   browser's fetch, so nothing depends on it.
@@ -317,7 +315,7 @@ CONTRIBUTING pointed at the new docs; CHANGELOG entry for the Pyodide change.
   would have thrown. Found by reading the lock file before touching the code.
 - Pyodide's version scheme changed: npm `latest` is `314.0.7` (2026-09-14) and `0.29.5` (2026-09-16) is the
   *older* Python 3.13 line. Easy to pick the wrong "newest".
-- First smoke run reported the kernel never ready: `window.OopisOS_Kernel` is undefined because it is a
+- First smoke run reported the kernel never ready: `window.FractalOS_Kernel` is undefined because it is a
   top-level `const`. Bare name fixed it. Recorded in TESTING.md.
 - A `pkill -f` pattern matched the session's own shell and killed it mid-command; nothing was lost because the
   commit had not started. Recorded in TESTING.md.

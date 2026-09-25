@@ -18,7 +18,7 @@ window.LogManager = class LogManager extends App {
         this.container = this.ui.getContainer();
         appLayer.appendChild(this.container);
 
-        const ensureResult = JSON.parse(await OopisOS_Kernel.syscall("log", "ensure_log_dir", [await this._getContext()]));
+        const ensureResult = JSON.parse(await FractalOS_Kernel.syscall("log", "ensure_log_dir", [await this._getContext()]));
         if (!ensureResult.success) {
             this.dependencies.OutputManager.appendToOutput(`Log App Error: ${ensureResult.error}`, { typeClass: 'text-error' });
             this.exit();
@@ -138,7 +138,7 @@ window.LogManager = class LogManager extends App {
             onSave: async () => {
                 if (!this.state.selectedPath || !this.state.isDirty) return;
                 const newContent = this.ui.getContent();
-                const resultJson = await OopisOS_Kernel.syscall("log", "save_entry", [this.state.selectedPath, newContent, await this._getContext()]);
+                const resultJson = await FractalOS_Kernel.syscall("log", "save_entry", [this.state.selectedPath, newContent, await this._getContext()]);
                 const result = JSON.parse(resultJson);
 
                 if (result.success) {
@@ -163,7 +163,7 @@ window.LogManager = class LogManager extends App {
     }
 
     async _loadEntries() {
-        const resultJson = await OopisOS_Kernel.syscall("log", "load_entries", [await this._getContext()]);
+        const resultJson = await FractalOS_Kernel.syscall("log", "load_entries", [await this._getContext()]);
         const result = JSON.parse(resultJson);
         if (result.success) {
             this.state.allEntries = result.data;

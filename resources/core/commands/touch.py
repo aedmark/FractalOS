@@ -1,5 +1,3 @@
-# gemini/core/commands/touch.py
-
 from filesystem import fs_manager
 from datetime import datetime
 from time_utils import time_utils
@@ -40,7 +38,6 @@ def run(args, flags, user_context, **kwargs):
                 new_node = fs_manager.get_node(path)
                 if new_node: new_node['mtime'] = mtime_iso
         except IsADirectoryError:
-            # Touching a directory should just update its timestamp without error.
             node['mtime'] = mtime_iso
         except Exception as e:
             return {"success": False, "error": f"touch: an unexpected error occurred with '{path}': {repr(e)}"}

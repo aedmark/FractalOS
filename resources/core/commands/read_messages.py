@@ -1,5 +1,3 @@
-# gem/core/commands/read_messages.py
-
 def run(args, flags, user_context, **kwargs):
     """ Returns an effect to read messages for a specific job. """
     if len(args) != 1:

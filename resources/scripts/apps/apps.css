@@ -1,5 +1,3 @@
-/* Apps.js Style Sheet */
-
 .app-container {
     display: flex;
     flex-direction: column;
@@ -13,7 +11,7 @@
     height: 95%;
     max-height: 95%;
     max-width: 1200px;
-    margin: auto; /* This ensures it's centered in the flex container */
+    margin: auto;
 }
 
 .app-header {

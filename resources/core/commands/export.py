@@ -1,5 +1,3 @@
-# gem/core/commands/export.py
-
 from filesystem import fs_manager
 import os
 

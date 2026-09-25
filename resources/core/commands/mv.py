@@ -1,5 +1,3 @@
-# /core/commands/mv.py
-
 from filesystem import fs_manager
 import os
 

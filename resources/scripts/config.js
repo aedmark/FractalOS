@@ -1,5 +1,3 @@
-// scripts/config.js
-
 class ConfigManager {
     constructor() {
         this.dependencies = {};
@@ -23,7 +21,7 @@ class ConfigManager {
             },
 
             NETWORKING: {
-                NETWORKING_ENABLED: false, // The new master switch!
+                NETWORKING_ENABLED: false,
                 SIGNALING_SERVER_URL: 'ws://localhost:8080',
             },
 
@@ -48,15 +46,15 @@ class ConfigManager {
             },
 
             STORAGE_KEYS: {
-                ONBOARDING_COMPLETE: "oopisOsOnboardingComplete",
-                USER_CREDENTIALS: "oopisOsUserCredentials",
-                USER_TERMINAL_STATE_PREFIX: "oopisOsUserTerminalState_",
-                MANUAL_TERMINAL_STATE_PREFIX: "oopisOsManualUserTerminalState_",
-                EDITOR_WORD_WRAP_ENABLED: "oopisOsEditorWordWrapEnabled",
-                ALIAS_DEFINITIONS: "oopisOsAliasDefinitions",
-                GEMINI_API_KEY: "oopisGeminiApiKey",
-                USER_GROUPS: "oopisOsUserGroups",
-                LAST_CREATED_USER: "oopisOsLastCreatedUser",
+                ONBOARDING_COMPLETE: "FractalOSOnboardingComplete",
+                USER_CREDENTIALS: "FractalOSUserCredentials",
+                USER_TERMINAL_STATE_PREFIX: "FractalOSUserTerminalState_",
+                MANUAL_TERMINAL_STATE_PREFIX: "FractalOSManualUserTerminalState_",
+                EDITOR_WORD_WRAP_ENABLED: "FractalOSEditorWordWrapEnabled",
+                ALIAS_DEFINITIONS: "FractalOSAliasDefinitions",
+                GEMINI_API_KEY: "FractalGeminiApiKey",
+                USER_GROUPS: "FractalOSUserGroups",
+                LAST_CREATED_USER: "FractalOSLastCreatedUser",
             },
 
             FILESYSTEM: {

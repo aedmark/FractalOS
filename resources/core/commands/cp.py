@@ -1,5 +1,3 @@
-# /core/commands/cp.py
-
 import os
 from filesystem import fs_manager
 from datetime import datetime
@@ -10,7 +8,7 @@ def define_flags():
     return {
         'flags': [
             {'name': 'recursive', 'short': 'r', 'long': 'recursive', 'takes_value': False},
-            {'name': 'recursive', 'short': 'R', 'takes_value': False}, # Alias for recursive
+            {'name': 'recursive', 'short': 'R', 'takes_value': False},
             {'name': 'preserve', 'short': 'p', 'long': 'preserve', 'takes_value': False},
             {'name': 'interactive', 'short': 'i', 'long': 'interactive', 'takes_value': False},
             {'name': 'force', 'short': 'f', 'long': 'force', 'takes_value': False},
@@ -24,7 +22,6 @@ def _copy_node_recursive(source_node, dest_parent_node, new_name, user_context, 
     """Recursively copies a node. A deep copy is made to prevent reference issues."""
     now_iso = datetime.utcnow().isoformat() + "Z"
 
-    # Deep copy the node to avoid modifying the original
     new_node = {k: v for k, v in source_node.items()}
     new_node['mtime'] = now_iso
 
@@ -99,9 +96,8 @@ def run(args, flags, user_context, **kwargs):
                 new_name = os.path.basename(dest_path_arg)
 
             if not dest_parent_node or dest_parent_node.get('type') != 'directory':
-                # If the parent directory doesn't exist, we create it.
                 fs_manager.create_directory(dest_parent_path, user_context)
-                dest_parent_node = fs_manager.get_node(dest_parent_path) # Re-fetch after creation
+                dest_parent_node = fs_manager.get_node(dest_parent_path)
                 if not dest_parent_node:
                     return {"success": False, "error": {"message": f"cp: cannot create directory for '{dest_path_arg}'", "suggestion": "Check permissions for the parent directory."}}
 

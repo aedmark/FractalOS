@@ -1,5 +1,3 @@
-# /core/commands/nl.py
-
 from filesystem import fs_manager
 
 def run(args, flags, user_context, stdin_data=None, **kwargs):
@@ -22,7 +20,7 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
                 continue
             lines.extend(node.get('content', '').splitlines())
     else:
-        return "" # No input, no output
+        return ""
 
     if has_errors and not lines:
         return {

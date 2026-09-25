@@ -1,5 +1,3 @@
-# gem/core/commands/expr.py
-
 import re
 import operator
 
@@ -12,13 +10,10 @@ def run(args, flags, user_context, **kwargs):
                 "suggestion": "Try 'expr 1 + 1'."
             }
         }
-    # Join all arguments into a single string to handle cases like '2000', '+', '25'
     expression = " ".join(args)
 
-    # Tokenize the expression into numbers and operators
     tokens = re.findall(r'(\d+\.?\d*|\+|\-|\*|\/|\%|\(|\))', expression)
 
-    # Basic validation to catch unsupported characters
     if "".join(tokens).replace(" ", "") != expression.replace(" ", ""):
         return {"success": False, "error": {"message": "expr: syntax error", "suggestion": "The expression contains unsupported characters."}}
 

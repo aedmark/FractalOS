@@ -1,16 +1,3 @@
-# /core/commands/python.py
-#
-# Run real Python inside FractalOS. The kernel already *is* CPython (under
-# Pyodide), so a script runs in the same interpreter as the OS, with:
-#   - stdout and stderr captured and returned as command output,
-#   - open() and input() rewired to the FractalOS virtual file system and to
-#     the command's stdin pipe (see D-011),
-#   - a step budget so a runaway loop cannot freeze the page (the kernel runs
-#     on the browser's main thread; nothing can interrupt it otherwise).
-#
-# It is not a sandbox. A script has the same trust as any other shell command:
-# it can import kernel modules from /core and break things on purpose.
-
 import builtins
 import contextlib
 import io
@@ -20,7 +7,7 @@ import traceback
 
 from filesystem import fs_manager
 
-DEFAULT_STEP_BUDGET = 2_000_000   # line events; --steps 0 disables the budget
+DEFAULT_STEP_BUDGET = 2_000_000
 SCRIPT_FILENAME = "<python>"
 
 
@@ -89,8 +76,6 @@ class _VfsTextFile(io.StringIO):
             super().close()
 
     def __del__(self):
-        # CPython refcounting closes a dropped file object at once, so
-        # open(p, 'w').write(s) without close() still lands in the VFS.
         try:
             self.close()
         except Exception:
@@ -179,7 +164,6 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
     code_flag = flags.get('code')
     steps_flag = flags.get('steps')
 
-    # --- What to run ---
     if code_flag is not None:
         source, filename, argv = str(code_flag), "<-c>", ["-c"] + list(args)
     elif args and args[0] != '-':
@@ -215,7 +199,6 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
         return _fail("".join(traceback.format_exception_only(type(e), e)).rstrip(),
                      "That's not Python. Well, not yet.")
 
-    # --- The script's world ---
     out = io.StringIO()
     stdin_text = "" if stdin_data is None or filename == "<stdin>" else str(stdin_data)
     script_builtins = dict(builtins.__dict__)
@@ -252,7 +235,7 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
     except StepBudgetExceeded as e:
         error = (f"python: stopped after {e.args[0]:,} steps. That looks like a loop that never ends.",
                  "If it really needs more, run it with --steps N (or --steps 0 for no limit) and good luck.")
-    except BaseException as e:  # noqa: BLE001 - anything the script raised is the script's problem, reported, not ours
+    except BaseException as e:
         error = (_format_user_traceback(e).rstrip(), "The traceback above is from your script.")
     finally:
         sys.argv, sys.stdin = saved_argv, saved_stdin

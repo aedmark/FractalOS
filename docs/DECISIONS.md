@@ -23,7 +23,7 @@ Pyodide ("after a successful and system-wide migration", README). The JS side st
 system, users and groups.
 **Decision:** The Python kernel (`resources/core/`) owns the file system tree, accounts, groups, permissions,
 the shell and every command. JS (`resources/scripts/`) owns the DOM, audio, storage APIs and the browser, keeps a
-read-mostly copy of the VFS for the UI, and reaches Python only through `OopisOS_Kernel.syscall` /
+read-mostly copy of the VFS for the UI, and reaches Python only through `FractakOS_Kernel.syscall` /
 `execute_command` (`kernel.syscall_handler`, one entry point).
 **Consequences:** Every command is a Python module. Any state JS needs (aliases, history, users, cwd) is pushed
 into Python before a command runs (`createKernelContext`) and the VFS is pulled back after. The kernel cannot
@@ -86,7 +86,7 @@ to come back (a Neutralino binary, a big wheel), use Git LFS or a release asset,
 settings such as credentials, aliases, onboarding flag, API key).
 **Decision:** `StorageHAL` picks a backend at boot: `IndexedDBManager` (database `FractalOS` v5, store
 `FileSystemsStore`, key `FractalOS_SharedFS`) in a browser; `NeutralinoFSManager` writing JSON under `data/`
-when `window.NL_PORT` is set. Session keys stay in `localStorage` under their original `oopisOs*` names; in
+when `window.NL_PORT` is set. Session keys stay in `localStorage`; in
 portable mode the whole localStorage is exported to a file on window close and imported at boot. The kernel
 saves the VFS through a callback (`fs_manager.set_save_function`) on every write.
 **Consequences:** Renaming any key or database is a migration; do not. The whole tree is written on every
@@ -105,7 +105,7 @@ re-hash on next login, not a silent switch.
 **Context:** There was no automated test. `extras/diag.sh` is a thorough in-OS suite but needs a running OS
 and a human to read it. Verifying the Pyodide upgrade needed something repeatable.
 **Decision:** `tests/smoke.js` (Node + Playwright, Chromium) loads the served page, waits for
-`OopisOS_Kernel.isReady`, calls `users.first_time_setup` and `verify_password` through the syscall bridge,
+`FractalOS_Kernel.isReady`, calls `users.first_time_setup` and `verify_password` through the syscall bridge,
 runs a list of shell commands through `CommandExecutor.processSingleCommand`, and compares against expected
 outcomes. Playwright's default context is a fresh profile, so no real IndexedDB or localStorage is touched. The
 same script run against the previous Pyodide build gave byte-identical command results, which is how the
@@ -113,13 +113,6 @@ upgrade was accepted.
 **Consequences:** Needs Node and a Chromium; neither is needed to run the app. Nothing checks the UI itself yet
 (onboarding dialog, editor, paint). The in-OS suite is not wired in (P1-06). `file://` is never used: the app
 cannot run from it (D-003), and the OS would share storage with the real profile if it could.
-
-## D-009 The internal name stays OopisOS  (2026-09-24, status: accepted)
-**Context:** The product was renamed FractalOS ("Update README to reflect new WebOS branding", 2025-11-23) but
-the code, storage keys, the kernel object and the BroadcastChannel name still say OopisOS.
-**Decision:** Leave them. Renaming `OopisOS_Kernel` is a large diff for nothing; renaming the `oopisOs*` keys
-and `oopisos-network` would break existing users' saved state (D-006).
-**Consequences:** Two names in the codebase. `CLAUDE.md` says so up front so a new session does not "fix" it.
 
 ## D-010 The kernel file list is generated into `core/manifest.json`, and a structure test guards both registration lists  (2026-09-24, status: accepted; amends D-003)
 **Context:** `bridge.js` carried three hand-typed arrays (`coreFiles`, `appFiles`, `commandFiles`, 140 names)

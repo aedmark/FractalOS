@@ -1,4 +1,3 @@
-# gem/core/commands/clearfs.py
 import os
 from filesystem import fs_manager
 from datetime import datetime

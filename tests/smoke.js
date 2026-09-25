@@ -1,12 +1,3 @@
-#!/usr/bin/env node
-// tests/smoke.js: boot FractalOS in headless Chromium and check the kernel works.
-//
-//   cd resources && python3 -m http.server 8000 &
-//   node tests/smoke.js http://127.0.0.1:8000/index.html
-//
-// Needs Node 18+ and Playwright with a Chromium (or CHROME=/path/to/chrome).
-// Exit code 0 = every check passed. See docs/TESTING.md.
-
 'use strict';
 
 const { chromium } = require('playwright');
@@ -14,25 +5,20 @@ const { chromium } = require('playwright');
 const url = process.argv[2] || 'http://127.0.0.1:8000/index.html';
 const BOOT_TIMEOUT_MS = 120000;
 
-// Shell commands run through CommandExecutor as the default user (Guest), in
-// this order. `expect` gets the result object and returns true on pass.
 const CHECKS = [
     { cmd: 'echo hello', expect: r => r.success && r.output === 'hello' },
     { cmd: 'date', expect: r => r.success && /\d{4}/.test(r.output || '') },
     { cmd: 'whoami', expect: r => r.success && r.output === 'Guest' },
     { cmd: 'ls -la /home', expect: r => r.success && ['gordon', 'Guest', 'root'].every(n => (r.output || '').includes(n)) },
     { cmd: 'help | head -3', expect: r => r.success && (r.output || '').startsWith('FractalOS - Powered by Python') },
-    // Guest may not write to /home: a denial is the correct answer.
     { cmd: 'mkdir /home/t', expect: r => !r.success && /Permission denied/.test(errorMessage(r)) },
     { cmd: 'cat /nonexistent', expect: r => !r.success && /No such file/.test(errorMessage(r)) },
-    // python (D-011): the kernel's own interpreter, VFS-aware open()/input(), a step budget.
     { cmd: 'python -c "print(2 ** 10)"', expect: r => r.success && r.output === '1024' },
     { cmd: 'python -c "import sys; print(sys.argv[1:])" one two', expect: r => r.success && r.output === "['one', 'two']" },
     { cmd: 'echo 21 | python -c "print(int(input()) * 2)"', expect: r => r.success && r.output === '42' },
     { cmd: 'echo hello > /home/Guest/hello.txt', expect: r => r.success },
     { cmd: 'echo "print(open(\'/home/Guest/hello.txt\').read().upper())" > /home/Guest/shout.py', expect: r => r.success },
     { cmd: 'python /home/Guest/shout.py', expect: r => r.success && r.output === 'HELLO' },
-    // cd is an effect applied after the line finishes, so it gets its own command (D-002).
     { cmd: 'cd /home/Guest', expect: r => r.success },
     { cmd: 'python -c "open(\'out.txt\', \'w\').write(\'written\')"', expect: r => r.success },
     { cmd: 'cd /', expect: r => r.success },
@@ -46,15 +32,12 @@ const CHECKS = [
     { cmd: 'python --steps 5000 -c "while True: pass"', expect: r => !r.success && /stopped after 5,000 steps/.test(errorMessage(r)) },
     { cmd: 'python -c "print(1)" | python -c "print(int(input()) + 1)"', expect: r => r.success && r.output === '2' },
     { cmd: 'python', expect: r => !r.success && /nothing to run/.test(errorMessage(r)) },
-    // P2-13: shell quoting + forge decoding + Python compilation, end to end.
     { cmd: String.raw`forge /home/Guest/nested.py 'print("first\\nsecond")\nprint("done")'`, expect: r => r.success },
     { cmd: 'python /home/Guest/nested.py', expect: r => r.success && r.output === 'first\nsecond\ndone' },
     { cmd: String.raw`forge --literal /home/Guest/literal.txt 'keep \n café'`, expect: r => r.success },
     { cmd: 'cat /home/Guest/literal.txt', expect: r => r.success && r.output === String.raw`keep \n café` },
-    // No pipe means no stdin: JS null must reach Python as None, not as Pyodide's jsnull (D-011).
     { cmd: 'cat', expect: r => r.success && (r.output || '') === '' },
-    { cmd: 'wc', expect: r => r.success && (r.output || '') === '' }, // crashed on JsNull before the fix
-    // find used to join its results with a literal backslash-n (one long line).
+    { cmd: 'wc', expect: r => r.success && (r.output || '') === '' },
     { cmd: 'find /home -name "*.txt"', expect: r => r.success && (r.output || '').split('\n').length >= 2 && !/\\n/.test(r.output) },
 ];
 
@@ -66,7 +49,7 @@ function errorMessage(r) {
 (async () => {
     const launchOptions = process.env.CHROME ? { executablePath: process.env.CHROME } : {};
     const browser = await chromium.launch(launchOptions);
-    const page = await browser.newPage(); // fresh context: no real profile is touched
+    const page = await browser.newPage();
     const logs = [];
     page.on('pageerror', e => logs.push(`[pageerror] ${e.message}`));
     page.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(`[${m.type()}] ${m.text()}`); });
@@ -83,7 +66,7 @@ function errorMessage(r) {
         await page.goto(url);
         try {
             await page.waitForFunction(
-                () => typeof OopisOS_Kernel !== 'undefined' && OopisOS_Kernel.isReady === true,
+                () => typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.isReady === true,
                 null, { timeout: BOOT_TIMEOUT_MS });
             report('kernel boots', true);
         } catch (e) {
@@ -91,9 +74,8 @@ function errorMessage(r) {
             throw e;
         }
 
-        // 1. Runtime and the vendored wheels agree (D-004, D-007).
         const runtime = await page.evaluate(async () => {
-            const py = OopisOS_Kernel.pyodide;
+            const py = FractalOS_Kernel.pyodide;
             return await py.runPythonAsync(`
 import sys, ssl, hashlib, zipfile, zlib, json
 import cryptography, pyodide
@@ -110,23 +92,21 @@ json.dumps({"python": sys.version.split()[0], "pyodide": pyodide.__version__,
         report('cryptography PBKDF2 derives a key', rt.pbkdf2 === '0a38253555ce37f5', `got ${rt.pbkdf2}`);
         report('hashlib sha1 works without the OpenSSL wheel', rt.sha1 === '11f6ad8e', `got ${rt.sha1}`);
         report('loaded packages are exactly the cryptography chain', await page.evaluate(() => {
-            const names = Object.keys(OopisOS_Kernel.pyodide.loadedPackages).sort().join(',');
+            const names = Object.keys(FractalOS_Kernel.pyodide.loadedPackages).sort().join(',');
             return names === 'cffi,cryptography,pycparser,six';
         }));
 
-        // 2. Accounts through the syscall bridge.
         const setup = JSON.parse(await page.evaluate(() =>
-            OopisOS_Kernel.syscall('users', 'first_time_setup', ['gordon', 'hunter2', 'rootpw'])));
+            FractalOS_Kernel.syscall('users', 'first_time_setup', ['gordon', 'hunter2', 'rootpw'])));
         report('first_time_setup creates root, Guest and the user', setup.success === true
             && setup.data && setup.data.users && ['root', 'Guest', 'gordon'].every(u => u in setup.data.users),
             JSON.stringify(setup).slice(0, 200));
-        const okPw = JSON.parse(await page.evaluate(() => OopisOS_Kernel.syscall('users', 'verify_password', ['gordon', 'hunter2'])));
-        const badPw = JSON.parse(await page.evaluate(() => OopisOS_Kernel.syscall('users', 'verify_password', ['gordon', 'wrong'])));
+        const okPw = JSON.parse(await page.evaluate(() => FractalOS_Kernel.syscall('users', 'verify_password', ['gordon', 'hunter2'])));
+        const badPw = JSON.parse(await page.evaluate(() => FractalOS_Kernel.syscall('users', 'verify_password', ['gordon', 'wrong'])));
         report('verify_password accepts the right password', okPw.success && okPw.data === true, JSON.stringify(okPw));
         report('verify_password rejects the wrong password', badPw.success && badPw.data === false, JSON.stringify(badPw));
 
-        // P2-09: exercise the real request/response adapter with a fake transport.
-        const wire = JSON.parse(await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync(`
+        const wire = JSON.parse(await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync(`
 import json, kernel, ai_manager
 saved_fetch = ai_manager.pyodide_http.pyfetch
 bodies = []
@@ -154,9 +134,8 @@ json.dumps(results)
             wire[k].success === false && wire[k].error.includes('done_reason: length')));
         report('Ollama nonempty replies survive the adapter', wire.hello.success === true && wire.hello.answer === 'hello');
 
-        // 2b. The agent and python (P2-03, D-013), with the LLM replaced by a fake that returns a fixed plan.
         const agent = JSON.parse(await page.evaluate(async () => {
-            const py = OopisOS_Kernel.pyodide;
+            const py = FractalOS_Kernel.pyodide;
             return await py.runPythonAsync(`
 import json, kernel
 from bone_driver import BoneDriver
@@ -233,7 +212,6 @@ json.dumps(results)
         report('samwise passes the confirm effect through (D-014)', agent.gemini_passes_confirm_effect === true);
         report('autopilot stores a real checkpoint before writing', agent.checkpoint_before_write === true);
 
-        // 3. Shell commands through the executor.
         for (const { cmd, expect } of CHECKS) {
             const r = await page.evaluate(async c => await CommandExecutor.processSingleCommand(c, { isInteractive: false }), cmd);
             let ok = false;

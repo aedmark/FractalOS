@@ -1,5 +1,3 @@
-// scripts/apps/basic/basic_ui.js
-
 window.BasicUI = class BasicUI {
 
   constructor(callbacks, dependencies) {

@@ -1,5 +1,3 @@
-# gem/core/commands/_upload_handler.py
-
 import json
 from filesystem import fs_manager
 
@@ -14,7 +12,6 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
     files_to_upload = json.loads(stdin_data) if stdin_data else None
 
     if not files_to_upload:
-        # This should never be called directly by a user.
         return {"success": False, "error": "_upload_handler: files data not provided. This command is for internal use."}
 
     output_messages = []
@@ -25,13 +22,12 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
         except Exception as e:
             return {"success": False, "error": f"Error uploading '{file_info['name']}': {repr(e)}"}
 
-    # Return a standard success object with the output messages.
     return {
         "success": True,
         "output": "\n".join(output_messages)
     }
 
-# No man or help page for internal commands.
+
 def man(args, flags, user_context, **kwargs):
     return ""
 

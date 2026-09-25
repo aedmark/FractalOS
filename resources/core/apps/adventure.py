@@ -1,5 +1,3 @@
-# /core/apps/adventure.py
-
 import json
 import random
 import re
@@ -39,14 +37,13 @@ class AdventureManager:
                 "inventory": adventure.get("player", {}).get("inventory", []),
                 "score": initial_score,
                 "moves": 0,
-                "dialogueWith": None, # State for tracking conversations
+                "dialogueWith": None,
                 "dialogueNode": None
             },
             "scriptingContext": scripting_context,
             "lastPlayerCommand": "",
         }
 
-        # Merge adventure-specific verbs with defaults
         self.verbs.update(adventure.get("verbs", {}))
 
         return self.get_initial_ui_update()
@@ -57,7 +54,6 @@ class AdventureManager:
         if not room:
             return {"error": "You have fallen into the void."}
 
-        # Initial room description and status
         outputs = []
         outputs.append({"type": "status", "roomName": room.get("name"), "score": self.state["player"]["score"], "moves": self.state["player"]["moves"]})
         outputs.append({"type": "output", "text": self._get_room_description(room), "styleClass": "room-desc"})
@@ -86,7 +82,6 @@ class AdventureManager:
         """Processes a single player command."""
         self.state['player']['moves'] += 1
 
-        # If in a dialogue, process the response differently.
         if self.state['player'].get('dialogueWith'):
             handler_result = self._process_dialogue_response(command_text)
             updates = handler_result.get("updates", [])
@@ -128,13 +123,11 @@ class AdventureManager:
 
         response_lower = response_text.lower()
 
-        # Allow exiting the conversation
         if response_lower in ["goodbye", "bye", "exit", "quit"]:
             self.state['player']['dialogueWith'] = None
             self.state['player']['dialogueNode'] = None
             return {"updates": [{"type": "output", "text": "You end the conversation.", "styleClass": "system"}]}
 
-        # Check player choices
         for choice in current_node.get('playerChoices', []):
             if any(keyword in response_lower for keyword in choice['keywords']):
                 next_node_id = choice['nextNode']
@@ -147,7 +140,6 @@ class AdventureManager:
         """Formats and returns the output for a given dialogue node."""
         node = npc['dialogue']['nodes'].get(node_id)
         if not node:
-            # End conversation if node doesn't exist
             self.state['player']['dialogueWith'] = None
             self.state['player']['dialogueNode'] = None
             return {"updates": [{"type": "output", "text": f"{npc['name']} has nothing more to say.", "styleClass": "system"}]}
@@ -157,7 +149,6 @@ class AdventureManager:
             for i, choice in enumerate(node['playerChoices']):
                 output_text.append(f"  > You could say something about: {', '.join(choice['keywords'])}")
         else:
-            # End conversation if there are no more choices
             self.state['player']['dialogueWith'] = None
             self.state['player']['dialogueNode'] = None
 

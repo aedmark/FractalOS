@@ -1,5 +1,3 @@
-# gem/core/commands/reboot.py
-
 def run(args, flags, user_context, **kwargs):
     """
     Signals the front end to perform a page reload.

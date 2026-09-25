@@ -1,5 +1,3 @@
-/* Chidi Style Sheet */
-
 #chidi-app-container .app-main {
     padding: var(--spacing-md);
     background-color: var(--color-background-darkest);

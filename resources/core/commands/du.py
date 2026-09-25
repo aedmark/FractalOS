@@ -1,5 +1,3 @@
-# gem/core/commands/du.py
-
 from filesystem import fs_manager
 import os
 
@@ -41,7 +39,6 @@ def run(args, flags, user_context, **kwargs):
                     "suggestion": "Please check that the file or directory path is correct."
                 }
             }
-        # Using 1024 for kilobyte calculation for block size
         size_in_kb = lambda size: (size + 1023) // 1024
 
         if is_summarize:

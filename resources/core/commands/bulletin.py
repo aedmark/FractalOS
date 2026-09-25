@@ -26,7 +26,7 @@ def _ensure_bulletin_exists(user_context):
 
     if not fs_manager.get_node(BULLETIN_PATH):
         try:
-            initial_content = "# OopisOS Town Bulletin\n"
+            initial_content = "# FractalOS Town Bulletin\n"
             fs_manager.write_file(BULLETIN_PATH, initial_content, user_context)
             fs_manager.chown(BULLETIN_PATH, "root")
             fs_manager.chgrp(BULLETIN_PATH, "towncrier")
@@ -89,7 +89,7 @@ def run(args, flags, user_context, **kwargs):
         if user_context.get('name') != 'root':
             return {"success": False, "error": {"message": "bulletin: permission denied", "suggestion": "Only the 'root' user can clear the bulletin board."}}
 
-        cleared_content = "# OopisOS Town Bulletin (cleared)\n"
+        cleared_content = "# FractalOS Town Bulletin (cleared)\n"
         try:
             fs_manager.write_file(BULLETIN_PATH, cleared_content, user_context)
             return "Bulletin board cleared."

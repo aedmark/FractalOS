@@ -70,7 +70,6 @@ window.PaintUI = class PaintUI {
         const mainDrawingArea = Utils.createElement("div", { className: "paint-main-drawing-area" }, [canvasContainer]);
         this.elements.main.appendChild(mainDrawingArea);
 
-        // Footer construction
         this.elements.statusTool = Utils.createElement("span");
         this.elements.statusChar = Utils.createElement("span");
         this.elements.statusBrush = Utils.createElement("span");
@@ -82,7 +81,7 @@ window.PaintUI = class PaintUI {
             this.elements.statusTool, this.elements.statusChar, this.elements.statusBrush, this.elements.statusCoords, this.elements.statusZoom
         ]);
 
-        this.elements.footer.innerHTML = ''; // Clear footer
+        this.elements.footer.innerHTML = '';
         if (!isWindowed) {
             this.elements.titleInput = Utils.createElement("input", { type: "text", className: "paint-title-input", value: initialState.filePath || "untitled.oopic" });
             this.elements.footer.append(this.elements.titleInput, this.elements.statusMessage, statusItemsGroup);

@@ -1,5 +1,3 @@
-# gem/core/commands/groupadd.py
-
 from groups import group_manager
 from audit import audit_manager
 

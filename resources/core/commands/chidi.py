@@ -1,5 +1,3 @@
-# gem/core/commands/chidi.py
-
 import os
 from filesystem import fs_manager
 from story_manager import story_manager
@@ -18,18 +16,16 @@ def _get_files_for_analysis(start_path, user_context):
     """
     Recursively finds all supported files for analysis from a starting path.
     """
-    # Check if the start_path is a .story directory
     if os.path.basename(start_path) == '.story':
         summary_result = story_manager.get_story_summary(start_path)
         if summary_result["success"]:
-            # Return a single pseudo-file with the story summary
             return [{
                 "name": "Story Summary",
                 "path": start_path,
                 "content": summary_result["data"]
             }]
         else:
-            return [] # Return empty if summary fails
+            return []
 
     files = []
     visited = set()
@@ -52,7 +48,6 @@ def _get_files_for_analysis(start_path, user_context):
                     "content": node.get('content', '')
                 })
         elif node.get('type') == 'directory':
-            # Skip .story directories during normal traversal
             if os.path.basename(current_path) == '.story':
                 return
             if not fs_manager.has_permission(current_path, user_context, "execute"):

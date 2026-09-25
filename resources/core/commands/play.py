@@ -1,5 +1,3 @@
-# gem/core/commands/play.py
-
 def run(args, flags, user_context, **kwargs):
     """
     Validates arguments for playing a note and returns an effect

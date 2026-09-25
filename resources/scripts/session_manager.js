@@ -3,24 +3,24 @@
 class EnvironmentManager {
     constructor() { this.dependencies = {}; }
     setDependencies(deps) { this.dependencies = deps; }
-    async push() { await OopisOS_Kernel.syscall("env", "push"); }
-    async pop() { await OopisOS_Kernel.syscall("env", "pop"); }
-    async initialize(userContext) { await OopisOS_Kernel.syscall("env", "initialize_defaults", [userContext]); }
+    async push() { await FractalOS_Kernel.syscall("env", "push"); }
+    async pop() { await FractalOS_Kernel.syscall("env", "pop"); }
+    async initialize(userContext) { await FractalOS_Kernel.syscall("env", "initialize_defaults", [userContext]); }
     async get(varName) {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("env", "get", [varName]));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("env", "get", [varName]));
         return result.success ? result.data : "";
     }
     async set(varName, value) {
         if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) return { success: false, error: `Invalid variable name: '${varName}'.` };
-        const result = JSON.parse(await OopisOS_Kernel.syscall("env", "set", [varName, value]));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("env", "set", [varName, value]));
         return result.success ? { success: true } : { success: false, error: result.error };
     }
-    async unset(varName) { await OopisOS_Kernel.syscall("env", "unset", [varName]); }
+    async unset(varName) { await FractalOS_Kernel.syscall("env", "unset", [varName]); }
     async getAll() {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("env", "get_all"));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("env", "get_all"));
         return result.success ? result.data : {};
     }
-    async load(vars) { await OopisOS_Kernel.syscall("env", "load", [vars]); }
+    async load(vars) { await FractalOS_Kernel.syscall("env", "load", [vars]); }
 }
 
 class HistoryManager {
@@ -36,7 +36,7 @@ class HistoryManager {
         this.historyIndex = this.jsHistoryCache.length;
     }
     async add(command) {
-        await OopisOS_Kernel.syscall("history", "add", [command]);
+        await FractalOS_Kernel.syscall("history", "add", [command]);
         await this._syncCache();
     }
     getPrevious() {
@@ -57,15 +57,15 @@ class HistoryManager {
     }
     resetIndex() { this.historyIndex = this.jsHistoryCache.length; this.searchIndex = -1; }
     async getFullHistory() {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("history", "get_full_history"));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("history", "get_full_history"));
         return result.success ? result.data : [];
     }
     async clearHistory() {
-        await OopisOS_Kernel.syscall("history", "clear_history");
+        await FractalOS_Kernel.syscall("history", "clear_history");
         await this._syncCache();
     }
     async setHistory(newHistory) {
-        await OopisOS_Kernel.syscall("history", "set_history", [newHistory]);
+        await FractalOS_Kernel.syscall("history", "set_history", [newHistory]);
         await this._syncCache();
     }
     search(query, startFromLast = false) {
@@ -93,23 +93,23 @@ class AliasManager {
     async initialize() {
         const allAliases = await this.getAllAliases();
         if (Object.keys(allAliases).length === 0) {
-            await OopisOS_Kernel.syscall("alias", "initialize_defaults");
+            await FractalOS_Kernel.syscall("alias", "initialize_defaults");
         }
     }
     async setAlias(name, value) {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("alias", "set_alias", [name, value]));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("alias", "set_alias", [name, value]));
         return result.success;
     }
     async removeAlias(name) {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("alias", "remove_alias", [name]));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("alias", "remove_alias", [name]));
         return result.success;
     }
     async getAlias(name) {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("alias", "get_alias", [name]));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("alias", "get_alias", [name]));
         return result.success ? result.data : null;
     }
     async getAllAliases() {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("alias", "get_all_aliases"));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("alias", "get_all_aliases"));
         return result.success ? result.data : {};
     }
 }
@@ -118,18 +118,18 @@ class SessionManager {
     constructor() { this.dependencies = {}; }
     setDependencies(deps) { this.dependencies = deps; }
 
-    async initializeStack() { await OopisOS_Kernel.syscall("session", "clear", ["Guest"]); }
+    async initializeStack() { await FractalOS_Kernel.syscall("session", "clear", ["Guest"]); }
     async getStack() {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("session", "get_stack"));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("session", "get_stack"));
         return result.success ? result.data : ["Guest"];
     }
-    async pushUserToStack(username) { await OopisOS_Kernel.syscall("session", "push", [username]); }
+    async pushUserToStack(username) { await FractalOS_Kernel.syscall("session", "push", [username]); }
     async popUserFromStack() {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("session", "pop"));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("session", "pop"));
         return result.success ? result.data : null;
     }
     async getCurrentUserFromStack() {
-        const result = JSON.parse(await OopisOS_Kernel.syscall("session", "get_current_user"));
+        const result = JSON.parse(await FractalOS_Kernel.syscall("session", "get_current_user"));
         return result.success ? result.data : "Guest";
     }
 
@@ -138,7 +138,7 @@ class SessionManager {
     async saveAutomaticState(username) {
         if (!username) return;
         const { FileSystemManager, TerminalUI, StorageManager } = this.dependencies;
-        const pythonStateResult = JSON.parse(await OopisOS_Kernel.syscall("session", "get_session_state_for_saving"));
+        const pythonStateResult = JSON.parse(await FractalOS_Kernel.syscall("session", "get_session_state_for_saving"));
         const pythonState = pythonStateResult.data || {};
 
         const uiState = {
@@ -162,7 +162,7 @@ class SessionManager {
                 environmentVariables: loadedState.environmentVariables || {},
                 aliases: loadedState.aliases || {},
             };
-            await OopisOS_Kernel.syscall("session", "load_session_state", [JSON.stringify(sessionPart)]);
+            await FractalOS_Kernel.syscall("session", "load_session_state", [JSON.stringify(sessionPart)]);
 
             FileSystemManager.setCurrentPath(loadedState.currentPath || Config.FILESYSTEM.ROOT_PATH);
             if (TerminalUI.elements.outputDiv) { TerminalUI.elements.outputDiv.innerHTML = loadedState.outputHTML || ""; }

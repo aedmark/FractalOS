@@ -1,5 +1,3 @@
-# /core/commands/netstat.py
-
 def run(args, flags, user_context, config=None, **kwargs):
     if not config or not config.get('NETWORKING_ENABLED'):
         return {

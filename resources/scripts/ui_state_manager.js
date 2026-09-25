@@ -1,5 +1,3 @@
-// scripts/ui_state_manager.js
-
 class UIStateManager {
     constructor() {
         this.isCinematicMode = false;
@@ -21,7 +19,6 @@ class UIStateManager {
         }
 
         const status = this.isCinematicMode ? "ON" : "OFF";
-        // Use _appendDirectly to avoid the cinematic effect on the confirmation message
         OutputManager._appendDirectly(`Cinematic mode is now ${status}.`, {
             typeClass: Config.CSS_CLASSES.INFO_MSG
         });

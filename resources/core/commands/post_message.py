@@ -1,5 +1,3 @@
-# gem/core/commands/post_message.py
-
 def run(args, flags, user_context, **kwargs):
     """
     Returns an effect to post a message to a specific job.

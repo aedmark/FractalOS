@@ -1,5 +1,3 @@
-# gem/core/commands/listusers.py
-
 def run(args, flags, user_context, stdin_data=None, users=None):
     if args:
         return {

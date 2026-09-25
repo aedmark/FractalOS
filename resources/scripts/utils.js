@@ -1,5 +1,3 @@
-// scripts/utils.js
-
 class Utils {
     static extractComments(content, fileExtension) {
         let comments = [];
@@ -309,7 +307,7 @@ class Utils {
 
     static sanitizeForExecution(input, options = {}) {
         const {
-            level = "command", // "command", "arguments", "full"
+            level = "command",
             allowedCommands = null,
         } = options;
 
@@ -317,11 +315,6 @@ class Utils {
             return { isValid: true, sanitized: "", error: null };
         }
 
-        // This is a simplified sanitizer. It primarily blocks backticks for command
-        // substitution, as our shell parser does not support them and they represent
-        // a common injection vector. Other shell metacharacters like '|', '>', '$', '&&'
-        // are handled by our own parser in commexec.js. A more robust solution would
-        // avoid regex and use the lexer to validate tokens.
         const backtickPattern = /`.*`/;
 
         if (backtickPattern.test(input)) {
@@ -332,14 +325,8 @@ class Utils {
             };
         }
 
-        // NOTE: Subshells with parentheses '()' are also not supported by our parser.
-        // A simple regex check for '(' or ')' would incorrectly flag them inside
-        // quoted strings (e.g., echo "hello (world)"). The parser in lexpar.js will
-        // correctly throw a syntax error for unsupported subshell syntax, which is sufficient.
-
         let sanitized = input;
 
-        // Level-specific validation
         switch (level) {
             case "command":
                 if (allowedCommands && !allowedCommands.includes(sanitized.split(" ")[0])) {
@@ -351,8 +338,6 @@ class Utils {
                 }
                 break;
             case "arguments":
-                // For arguments, we can be a bit stricter, as they shouldn't contain shell operators.
-                // We allow '$' for variable expansion but block most other operators.
                 const argMetacharacterBlacklist = /[;&|<>`()]/;
                 if (argMetacharacterBlacklist.test(input)) {
                     return {
@@ -363,7 +348,6 @@ class Utils {
                 }
                 break;
             case "full":
-                // This is covered by the main backtick check for now.
                 break;
             default:
                 return {

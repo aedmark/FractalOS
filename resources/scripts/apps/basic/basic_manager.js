@@ -181,7 +181,7 @@ window.BasicManager = class BasicManager extends App {
             return;
         }
 
-        const result = JSON.parse(await OopisOS_Kernel.syscall("basic", "run_program", [
+        const result = JSON.parse(await FractalOS_Kernel.syscall("basic", "run_program", [
             programText,
             (text, withNewline = true) => {
                 withNewline ? this.ui.writeln(text) : this.ui.write(text);

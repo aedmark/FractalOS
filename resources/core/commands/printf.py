@@ -1,5 +1,3 @@
-# gem/core/commands/printf.py
-
 def _unescape(s):
     try:
         return bytes(s, "utf-8").decode("unicode_escape")

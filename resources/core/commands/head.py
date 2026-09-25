@@ -1,5 +1,3 @@
-# gem/core/commands/head.py
-
 from filesystem import fs_manager
 
 def define_flags():

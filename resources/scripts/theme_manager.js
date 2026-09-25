@@ -1,5 +1,3 @@
-// gemini/scripts/theme_manager.js
-
 class ThemeManager {
     constructor() {
         this.dependencies = {};
@@ -19,7 +17,6 @@ class ThemeManager {
                 beepNote: "G5"
             }
         };
-        // We can apply the object directly since we have it here
         await this.applyTheme(defaultTheme);
     }
 
@@ -59,7 +56,6 @@ class ThemeManager {
             .map(([key, value]) => `    --${key}: ${value};`)
             .join('\n');
 
-        // Clear previous font rules before adding new color rules
         const existingContent = styleElement.textContent || '';
         const fontRootRegex = /:root\s*\{[^}]*--font-family-[^}]*\}/g;
         const fontRules = existingContent.match(fontRootRegex) || [];
@@ -96,7 +92,6 @@ class ThemeManager {
 
     async _fetchThemeData(themeName) {
         const { CommandExecutor } = this.dependencies;
-        // Escape quotes in the theme name for the command
         const escapedThemeName = themeName.replace(/"/g, '\\"');
         const command = `theme get "${escapedThemeName}"`;
 
@@ -104,7 +99,6 @@ class ThemeManager {
 
         if (result.success) {
             try {
-                // The command output is the raw JSON string
                 return JSON.parse(result.output);
             } catch (e) {
                 console.error(`Failed to parse theme JSON for '${themeName}':`, e);

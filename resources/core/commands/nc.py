@@ -1,5 +1,3 @@
-# /core/commands/nc.py
-
 def define_flags():
     return {
         'flags': [

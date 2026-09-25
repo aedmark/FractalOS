@@ -1,9 +1,8 @@
-// signaling_server.js
 const WebSocket = require('ws');
 
 const wss = new WebSocket.Server({ port: 8080 });
 
-console.log('OopisOS Signaling Server is running on port 8080...');
+console.log('FractalOS Signaling Server is running on port 8080...');
 
 wss.on('connection', function connection(ws) {
     console.log('A new client has connected.');

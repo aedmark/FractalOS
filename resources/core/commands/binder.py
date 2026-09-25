@@ -1,5 +1,3 @@
-# gem/core/commands/binder.py
-
 import json
 from filesystem import fs_manager
 from users import user_manager
@@ -164,7 +162,6 @@ def run(args, flags, user_context, **kwargs):
         commands_to_run = []
         for path in all_paths:
             if fs_manager.get_node(path):
-                # Replace placeholder {} with the quoted path
                 cmd_str = ' '.join([shlex.quote(path) if part == '{}' else part for part in command_parts])
                 commands_to_run.append(cmd_str)
 

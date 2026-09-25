@@ -1,10 +1,8 @@
-# gem/core/apps/basic.py
 import math
 import random
 import json
 import re
 
-# This will be a large file, as it's a direct translation of a complex interpreter.
 class BasicInterpreter:
     def __init__(self, kernel_bridge):
         self.kernel_bridge = kernel_bridge
@@ -45,7 +43,6 @@ class BasicInterpreter:
             statement = self.program[line_num]
             if statement.upper().startswith('DATA'):
                 data_part = statement[4:].strip()
-                # This is a simplified parser for DATA statements
                 in_quotes = False
                 current_val = ''
                 for char in data_part:
@@ -66,7 +63,7 @@ class BasicInterpreter:
         try:
             return float(val_str)
         except ValueError:
-            return val_str # Keep as string if not a number
+            return val_str
 
     def run(self, program_text, output_callback, input_callback):
         self._initialize_state()
@@ -86,10 +83,10 @@ class BasicInterpreter:
             statement = self.program[self.program_counter]
             self.execute_statement(statement)
 
-            if self.program_counter is None: # END statement was hit
+            if self.program_counter is None:
                 break
 
-            if self.program_counter != pc_before_exec: # GOTO or GOSUB
+            if self.program_counter != pc_before_exec:
                 try:
                     current_index = self.program_lines.index(self.program_counter)
                 except ValueError:
@@ -99,19 +96,15 @@ class BasicInterpreter:
                 current_index += 1
 
     def execute_statement(self, statement):
-        # This is where the big switch-case from JS will be translated
-        # For brevity in this response, I'll stub it out. The full implementation
-        # would translate each command (PRINT, LET, IF, FOR, etc.) into Python.
-        pass # The full translation is very large.
+        pass
 
-# We'll create a single instance for the kernel to use.
-basic_interpreter = BasicInterpreter(None) # Pass a kernel bridge if needed for SYS calls
+
+basic_interpreter = BasicInterpreter(None)
+
 
 def run_program(program_text, output_callback, input_callback):
     """Bridge function for the kernel to call the interpreter."""
     try:
-        # We need a way to pass JS callbacks into Python.
-        # Pyodide's to_py can handle this.
         basic_interpreter.run(program_text, output_callback.to_py(), input_callback.to_py())
         return {"success": True}
     except Exception as e:

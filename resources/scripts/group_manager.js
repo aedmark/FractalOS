@@ -1,5 +1,3 @@
-// gem/scripts/group_manager.js
-
 class GroupManager {
     constructor() {
         this.dependencies = {};
@@ -18,11 +16,11 @@ class GroupManager {
         );
 
         if (groupsFromStorage) {
-            await OopisOS_Kernel.syscall("groups", "load_groups", [groupsFromStorage]);
+            await FractalOS_Kernel.syscall("groups", "load_groups", [groupsFromStorage]);
         } else {
-            await OopisOS_Kernel.syscall("groups", "initialize_defaults");
+            await FractalOS_Kernel.syscall("groups", "initialize_defaults");
         }
-        await this._save(); // Save back to storage to ensure consistency
+        await this._save();
         console.log("GroupManager initialized and synced with Python kernel.");
     }
 
@@ -39,12 +37,12 @@ class GroupManager {
     async syncAndSave(groupsData) {
         const { StorageManager, Config } = this.dependencies;
         StorageManager.saveItem(Config.STORAGE_KEYS.USER_GROUPS, groupsData, "User Groups");
-        await OopisOS_Kernel.syscall("groups", "load_groups", [groupsData]);
+        await FractalOS_Kernel.syscall("groups", "load_groups", [groupsData]);
     }
 
     async getAllGroups() {
         try {
-            const resultJson = await OopisOS_Kernel.syscall("groups", "get_all_groups");
+            const resultJson = await FractalOS_Kernel.syscall("groups", "get_all_groups");
             const result = JSON.parse(resultJson);
             if (result.success) {
                 return result.data;
@@ -58,13 +56,13 @@ class GroupManager {
     }
 
     async groupExists(groupName) {
-        const resultJson = await OopisOS_Kernel.syscall("groups", "group_exists", [groupName]);
+        const resultJson = await FractalOS_Kernel.syscall("groups", "group_exists", [groupName]);
         const result = JSON.parse(resultJson);
         return result.success ? result.data : false;
     }
 
     async createGroup(groupName) {
-        const resultJson = await OopisOS_Kernel.syscall("groups", "create_group", [groupName]);
+        const resultJson = await FractalOS_Kernel.syscall("groups", "create_group", [groupName]);
         const result = JSON.parse(resultJson);
         if (result.success && result.data) {
             await this._save();
@@ -74,7 +72,7 @@ class GroupManager {
     }
 
     async addUserToGroup(username, groupName) {
-        const resultJson = await OopisOS_Kernel.syscall("groups", "add_user_to_group", [username, groupName]);
+        const resultJson = await FractalOS_Kernel.syscall("groups", "add_user_to_group", [username, groupName]);
         const result = JSON.parse(resultJson);
         if (result.success && result.data) {
             await this._save();
@@ -111,7 +109,7 @@ class GroupManager {
     }
 
     async deleteGroup(groupName) {
-        const resultJson = await OopisOS_Kernel.syscall("groups", "delete_group", [groupName]);
+        const resultJson = await FractalOS_Kernel.syscall("groups", "delete_group", [groupName]);
         const result = JSON.parse(resultJson);
         if (result.success && result.data) {
             await this._save();
@@ -121,7 +119,7 @@ class GroupManager {
     }
 
     async removeUserFromAllGroups(username) {
-        const resultJson = await OopisOS_Kernel.syscall("groups", "remove_user_from_all_groups", [username]);
+        const resultJson = await FractalOS_Kernel.syscall("groups", "remove_user_from_all_groups", [username]);
         const result = JSON.parse(resultJson);
         if (result.success && result.data) {
             await this._save();

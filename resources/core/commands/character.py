@@ -1,5 +1,3 @@
-# gemini/core/commands/character.py
-
 import os
 from filesystem import fs_manager
 
@@ -46,14 +44,12 @@ def run(args, flags, user_context, **kwargs):
             "output": f"Character '{char_name}' created! Binder, character sheet, and quest log are ready."
         }
 
-    # All other commands require a character name
     if len(args) < 2:
         return {"success": False, "error": {"message": f"character: missing character name for '{sub_command}'", "suggestion": f"Usage: character {sub_command} <name>"}}
 
     char_name = args[1]
     binder_name = f"{char_name}.binder"
 
-    # Check if the binder exists as a proxy for the character
     if not fs_manager.get_node(binder_name):
         return {"success": False, "error": {"message": f"character: no character named '{char_name}' found", "suggestion": "Create the character first with 'character create <name>'."}}
 
@@ -63,7 +59,6 @@ def run(args, flags, user_context, **kwargs):
         if not message:
             return {"success": False, "error": {"message": "character: missing journal entry text", "suggestion": f'Usage: character journal {char_name} "Your entry here"'}}
 
-        # We'll tag the log entry to make it searchable
         tagged_message = f"# {char_name}\n\n{message}"
 
         return {

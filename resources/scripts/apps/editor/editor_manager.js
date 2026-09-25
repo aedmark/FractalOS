@@ -1,5 +1,3 @@
-// gem/scripts/apps/editor/editor_manager.js
-
 window.EditorManager = class EditorManager extends App {
     constructor() {
         super();
@@ -17,12 +15,12 @@ window.EditorManager = class EditorManager extends App {
 
         this._debouncedPushUndo = this.dependencies.Utils.debounce(async (content) => {
             if (!this.isActive || this.state.isReadOnly) return;
-            const result = JSON.parse(await OopisOS_Kernel.syscall("editor", "push_undo_state", [content]));
+            const result = JSON.parse(await FractalOS_Kernel.syscall("editor", "push_undo_state", [content]));
             this._updateStateFromPython(result);
         }, 500);
 
         const normalizedContent = (fileContent || "").replace(/\r\n|\r/g, "\n");
-        const loadResult = JSON.parse(await OopisOS_Kernel.syscall("editor", "load_file", [filePath, normalizedContent]));
+        const loadResult = JSON.parse(await FractalOS_Kernel.syscall("editor", "load_file", [filePath, normalizedContent]));
 
         if (!loadResult.success) {
             const errorMessage = `Failed to initialize editor: ${loadResult.error}`;
@@ -103,7 +101,7 @@ window.EditorManager = class EditorManager extends App {
 
                 if (saveResult.success) {
                     await FileSystemManager.save();
-                    const pyResult = JSON.parse(await OopisOS_Kernel.syscall("editor", "update_on_save", [savePath, currentContent]));
+                    const pyResult = JSON.parse(await FractalOS_Kernel.syscall("editor", "update_on_save", [savePath, currentContent]));
                     this.state.originalContent = currentContent;
                     this._updateStateFromPython(pyResult);
                     this._checkDirty();
@@ -122,11 +120,11 @@ window.EditorManager = class EditorManager extends App {
                 this.ui.setViewMode(this.state.viewMode, this.state.fileMode, this.ui.elements.textarea.textContent || "");
             },
             onUndo: async () => {
-                const result = JSON.parse(await OopisOS_Kernel.syscall("editor", "undo"));
+                const result = JSON.parse(await FractalOS_Kernel.syscall("editor", "undo"));
                 this._updateStateFromPython(result);
             },
             onRedo: async () => {
-                const result = JSON.parse(await OopisOS_Kernel.syscall("editor", "redo"));
+                const result = JSON.parse(await FractalOS_Kernel.syscall("editor", "redo"));
                 this._updateStateFromPython(result);
             },
             onWordWrapToggle: () => {

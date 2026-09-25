@@ -1,4 +1,3 @@
-# gem/core/commands/find.py
 import os
 import fnmatch
 import re

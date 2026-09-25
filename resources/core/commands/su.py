@@ -1,10 +1,8 @@
-# gem/core/commands/su.py
-
 def run(args, flags, user_context, **kwargs):
     """
     Handles the 'su' command by returning an effect to be processed by the JS UserManager.
     """
-    target_username = 'root' # Default to root if no user is specified
+    target_username = 'root'
     password = None
 
     if len(args) > 2:

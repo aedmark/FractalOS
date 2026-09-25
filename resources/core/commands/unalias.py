@@ -1,5 +1,3 @@
-# gem/core/commands/unalias.py
-
 from session import alias_manager
 
 def run(args, flags, user_context, stdin_data=None):
@@ -21,7 +19,6 @@ def run(args, flags, user_context, stdin_data=None):
             error_messages.append(f"unalias: no such alias: {alias_name}")
 
     if error_messages:
-        # Even on failure, we sync state in case some aliases were removed successfully
         effect = {
             "effect": "sync_session_state",
             "aliases": alias_manager.get_all_aliases()
@@ -35,7 +32,7 @@ def run(args, flags, user_context, stdin_data=None):
             }
         }
         if effect:
-            final_error["effects"] = [effect] # Embed effect within the error response
+            final_error["effects"] = [effect]
         return final_error
 
     if changed:

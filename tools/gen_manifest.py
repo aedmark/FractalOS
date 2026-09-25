@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Regenerate resources/core/manifest.json from the Python files on disk.
 
 bridge.js fetches this manifest at boot to know which kernel files to copy into

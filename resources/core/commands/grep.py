@@ -1,5 +1,3 @@
-# gem/core/commands/grep.py
-
 import re
 import os
 from filesystem import fs_manager
@@ -103,7 +101,6 @@ def run(args, flags, user_context, stdin_data=None):
     if stdin_data is not None:
         output_lines.extend(_process_content(stdin_data, pattern, flags, "(stdin)", False))
     elif not file_paths:
-        # This case is now handled by the initial check, but we keep it for safety.
         return {
             "success": False,
             "error": {

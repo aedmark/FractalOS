@@ -78,7 +78,7 @@ echo "file one content" > zip_test/file1.txt
 echo "nested file content" > zip_test/nested_dir/file2.txt
 delay 200
 printf "\nScripting assets..."
-echo '#!/bin/oopis_shell' > /home/root/arg_test.sh
+echo '#!/bin/fractal_shell' > /home/root/arg_test.sh
 echo 'echo "Arg 1: $1, Arg 2: $2, Arg Count: $#, All Args: $@" ' >> /home/root/arg_test.sh
 chmod 777 /home/root/arg_test.sh
 delay 200
@@ -610,7 +610,7 @@ rm simple_test.sh
 printf "\n \nBasic execution test complete."
 delay 200
 printf "\n \n--- Test: Script argument passing ---"
-echo '#!/bin/oopis_shell' > arg_passing_test.sh
+echo '#!/bin/fractal_shell' > arg_passing_test.sh
 echo 'echo "Arg 1: $1, Arg 2: $2, Arg Count: $#, All Args: $@" ' >> arg_passing_test.sh
 chmod 755 arg_passing_test.sh
 run ./arg_passing_test.sh first "second arg" third
@@ -1264,7 +1264,7 @@ groupdel recursive_test_group
 groupdel harvest_festival
 
 delay 500
-printf "\n \n===== OopisOS Planner Command Test Suite ====="
+printf "\n \n===== FractalOS Planner Command Test Suite ====="
 delay 500
 
 printf "\n \n--- Phase 1: Setup and User Creation ---"

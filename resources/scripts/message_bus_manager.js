@@ -1,5 +1,3 @@
-// /scripts/message_bus_manager.js
-
 class MessageBusManager {
     constructor() {
         this.jobQueues = new Map();
@@ -33,7 +31,7 @@ class MessageBusManager {
             return [];
         }
         const messages = this.jobQueues.get(jobId);
-        this.jobQueues.set(jobId, []); // Clear the queue after reading
+        this.jobQueues.set(jobId, []);
         return messages;
     }
 }

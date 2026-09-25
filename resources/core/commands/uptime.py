@@ -1,5 +1,3 @@
-# gem/core/commands/uptime.py
-
 from datetime import datetime, timezone
 
 def _format_timedelta(td):
@@ -41,7 +39,6 @@ def run(args, flags, user_context, session_start_time=None, **kwargs):
         uptime_delta = now_utc - start_time
         current_time_str = now_utc.strftime('%H:%M:%S')
         uptime_str = _format_timedelta(uptime_delta)
-        # Simplified user count for our single-threaded environment
         return f" {current_time_str} up {uptime_str},  1 user"
     except (ValueError, TypeError) as e:
         return {"success": False, "error": f"uptime: could not parse session start time: {repr(e)}"}

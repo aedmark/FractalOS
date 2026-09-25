@@ -45,7 +45,7 @@ SYNOPSIS
     paint [filename.oopic]
 
 DESCRIPTION
-    Launches the OopisOS character-based art editor. If a filename is
+    Launches a character-based art editor. If a filename is
     provided, it will be opened. Files must have the '.oopic' extension.
 """
 

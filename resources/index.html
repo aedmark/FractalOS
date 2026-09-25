@@ -55,10 +55,8 @@
             });
         };
 
-        // Load all CSS files in parallel
         manifest.css.forEach(loadCss);
 
-        // Load all JS files sequentially to respect dependencies
         try {
             for (const scriptUrl of manifest.js) {
                 await loadJs(scriptUrl);

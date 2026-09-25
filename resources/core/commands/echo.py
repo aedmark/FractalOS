@@ -1,5 +1,3 @@
-# gem/core/commands/echo.py
-
 import codecs
 
 def define_flags():
@@ -19,7 +17,6 @@ def run(args, flags, user_context, stdin_data=None):
     output_string = " ".join(args)
 
     if enable_escapes:
-        # Using codecs.decode with 'unicode_escape' is a robust way to handle this
         output_string = codecs.decode(output_string, 'unicode_escape')
 
     return output_string

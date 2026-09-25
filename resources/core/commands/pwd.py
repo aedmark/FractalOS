@@ -1,5 +1,3 @@
-# /core/commands/pwd.py
-
 from filesystem import fs_manager
 
 def run(args, flags, user_context, **kwargs):

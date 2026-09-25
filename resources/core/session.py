@@ -1,5 +1,3 @@
-# gem/core/session.py
-
 import json
 
 class EnvironmentManager:
@@ -162,7 +160,7 @@ class SessionManager:
             alias_manager.load_aliases({})
             return False
 
-# Instantiate singletons that will be exposed to JavaScript
+
 env_manager = EnvironmentManager()
 history_manager = HistoryManager()
 alias_manager = AliasManager()

@@ -1,5 +1,3 @@
-# /core/filesystem.py
-
 import json
 from datetime import datetime
 import os
@@ -10,7 +8,7 @@ class FileSystemManager:
         self.fs_data = {}
         self.current_path = "/"
         self.save_function = None
-        self.user_groups = {} # Initialize the attribute
+        self.user_groups = {}
         self._initialize_default_filesystem()
 
     def set_save_function(self, func):
@@ -81,7 +79,7 @@ class FileSystemManager:
         abs_path = self.get_absolute_path(path)
 
         if abs_path in visited_links:
-            return None # Circular reference detected
+            return None
 
         visited_links.add(abs_path)
 
@@ -230,7 +228,7 @@ class FileSystemManager:
         abs_path = self.get_absolute_path(path)
         if self.get_node(abs_path):
             if parents:
-                return # If it exists and -p is used, it's not an error
+                return
             raise FileExistsError(f"'{path}' already exists.")
 
         parts = [part for part in abs_path.split('/') if part]

@@ -1,5 +1,3 @@
-# gem/core/commands/jobs.py
-
 def run(args, flags, user_context, jobs=None, **kwargs):
     """
     Lists active background jobs for the current session.

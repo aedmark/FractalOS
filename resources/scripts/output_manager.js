@@ -1,5 +1,3 @@
-// gemini/scripts/output_manager.js
-
 class OutputManager {
     constructor() {
         this.isEditorActive = false;
@@ -30,7 +28,6 @@ class OutputManager {
     async appendToOutput(text, options = {}) {
         const { UIStateManager } = this.dependencies;
 
-        // If cinematic mode is on, queue the typing effect.
         if (UIStateManager && UIStateManager.isCinematic() && !options.isCompletionSuggestion && !this.isEditorActive && !options.noCinematic) {
             return new Promise(resolve => {
                 this.typingQueue.push({ text, options, resolve });
@@ -39,7 +36,6 @@ class OutputManager {
                 }
             });
         } else {
-            // Original non-cinematic behavior
             this._appendDirectly(text, options);
         }
     }
@@ -117,9 +113,9 @@ class OutputManager {
         this.isTyping = true;
         const { text, options, resolve } = this.typingQueue.shift();
         await this._typewriterEffect(text, options);
-        resolve(); // Resolve the promise for this item
+        resolve();
 
-        this._processTypingQueue(); // Process next item
+        this._processTypingQueue();
     }
 
     _typewriterEffect(text, options) {
@@ -151,14 +147,14 @@ class OutputManager {
                     if (this.cinematicSkip) {
                         lineDiv.textContent = line;
                         this.cachedOutputDiv.scrollTop = this.cachedOutputDiv.scrollHeight;
-                        break; // Exit the character loop
+                        break;
                     }
                     lineDiv.textContent += line[i];
                     this.cachedOutputDiv.scrollTop = this.cachedOutputDiv.scrollHeight;
                     await Utils.safeDelay(characterDelay);
                 }
                 if (this.cinematicSkip) {
-                    continue; // Continue to the next line immediately
+                    continue;
                 }
             }
 

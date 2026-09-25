@@ -1,5 +1,3 @@
-# gemini/resources/core/commands/story.py
-
 import os
 import json
 import shlex
@@ -86,7 +84,6 @@ def run(args, flags, user_context, **kwargs):
         snapshot_id = args[1]
         confirmed_id = flags.get("confirmed")
 
-        # Check if this run is the result of a confirmation
         if confirmed_id == snapshot_id:
             restore_result = story_manager.restore_snapshot(os.path.dirname(story_path), snapshot_id, user_context)
             if restore_result["success"]:
@@ -94,7 +91,6 @@ def run(args, flags, user_context, **kwargs):
             else:
                 return {"success": False, "error": {"message": restore_result["error"]}}
 
-        # If not confirmed, send the confirmation effect
         return {
             "effect": "confirm",
             "message": [

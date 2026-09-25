@@ -1,5 +1,3 @@
-/* Oopis Editor Style Sheet */
-
 #text-editor-app-container > .app-main {
     display: flex;
     flex-direction: column !important;

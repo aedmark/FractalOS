@@ -1,5 +1,3 @@
-// scripts/terminal_ui.js
-
 class TerminalUI {
     constructor() {
         this.isNavigatingHistory = false;
@@ -7,7 +5,6 @@ class TerminalUI {
         this.elements = {};
         this.originalInputForObscure = "";
         this.dependencies = {};
-        // New properties for reverse-i-search
         this.isSearchingHistory = false;
         this.historySearchQuery = "";
         this.originalInputBeforeSearch = "";
@@ -30,7 +27,6 @@ class TerminalUI {
 
         if (!this.elements.promptContainer) return;
 
-        // New logic for reverse-i-search prompt
         if (this.isSearchingHistory) {
             this.elements.promptContainer.textContent = `(reverse-i-search)\`${this.historySearchQuery}\`: `;
             return;
@@ -51,7 +47,7 @@ class TerminalUI {
                 .replace(/\\w/g, displayPath)
                 .replace(/\\W/g, path.substring(path.lastIndexOf("/") + 1) || "/")
                 .replace(/\\$/g, user.name === "root" ? "#" : "$")
-                .replace(/\\s/g, "OopisOS")
+                .replace(/\\s/g, "FractalOS")
                 .replace(/\\\\/g, "\\");
 
             this.elements.promptContainer.textContent = parsedPrompt;
@@ -299,10 +295,8 @@ class TerminalUI {
         }
     }
 
-    // --- History Search Methods ---
     async startHistorySearch() {
         if (this.isSearchingHistory) {
-            // If already searching, cycle to next result
             const { HistoryManager } = this.dependencies;
             const found = HistoryManager.search(this.historySearchQuery);
             if (found) {
@@ -325,7 +319,7 @@ class TerminalUI {
             this.historySearchQuery = this.historySearchQuery.slice(0, -1);
         }
         const { HistoryManager } = this.dependencies;
-        const found = HistoryManager.search(this.historySearchQuery, true); // Start from last
+        const found = HistoryManager.search(this.historySearchQuery, true);
         this.setCurrentInputValue(found || "");
         await this.updatePrompt();
     }
@@ -445,12 +439,11 @@ class TabCompletionManager {
                 cmd.toLowerCase().startsWith(currentWordPrefix.toLowerCase())
             ).sort();
         } else {
-            // NEW LOGIC: Infer completion type from command name
             const userCommands = ['su', 'chown', 'usermod', 'removeuser', 'groups', 'passwd', 'login'];
             const groupCommands = ['chgrp'];
             const commandCompletingCommands = ['help', 'man', 'alias', 'unalias'];
 
-            let completionType = 'paths'; // Default to paths
+            let completionType = 'paths';
             if (userCommands.includes(commandName)) {
                 completionType = 'users';
             } else if (groupCommands.includes(commandName) || (commandName === 'usermod' && tokens.includes('-aG'))) {
@@ -485,7 +478,7 @@ class TabCompletionManager {
                         name.toLowerCase().startsWith(currentWordPrefix.toLowerCase())
                     )
                     .sort();
-            } else { // Fallback to 'paths'
+            } else {
                 const lastSlashIndex = currentWordPrefix.lastIndexOf(
                     Config.FILESYSTEM.PATH_SEPARATOR
                 );

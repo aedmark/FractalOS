@@ -1,5 +1,3 @@
-/* Captain's Log Style Sheet */
-
 #captains-log-app-container .app-main {
     padding: var(--spacing-md);
     padding-top: 0;
@@ -17,7 +15,7 @@
     border-radius: var(--border-radius-sm);
     color: var(--color-text-primary);
     padding: var(--spacing-xs) var(--spacing-sm);
-    flex-grow: 1; /* Allow search to take up space */
+    flex-grow: 1;
 }
 
 .log-app__actions {

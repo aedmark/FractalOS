@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-// No model/browser needed: verify the facts required for a harness PASS.
 'use strict';
 const assert = require('node:assert/strict');
 const { TASKS, gradeTask } = require('./agent');

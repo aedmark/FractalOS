@@ -1,5 +1,3 @@
-# gem/core/commands/agenda.py
-
 import json
 from filesystem import fs_manager
 

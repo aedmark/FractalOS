@@ -1,4 +1,3 @@
-# gemini/core/commands/theme.py
 import json
 import os
 from filesystem import fs_manager
@@ -16,7 +15,7 @@ def _ensure_theme_dir_exists(user_context):
             if not fs_manager.get_node("/etc"):
                 fs_manager.create_directory("/etc", {"name": "root", "group": "root"})
             fs_manager.create_directory(THEME_DIR, {"name": "root", "group": "root"})
-            fs_manager.chmod(THEME_DIR, "755") # rwxr-xr-x
+            fs_manager.chmod(THEME_DIR, "755")
             return True
         except Exception:
             return False
@@ -82,7 +81,7 @@ def run(args, flags, user_context, **kwargs):
         theme_content = _find_theme_by_name(theme_to_get)
 
         if theme_content:
-            return theme_content # Return the raw JSON string
+            return theme_content
 
         return {"success": False, "error": {"message": f"theme: theme '{theme_to_get}' not found"}}
 

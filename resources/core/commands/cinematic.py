@@ -1,5 +1,3 @@
-# gemini/core/commands/cinematic.py
-
 def define_flags():
     """Declares the flags that the cinematic command accepts."""
     return {'flags': [], 'metadata': {}}

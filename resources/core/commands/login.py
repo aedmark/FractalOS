@@ -1,5 +1,3 @@
-# gem/core/commands/login.py
-
 def run(args, flags, user_context, stdin_data=None):
     if not 1 <= len(args) <= 2:
         return {

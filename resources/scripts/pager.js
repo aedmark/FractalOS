@@ -1,5 +1,3 @@
-// /scripts/pager.js
-
 class PagerUI {
     constructor(dependencies) {
         this.elements = {};
@@ -85,12 +83,12 @@ window.PagerManager = class PagerManager extends (window.App || class {}) {
 
         switch (e.key) {
             case "q":
-            case "Escape": // Also allow Escape to quit, consistent with other apps
+            case "Escape":
                 this.exit();
                 break;
             case " ":
             case "f":
-            case "PageDown": // Add PageDown for more intuitive scrolling
+            case "PageDown":
                 this.topVisibleLine = Math.min(
                     this.topVisibleLine + this.terminalRows,
                     Math.max(0, this.lines.length - this.terminalRows)
@@ -98,7 +96,7 @@ window.PagerManager = class PagerManager extends (window.App || class {}) {
                 scrolled = true;
                 break;
             case "ArrowDown":
-            case "j": // Vim-style navigation
+            case "j":
                 if (this.mode === "less") {
                     this.topVisibleLine = Math.min(
                         this.topVisibleLine + 1,
@@ -108,11 +106,10 @@ window.PagerManager = class PagerManager extends (window.App || class {}) {
                 }
                 break;
             case "b":
-            case "PageUp": // Add PageUp for more intuitive scrolling
+            case "PageUp":
             case "ArrowUp":
-            case "k": // Vim-style navigation
+            case "k":
                 if (this.mode === "less") {
-                    // In 'less', ArrowUp should scroll by one line, not a full page.
                     if (e.key === "ArrowUp" || e.key === "k") {
                         this.topVisibleLine = Math.max(0, this.topVisibleLine - 1);
                     } else {
@@ -142,9 +139,8 @@ window.PagerManager = class PagerManager extends (window.App || class {}) {
         this.container = this.ui.buildLayout();
         appLayer.appendChild(this.container);
 
-        // Use a timeout to ensure the element is in the DOM and has dimensions.
         setTimeout(() => {
-            if (!this.isActive) return; // Check if exited before timeout
+            if (!this.isActive) return;
             this.terminalRows = this.ui.getTerminalRows();
             this.ui.render(this.lines, this.topVisibleLine, this.mode, this.terminalRows);
         }, 0);
@@ -154,8 +150,6 @@ window.PagerManager = class PagerManager extends (window.App || class {}) {
         if (!this.isActive) return;
         this.isActive = false;
 
-        // The AppLayerManager is responsible for removing the container.
-        // We just need to tell it that we are done.
         this.dependencies.AppLayerManager.hide(this);
 
         if (this.ui) {

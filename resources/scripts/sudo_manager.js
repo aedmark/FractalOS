@@ -1,5 +1,3 @@
-// gem/scripts/sudo_manager.js
-
 class SudoManager {
     constructor() {
         this.userSudoTimestamps = {};
@@ -40,8 +38,7 @@ class SudoManager {
     canUserRunCommand(username, commandToRun) {
         try {
             const userGroups = this.groupManager.getGroupsForUser(username);
-            // Delegate the actual check to the Python kernel via syscall
-            const resultJson = OopisOS_Kernel.syscall("sudo", "can_user_run_command", [username, userGroups, commandToRun]);
+            const resultJson = FractalOS_Kernel.syscall("sudo", "can_user_run_command", [username, userGroups, commandToRun]);
             const result = JSON.parse(resultJson);
             return result.success ? result.data : false;
         } catch (e) {

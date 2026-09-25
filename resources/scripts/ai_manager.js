@@ -1,5 +1,3 @@
-// scripts/ai_manager.js
-
 class AIManager {
     constructor() {
         this.dependencies = {};

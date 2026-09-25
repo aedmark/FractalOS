@@ -1,5 +1,3 @@
-# gem/core/commands/base64.py
-
 import base64
 import re
 import binascii

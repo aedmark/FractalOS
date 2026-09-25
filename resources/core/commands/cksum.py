@@ -1,5 +1,3 @@
-# gem/core/commands/cksum.py
-
 import zlib
 from filesystem import fs_manager
 
@@ -32,10 +30,8 @@ def run(args, flags, user_context, stdin_data=None):
             content = node.get('content', '')
             output_lines.append(process_content(content, path))
     else:
-        # Handles 'cksum' with no args and no stdin.
         output_lines.append(process_content(""))
 
-    # If any errors occurred, we return a structured error object.
     if error_messages:
         return {
             "success": False,

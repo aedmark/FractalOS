@@ -1,4 +1,3 @@
-# gem/core/commands/printscreen.py
 import os
 from datetime import datetime
 

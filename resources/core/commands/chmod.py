@@ -1,5 +1,3 @@
-# gem/core/commands/chmod.py
-
 from filesystem import fs_manager
 import os
 import re
@@ -20,9 +18,7 @@ def _chmod_recursive(path, mode_octal, user_context):
     if not node:
         return
 
-    # Security Check: Only the owner or root can change permissions.
     if user_context.get('name') != 'root' and node.get('owner') != user_context.get('name'):
-        # Silently skip if no permission, as chmod often does in recursive runs.
         return
 
     now_iso = datetime.utcnow().isoformat() + "Z"
@@ -33,7 +29,6 @@ def _chmod_recursive(path, mode_octal, user_context):
         for child_name in node.get('children', {}).keys():
             child_path = os.path.join(path, child_name)
             child_node = node['children'][child_name]
-            # Pass the child node to the recursive call
             _chmod_recursive_helper(child_path, child_node, mode_octal, user_context)
 
 def _chmod_recursive_helper(path, node, mode_octal, user_context):
@@ -87,7 +82,6 @@ def run(args, flags, user_context, **kwargs):
                     }
                 }
 
-            # Security Check: Only the owner or root can change permissions.
             if user_context.get('name') != 'root' and node.get('owner') != user_context.get('name'):
                 return {
                     "success": False,
@@ -111,7 +105,8 @@ def run(args, flags, user_context, **kwargs):
                 }
             }
 
-    return "" # Success
+    return ""
+
 
 def man(args, flags, user_context, **kwargs):
     return """

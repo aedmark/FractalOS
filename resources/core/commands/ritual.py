@@ -1,5 +1,3 @@
-# gemini/core/commands/ritual.py
-
 import shlex
 
 def define_flags():

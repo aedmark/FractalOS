@@ -1,5 +1,3 @@
-# gemini/core/commands/roll.py
-
 import random
 import re
 
@@ -16,7 +14,6 @@ def run(args, flags, user_context, **kwargs):
 
     dice_string = "".join(args).lower()
 
-    # Regex to parse notation like '3d6+4' or '1d20-1'
     match = re.match(r'(\d+)d(\d+)([+-]\d+)?', dice_string)
 
     if not match:
@@ -40,7 +37,6 @@ def run(args, flags, user_context, **kwargs):
         modifier = int(modifier_str)
         total += modifier
 
-    # Build the output string
     rolls_str = " + ".join(map(str, rolls))
 
     if len(rolls) > 1:

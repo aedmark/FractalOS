@@ -55,11 +55,11 @@ printed at the end either way; the `AudioContext was not allowed to start` warni
 ### What it does, in order
 
 1. Opens the page in a fresh browser context (no real profile, no shared IndexedDB or localStorage, D-008).
-2. Waits up to 120 s for `OopisOS_Kernel.isReady` (bare name: `OopisOS_Kernel` is a top-level `const`, not a
+2. Waits up to 120 s for `FractalOS_Kernel.isReady` (bare name: `FractalOS_Kernel` is a top-level `const`, not a
    `window` property). Boot is 5 to 15 s on a laptop, longer the first time the wasm is compiled.
 3. Runs Python inside the kernel to report `sys.version`, `pyodide.__version__` and `cryptography.__version__`
    and to derive a PBKDF2 key. This is the check that the vendored wheels match the runtime (D-004, D-007).
-4. Calls `users.first_time_setup("gordon", "hunter2", "rootpw")` through `OopisOS_Kernel.syscall`, then
+4. Calls `users.first_time_setup("gordon", "hunter2", "rootpw")` through `FractalOS_Kernel.syscall`, then
    `verify_password` with the right and the wrong password. Expects `true` then `false`.
 5. Runs shell commands through `CommandExecutor.processSingleCommand(cmd, { isInteractive: false })` and checks
    each result against an expectation: `echo hello` → `hello`; `date` succeeds; `whoami` → `Guest`; `ls -la /home`
@@ -228,8 +228,8 @@ The CONTRIBUTING.md checklist, made concrete:
   and reload; `main.js` only takes the post-onboarding path on a fresh load. Setting the flag alone does not
   populate the users, groups and session stack.
 
-- **`window.OopisOS_Kernel` is `undefined`.** Every top-level object in the app is a `const`, so it is a global
-  but not a `window` property. `waitForFunction(() => window.OopisOS_Kernel ...)` waits forever. Use the bare
+- **`window.FractalOS_Kernel` is `undefined`.** Every top-level object in the app is a `const`, so it is a global
+  but not a `window` property. `waitForFunction(() => window.FractalOS_Kernel ...)` waits forever. Use the bare
   name. Same for `CommandExecutor` and `dependencies`.
 - **Guest has no home to write in during the smoke test.** `mkdir /home/gordon/t` is denied for Guest even after
   `first_time_setup` created `gordon`, because the executing user is still Guest. The test asserts the denial.

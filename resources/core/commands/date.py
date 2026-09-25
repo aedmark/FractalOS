@@ -1,5 +1,3 @@
-# gem/core/commands/date.py
-
 from datetime import datetime
 
 def run(args, flags, user_context, stdin_data=None):
@@ -14,7 +12,6 @@ def run(args, flags, user_context, stdin_data=None):
                 "suggestion": "Simply run 'date' by itself to see the current time."
             }
         }
-    # Using a format that's standard and includes timezone info
     return datetime.now().strftime('%a %b %d %H:%M:%S %Z %Y')
 
 def man(args, flags, user_context, **kwargs):

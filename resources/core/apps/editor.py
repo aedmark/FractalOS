@@ -1,5 +1,3 @@
-# gem/core/apps/editor.py
-
 class EditorManager:
     """Manages the state and logic for the text editor application."""
     def __init__(self):
@@ -31,13 +29,10 @@ class EditorManager:
 
     def push_undo_state(self, content):
         """Pushes a new content state to the undo stack."""
-        # To avoid flooding the stack, only add if content has changed
         if content != self.undo_stack[-1]:
             self.undo_stack.append(content)
-            # Limit stack size for performance
             if len(self.undo_stack) > 50:
                 self.undo_stack.pop(0)
-            # A new action clears the redo stack
             self.redo_stack = []
         return self.get_state()
 
@@ -47,7 +42,7 @@ class EditorManager:
             current_state = self.undo_stack.pop()
             self.redo_stack.append(current_state)
             return {"content": self.undo_stack[-1], **self.get_state()}
-        return None # Can't undo
+        return None
 
     def redo(self):
         """Re-applies a content state from the redo stack."""
@@ -55,18 +50,15 @@ class EditorManager:
             next_state = self.redo_stack.pop()
             self.undo_stack.append(next_state)
             return {"content": next_state, **self.get_state()}
-        return None # Can't redo
+        return None
 
     def update_on_save(self, path, content):
         """Updates the editor's state after a successful save."""
         self.current_file_path = path
         self.original_content = content
-        # After saving, the current state is the new "original"
-        # We can clear the undo/redo stacks or just mark the current state as clean
-        # For simplicity, we'll consider the saved content the new baseline
         self.undo_stack = [content]
         self.redo_stack = []
         return self.get_state()
 
-# Instantiate a singleton that will be exposed to JavaScript via the kernel
+
 editor_manager = EditorManager()

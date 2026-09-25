@@ -1,5 +1,3 @@
-# /core/commands/rm.py
-
 from filesystem import fs_manager
 import shlex
 import os
@@ -62,7 +60,8 @@ def run(args, flags, user_context, **kwargs):
             }
         }
 
-    return "" # Success
+    return ""
+
 
 def man(args, flags, user_context, **kwargs):
     return """

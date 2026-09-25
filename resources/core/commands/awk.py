@@ -1,5 +1,3 @@
-# /core/commands/awk.py
-
 import re
 import shlex
 from filesystem import fs_manager
@@ -26,8 +24,6 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
     program_arg = args[0]
     file_path = args[1] if len(args) > 1 else None
 
-    # The executor's shlex.split keeps the program as a single argument,
-    # including quotes. We need to strip them here for parsing.
     if (program_arg.startswith("'") and program_arg.endswith("'")) or \
             (program_arg.startswith('"') and program_arg.endswith('"')):
         program = program_arg[1:-1]
@@ -73,11 +69,10 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
 
         to_print_str = print_match.group(1) if print_match.group(1) else '$0'
 
-        # Using shlex.split is far more robust for parsing arguments.
         try:
             print_parts = shlex.split(to_print_str)
         except ValueError:
-            print_parts = to_print_str.split() # Fallback for simple cases
+            print_parts = to_print_str.split()
 
         if not print_parts:
             print_parts = ['$0']

@@ -1,6 +1,4 @@
-// gemini/bridge.js
-
-const OopisOS_Kernel = {
+const FractalOS_Kernel = {
     isReady: false,
     pyodide: null,
     kernel: null,
@@ -9,10 +7,10 @@ const OopisOS_Kernel = {
     _resolveInit: null,
 
     async syscall(module, func, args = [], kwargs = {}) {
-        // If kernel isn't ready yet, wait for initialization to complete
         if (!this.isReady || !this.kernel) {
             if (this._initPromise) {
-                try { await this._initPromise; } catch (_) { /* ignore */ }
+                try { await this._initPromise; } catch (_) {
+                }
             }
         }
         if (!this.isReady || !this.kernel) {
@@ -28,9 +26,6 @@ const OopisOS_Kernel = {
     },
     
     async getKernelFileManifest() {
-        // core/manifest.json lists every Python module to copy into the Pyodide FS.
-        // It is generated from the directories by tools/gen_manifest.py (D-010);
-        // tests/structure.js fails if it drifts from disk. Do not hand-edit it.
         const response = await fetch('./core/manifest.json');
         if (!response.ok) {
             throw new Error(`Could not load core/manifest.json (HTTP ${response.status}). Run: python3 tools/gen_manifest.py`);
@@ -56,7 +51,6 @@ const OopisOS_Kernel = {
     async initialize(dependencies) {
         this.dependencies = dependencies;
         const { OutputManager, Config } = this.dependencies;
-        // Set up an initialization promise that other calls can await
         if (!this._initPromise) {
             this._initPromise = new Promise((resolve) => { this._resolveInit = resolve; });
         }
@@ -77,13 +71,11 @@ const OopisOS_Kernel = {
             this.pyodide.FS.mkdir('/core/apps');
             await this.pyodide.runPythonAsync(`import sys; sys.path.append('/core')`);
 
-            // This is the new, refactored loading process!
             const filesToLoad = await this.getKernelFileManifest();
 
             for (const [pyPath, jsPath] of Object.entries(filesToLoad)) {
                 if (jsPath) {
                     let code;
-                    // Browser: Use the original fetch method.
                     code = await (await fetch(jsPath)).text();
                     this.pyodide.FS.writeFile(pyPath, code, { encoding: 'utf8' });
                 } else {
@@ -98,7 +90,6 @@ const OopisOS_Kernel = {
             Config.COMMANDS_MANIFEST.push(...pythonCommands);
             Config.COMMANDS_MANIFEST.sort();
 
-            // During initialization, call the Python syscall handler directly to avoid readiness gating deadlock
             try {
                 const request = { module: "executor", "function": "set_js_native_commands", args: [Config.JS_NATIVE_COMMANDS], kwargs: {} };
                 await this.kernel.syscall_handler(JSON.stringify(request));
@@ -107,7 +98,7 @@ const OopisOS_Kernel = {
             }
 
             this.isReady = true;
-            await OutputManager.appendToOutput("OopisOS Python Kernel is online.", { typeClass: Config.CSS_CLASSES.SUCCESS_MSG });
+            await OutputManager.appendToOutput("FractalOS Python Kernel is online.", { typeClass: Config.CSS_CLASSES.SUCCESS_MSG });
             if (this._resolveInit) { this._resolveInit(); this._resolveInit = null; }
         } catch (error) {
             this.isReady = false;
@@ -118,10 +109,10 @@ const OopisOS_Kernel = {
     },
 
     async execute_command(commandString, jsContextJson, stdinContent = null) {
-        // Wait for initialization to complete if needed
         if (!this.isReady || !this.kernel) {
             if (this._initPromise) {
-                try { await this._initPromise; } catch (_) { /* ignore */ }
+                try { await this._initPromise; } catch (_) {
+                }
             }
         }
         if (!this.isReady || !this.kernel) {
@@ -131,7 +122,7 @@ const OopisOS_Kernel = {
     },
 
     async saveFileSystemToDB(fsJsonString) {
-        const { StorageHAL } = OopisOS_Kernel.dependencies;
+        const { StorageHAL } = FractalOS_Kernel.dependencies;
         try {
             const fsData = JSON.parse(fsJsonString);
             await StorageHAL.save(fsData);

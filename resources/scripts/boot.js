@@ -1,8 +1,5 @@
-// /scripts/boot.js
-
 window.sessionStartTime = new Date();
 
-// --- Onboarding Process ---
 function startOnboardingProcess(dependencies) {
     const { AppLayerManager, OutputManager, TerminalUI } = dependencies;
     OutputManager.clearOutput();
@@ -18,7 +15,6 @@ function startOnboardingProcess(dependencies) {
     }
 }
 
-// --- Asynchronous Python Command Execution ---
 async function executePythonCommand(rawCommandText, options = {}) {
     const { isInteractive = true, scriptingContext = null, stdinContent = null, asUser = null } = options;
     const { ModalManager, OutputManager, TerminalUI, AppLayerManager, HistoryManager, Config, ErrorHandler, Utils, FileSystemManager } = dependencies;
@@ -54,7 +50,7 @@ async function executePythonCommand(rawCommandText, options = {}) {
     let result;
     try {
         const kernelContextJson = await createKernelContext({ asUser });
-        const jsonResult = await OopisOS_Kernel.execute_command(rawCommandText, kernelContextJson, stdinContent);
+        const jsonResult = await FractalOS_Kernel.execute_command(rawCommandText, kernelContextJson, stdinContent);
         const pyResult = JSON.parse(jsonResult);
 
         if (pyResult.success) {
@@ -78,14 +74,12 @@ async function executePythonCommand(rawCommandText, options = {}) {
             FileSystemManager.setFsData(updatedFsData);
 
         } else {
-            // This is the new, improved error handling logic!
             const errorObject = ErrorHandler.createError(pyResult.error);
             let fullErrorMessage = errorObject.error.message;
             if (errorObject.error.suggestion) {
                 fullErrorMessage += `\nSuggestion: ${errorObject.error.suggestion}`;
             }
 
-            // Still log the raw error to the dev console for us engineers!
             console.error("Python Execution Error:", pyResult.error);
 
             await OutputManager.appendToOutput(fullErrorMessage, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
@@ -108,13 +102,11 @@ async function executePythonCommand(rawCommandText, options = {}) {
     return result || { success: true, output: "" };
 }
 
-// --- Command Execution Wrapper ---
 const CommandExecutor = {
     processSingleCommand: executePythonCommand,
     getActiveJobs: () => activeJobs,
 };
 
-// --- Kernel Context Creation ---
 async function createKernelContext(options = {}) {
     const { asUser = null } = options;
     const { FileSystemManager, UserManager, GroupManager, StorageManager, Config, SessionManager, AliasManager, HistoryManager } = dependencies;
@@ -141,9 +133,8 @@ async function createKernelContext(options = {}) {
     }
     const apiKey = StorageManager.loadItem(Config.STORAGE_KEYS.GEMINI_API_KEY);
 
-    // This syncs the JS-side session state to Python before execution
-    await OopisOS_Kernel.syscall("alias", "load_aliases", [await AliasManager.getAllAliases()]);
-    await OopisOS_Kernel.syscall("history", "set_history", [await HistoryManager.getFullHistory()]);
+    await FractalOS_Kernel.syscall("alias", "load_aliases", [await AliasManager.getAllAliases()]);
+    await FractalOS_Kernel.syscall("history", "set_history", [await HistoryManager.getFullHistory()]);
 
     return JSON.stringify({
         current_path: FileSystemManager.getCurrentPath(),
@@ -154,7 +145,7 @@ async function createKernelContext(options = {}) {
         jobs: activeJobs,
         config: {
             MAX_VFS_SIZE: Config.FILESYSTEM.MAX_VFS_SIZE,
-            NETWORKING_ENABLED: Config.NETWORKING.NETWORKING_ENABLED, // Pass the flag
+            NETWORKING_ENABLED: Config.NETWORKING.NETWORKING_ENABLED,
         },
         api_key: apiKey,
         session_start_time: window.sessionStartTime.toISOString(),
@@ -162,7 +153,6 @@ async function createKernelContext(options = {}) {
     });
 }
 
-// --- Terminal UI State Initialization ---
 async function finalizeInteractiveModeUI(originalCommandText) {
     const { TerminalUI, AppLayerManager, HistoryManager } = dependencies;
     if (!TerminalUI.isSearchingHistory) {
@@ -186,8 +176,6 @@ function initializeTerminalEventListeners(domElements, dependencies) {
     domElements.terminalDiv.addEventListener("click", (e) => {
         if (AppLayerManager.isActive()) return;
 
-        // If text has been selected, don't steal focus.
-        // This allows the user to copy text from the output.
         const selection = window.getSelection();
         if (selection && selection.toString().length > 0) {
             return;
@@ -228,7 +216,6 @@ function initializeTerminalEventListeners(domElements, dependencies) {
 
         if (e.target !== domElements.editableInputDiv && !TerminalUI.isSearchingHistory) return;
 
-        // --- History Search Logic ---
         if (e.ctrlKey && e.key === 'r') {
             e.preventDefault();
             await TerminalUI.startHistorySearch();
@@ -247,7 +234,6 @@ function initializeTerminalEventListeners(domElements, dependencies) {
             }
             return;
         }
-        // --- End History Search Logic ---
 
         switch (e.key) {
             case "Enter":

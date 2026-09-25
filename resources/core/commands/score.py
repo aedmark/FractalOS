@@ -1,5 +1,3 @@
-# gemini/core/commands/score.py
-
 import json
 from filesystem import fs_manager
 
