@@ -187,10 +187,9 @@ The CONTRIBUTING.md checklist, made concrete:
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
 
-- **Thinking models return an empty reply through Ollama** (P2-09, not fixed yet). The kernel sends no `think`
-  field, so `gemma4` reasons until `done_reason: "length"` and `response` is `""`. The OS reports "AI failed to
-  generate a valid response structure" after a minute or more. Check with `curl .../api/generate` and look at
-  `eval_count` and `done_reason` before blaming the prompt.
+- **Ollama thinking is disabled** (P2-09). Requests send `think: false`; empty or whitespace-only responses
+  report `done_reason` (including `length` when the output budget ran out). Three smoke checks exercise the
+  actual adapter with a fake transport. Real gemma4 replies took 0.3–2.2 s after this fix.
 - **The real Ollama and `tests/fake_ollama.py` both want port 11434.** Stop one to run the other.
 - **A `\n` inside a JS template literal that holds Python source is a real newline by the time Python sees it.**
   Hit twice now (sessions 5 and 6). Write `\\n` in the `.js` file. `node --check` cannot catch it; the smoke test

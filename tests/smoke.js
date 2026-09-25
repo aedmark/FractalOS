@@ -120,6 +120,35 @@ json.dumps({"python": sys.version.split()[0], "pyodide": pyodide.__version__,
         report('verify_password accepts the right password', okPw.success && okPw.data === true, JSON.stringify(okPw));
         report('verify_password rejects the wrong password', badPw.success && badPw.data === false, JSON.stringify(badPw));
 
+        // P2-09: exercise the real request/response adapter with a fake transport.
+        const wire = JSON.parse(await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync(`
+import json, kernel, ai_manager
+saved_fetch = ai_manager.pyodide_http.pyfetch
+bodies = []
+class Reply:
+    status = 200
+    async def json(self):
+        return Reply.data
+async def fake_fetch(url, **kwargs):
+    bodies.append(json.loads(kwargs["body"]))
+    return Reply()
+ai_manager.pyodide_http.pyfetch = fake_fetch
+results = {}
+try:
+    for value in ["", "   ", None, "hello"]:
+        Reply.data = {"response": value, "done_reason": "length"}
+        r = await kernel.ai_manager._call_llm_api("ollama", "test", [], None)
+        results[str(value)] = r
+    results["thinking_disabled"] = all(b.get("think") is False for b in bodies)
+finally:
+    ai_manager.pyodide_http.pyfetch = saved_fetch
+json.dumps(results)
+`)));
+        report('Ollama requests disable thinking', wire.thinking_disabled === true);
+        report('Ollama empty replies report done_reason', ['', '   ', 'None'].every(k =>
+            wire[k].success === false && wire[k].error.includes('done_reason: length')));
+        report('Ollama nonempty replies survive the adapter', wire.hello.success === true && wire.hello.answer === 'hello');
+
         // 2b. The agent and python (P2-03, D-013), with the LLM replaced by a fake that returns a fixed plan.
         const agent = JSON.parse(await page.evaluate(async () => {
             const py = OopisOS_Kernel.pyodide;

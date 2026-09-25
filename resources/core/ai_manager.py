@@ -387,7 +387,8 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             request_body_dict = {
                 "model": ollama_model,
                 "prompt": full_prompt,
-                "stream": False
+                "stream": False,
+                "think": False
             }
         else:
             return {"success": False, "error": f"Provider '{provider}' not implemented in Python AIManager."}
@@ -412,8 +413,11 @@ ls, cat, grep, find, tree, pwd, head, tail, wc, man, help, echo, bc, expr, whoam
             elif provider == "ollama":
                 answer = response_data.get("response")
 
-            if answer:
+            if isinstance(answer, str) and answer.strip():
                 return {"success": True, "answer": answer}
+            elif provider == "ollama":
+                reason = response_data.get("done_reason", "unknown")
+                return {"success": False, "error": f"Ollama returned an empty reply (done_reason: {reason})."}
             else:
                 return {"success": False, "error": "AI failed to generate a valid response structure."}
 

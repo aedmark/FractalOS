@@ -124,13 +124,9 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   `confirm_ai_command` effect at the first dangerous line, the front end runs only that one command on "yes", and
   the remaining plan lines and the synthesizer never run (seen in `tests/agent.js` task B2, 2026-09-25). Decide:
   resume the plan after confirmation, or confirm the whole plan up front
-- [ ] P2-09 Thinking models return nothing through Ollama. `_call_llm_api` sends no `think` field, so `gemma4`
-  (and presumably `qwen3`, `qwen3.5`) reasons by default, spends the whole output budget on hidden thinking and
-  comes back with `response: ""` and `done_reason: "length"`: "AI failed to generate a valid response
-  structure" after 80 to 95 s, or a plan cut off mid-line. Replaying the C1 autopilot prompt against `gemma4:12b`:
-  3,296 tokens and an empty reply in 74 s by default, a two-line plan in 1 s with `"think": false`. Send
-  `think: false` for Ollama (or read the `thinking` field and raise the limit), and report `done_reason` when the
-  reply is empty (2026-09-25)
+- [x] P2-09 Ollama requests send `think: false`; empty, whitespace-only or missing replies report
+  `done_reason`. Verified by three adapter smoke checks and real `gemma4:12b` replies in 0.3–2.2 s
+  (2026-09-25; smoke 50/50, diag 40/0).
 - [ ] P2-10 Agent mode takes every numbered line in the planner's answer as a command and halts on the first
   one that is not whitelisted. `llama3.1:8b` wraps its plan in prose with its own numbered "Step" and
   "Explanation" lists, so B1 halted on `**Step` and B2 on `We` (2026-09-25). Extract only the plan list (the
