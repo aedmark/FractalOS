@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-25, session 8 (P2-09 and P2-11 complete; real-model reruns still block P2-01)._
+_Last updated: 2026-09-25, session 9 (root-cause diagnosis reproduced; runtime unchanged, P2-01 still open)._
 
 **What works / verified now**
 - Pyodide 314.0.7 / Python 3.14.2 boots from the trimmed vendored runtime. Structure PASS (10 checks),
@@ -48,6 +48,23 @@ Gemma: **4 FAIL of 7**. Llama: **5 FAIL of 7**. C2 is INFO, not a passing test. 
 one confirmation, but mv failed because A2 had not created tools.txt. **Neither A2 nor a successful B2 was
 observed**, so P2-01 cannot be closed. `--force` still is not read: differing plans explain differing outcomes.
 
+**Root causes reproduced in session 9**
+- Actual BoneDriver audit: `forge tools.txt "trowel"` scores 20 (blocked); adding `story save` scores 5.
+  `rm -r garden` or `rm -fr garden` plus `story save` scores 10 (allowed); `rm -rf` scores 60 (blocked).
+  Even `echo "story save"` suppresses the +15 penalty. The audit scans substrings, not command semantics;
+  it neither verifies a snapshot nor requires it to succeed before writes.
+- Actual AIManager loop with a fake executor: failed `cd garden` is followed by forge and story save;
+  final success is true. This reproduces the observed cascade without invoking a model.
+- B1/B2 llama transcripts contain a valid final command list after numbered Markdown prose. The parser
+  collects both lists and aborts on the prose first. Separately, `mv` is whitelisted and confirmed-first but
+  explicitly omitted from the planner's ONLY-use-these-tools manifest (P2-14).
+- A3's Project directory is a direct PRIME DIRECTIVE in the persona, not merely a suggestive example.
+  The same prompt frames forge as creating only .sh/.py scripts, encouraging an unnecessary seeds.py for A1.
+- Replayed gemma's exact forge command through shlex plus forge's replacement: nested Python string
+  escapes become real line breaks; compile raises the same unterminated-string SyntaxError.
+- A2/B2 harness dependencies multiply failures; A2's "cd was forgotten" text overstates what its filesystem
+  check proves. B2's grade does not enforce that confirmation happened (P2-15).
+
 **Not verified / not done**
 - P2-02 voltage calibration: a lone forge without story save is blocked, but rm -r with story save can delete
   at voltage 10 even when the story save subsequently fails. P2-07: plans continue after failed steps.
@@ -55,7 +72,7 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
   abandoning subsequent plan steps and synthesis. P2-12: worked example draws sum.py into Project/.
 - P2-13: forge's newline expansion corrupts nested Python string escapes (new evidence from gemma A1).
 - No Gemini key was used. UI apps, audio, portable/Neutralino mode, Firefox and Safari remain unverified.
-- P1-07: neutralinojs.log is still tracked. User-supplied AGENTS.md is untracked and was left untouched.
+- P1-07: neutralinojs.log is still tracked. AGENTS.md is now tracked; it was left untouched.
 
 **Gotchas for the next session**
 - **Two names.** The code says OopisOS (`OopisOS_Kernel`, `oopisOs*` keys, `oopisos-network`); the product is
@@ -98,10 +115,12 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
 
 ## Next steps (in order)
 
-1. **P2-02:** calibrate the story-save interlock and destructive-command voltage using the recorded plans.
-2. **P2-10:** fix agent-mode plan extraction. Then rerun the unchanged harness for successful A2 and B2
-   evidence before closing **P2-01**. P2-12 and P2-13 explain the other observed failures.
-3. **P2-07 / P2-08:** define force/brake policy, stop failed plans, and resume after confirmation.
+1. **P2-12 / P2-14:** remove contradictory project/script directives and advertise the tools the planner can
+   actually execute. **P2-10:** extract the executable list separately from explanation, preserving validation.
+2. **P2-02 / P2-07:** score parsed operations consistently; replace the story-save substring discount with a
+   real snapshot policy, stop on failed steps and report failure. Do not just lower the threshold.
+3. **P2-13 / P2-15:** fix nested escapes; independently verify cd and confirmation with known prerequisites.
+   Then rerun both real models for **P2-01**. **P2-08:** resume remaining steps after confirmation.
 
 ## Open questions for the user
 
@@ -114,6 +133,20 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 9: 2026-09-25: Reproduce why the agent tasks keep failing (P2-01 diagnosis)
+
+**Goal:** Explain repeated task failures after the thinking and delete-grading fixes were pushed.
+**Done:** Traced both preserved model transcripts through prompts, parser, audit, execution, confirmation and
+harness grades. Reproduced six voltage cases with the actual BoneDriver; replayed AIManager's loop using a
+fake executor to demonstrate continuation after failed cd; reproduced forge's nested-escape SyntaxError.
+Verified the planner manifest/whitelist mismatch. Detailed evidence is in Current state.
+**Changed:** ROADMAP (P2-14 and P2-15 added, P2-10 evidence), this file. No runtime changes.
+**Decisions:** none; calibration and snapshot policy need an intentional implementation, not a threshold tweak.
+**Problems / surprises:** Reordered rm flags change the score from 60 to 10; merely echoing "story save"
+bypasses the surcharge. Project/ is an explicit instruction. A compliant planner cannot use mv for B2.
+**Left undone:** Fixes and real-model reruns; previous browser test results remain the latest, not rerun here.
+**Next session should start with:** Next steps above; P2-01 remains open.
 
 ### Session 8: 2026-09-25: Disable thinking, repair delete grading, rerun real models (P2-09, P2-11)
 

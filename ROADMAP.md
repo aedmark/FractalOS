@@ -124,6 +124,8 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   "Explanation" lists, so B1 halted on `**Step` and B2 on `We` (2026-09-25). Extract only the plan list (the
   autopilot's backtick stripping already copes with `` `ls` ``), skip lines whose first word is not a command,
   or tighten the planner prompt; the autopilot's parser has the same weakness but tolerated it here
+  *Session 9 diagnosis:* the same response can contain a prose list and a valid final command list; the
+  parser executes the prose first and never reaches the valid list. Fix extraction before widening acceptance.
 - [x] P2-11 Delete tasks independently create and verify `garden/delete-probe.txt`, resetting cwd to home.
   Missing, empty or failed LLM calls are explicit inconclusive FAILs; C1 requires both disengagement and a
   surviving fixture. Setup is recorded in the transcript. Verified with 11 focused grading cases and real
@@ -135,6 +137,14 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [ ] P2-13 `forge` expands literal newline escapes inside generated Python string literals as well as between
   source lines. Gemma4 A1 forged seeds.py with a nested f.write string; execution failed with an unterminated
   string literal (2026-09-25, session 8). Define escape handling that preserves nested source strings.
+
+- [ ] P2-14 Align the planner's advertised tools with its executable whitelist. Its prompt says ONLY the
+  manifest's read-oriented commands are allowed, omitting `mv`, `forge`, `python`, etc., while the executor
+  supports them. B2 requires a tool the planner is expressly told not to use (session 9 diagnosis).
+- [ ] P2-15 Separate agent harness prerequisites from behavioral verdicts. A2 depends on A1 creating garden;
+  B2 depends on A2 creating tools.txt. A failed prerequisite should be explicit, with independent fixture-based
+  checks for cd and confirmation. A2 currently diagnoses any misplaced tools.txt as "cd was forgotten" even
+  when cd failed. B2 passes on kit.txt alone, without requiring confirmation or source removal (session 9).
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 
