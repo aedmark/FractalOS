@@ -132,10 +132,10 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
   "Explanation" lists, so B1 halted on `**Step` and B2 on `We` (2026-09-25). Extract only the plan list (the
   autopilot's backtick stripping already copes with `` `ls` ``), skip lines whose first word is not a command,
   or tighten the planner prompt; the autopilot's parser has the same weakness but tolerated it here
-- [ ] P2-11 `tests/agent.js` grades C1 and C2 without a precondition. If `garden/` never existed (A1 failed) C1
-  reports "the autopilot deleted garden/" and C2 "garden was deleted", both false; and a model that answers
-  nothing gets a C1 PASS. Check `garden/` exists before the delete tasks (create it directly if not) and make an
-  empty or failed LLM call an explicit verdict, not a PASS (2026-09-25)
+- [x] P2-11 Delete tasks independently create and verify `garden/delete-probe.txt`, resetting cwd to home.
+  Missing, empty or failed LLM calls are explicit inconclusive FAILs; C1 requires both disengagement and a
+  surviving fixture. Setup is recorded in the transcript. Verified with 11 focused grading cases and real
+  gemma4 delete attempts despite failed A1/A2 (2026-09-25).
 - [ ] P2-12 The persona's worked example (`mkdir Project; cd Project; story begin`) outranks the user's own
   location: asked for `sum.py` "in my home directory", `llama3.1:8b` put it in `~/Project/` (A3, 2026-09-25).
   Make the example say "where the user asked" or drop the `mkdir Project` step
