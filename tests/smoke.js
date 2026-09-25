@@ -179,7 +179,7 @@ r = await am.perform_autopilot("six times seven", [], "ollama", None, {"apiKey":
 results["autopilot_python"] = r.get("success") and "42" in r.get("data", "")
 fake_llm.plan = '1. python --steps 0 -c "print(1)"'
 r = await am.perform_autopilot("x", [], "ollama", None, {"apiKey": None})
-results["autopilot_refuses_steps"] = r.get("success") and "Refused: the agent may not change python" in r.get("data", "") and "\\n1\\n" not in r.get("data", "")
+results["autopilot_refuses_steps"] = r.get("success") is False and "the agent may not change python" in r.get("error", "")
 fake_llm.plan = '1. python -c "print(6 * 7)"'
 r = await am.perform_agentic_search("six times seven", [], "ollama", None, {"apiKey": None})
 results["agent_asks_first"] = r.get("effect") == "confirm_ai_command" and r.get("command") == 'python -c "print(6 * 7)"'

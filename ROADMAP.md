@@ -106,12 +106,15 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 - [ ] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named.
   Note: `_call_llm_api` passes `timeout=20` to `pyfetch`, which has no such parameter; there is no timeout at all
   today and the `TimeoutError` branch is dead (found 2026-09-25, P2-01)
-- [ ] P2-07 The autopilot enforces nothing but voltage: `perform_autopilot` never checks `COMMAND_WHITELIST`
+- [~] P2-07 The autopilot enforces nothing but voltage: `perform_autopilot` never checks `COMMAND_WHITELIST`
   or `DANGEROUS_COMMANDS` (the whitelist is only used to *recognise* plan lines), and the `--force` flag is
   passed in as `force_override` and never read. Decide what the autopilot's brakes are (whitelist? confirm?
   voltage plus force?) and make `--force` mean something or remove it. Also seen 2026-09-25 (llama3.1 A2): a
   failed step does not stop the plan. `cd garden` failed, the next line wrote `tools.txt` into `$HOME` instead,
   and the report still came back `success: true` at LOW VOLTAGE.
+  *Repair in progress:* both execution paths prevalidate the entire simple-command plan and stop on the
+  first failed step; unknown commands and compound shell syntax are rejected before writes. Failures no
+  longer report success. Remaining: operation-based voltage, checkpoint and force policy (P2-02).
 - [ ] P2-08 Agent mode abandons the rest of its plan after a confirmation: `perform_agentic_search` returns the
   `confirm_ai_command` effect at the first dangerous line, the front end runs only that one command on "yes", and
   the remaining plan lines and the synthesizer never run (seen in `tests/agent.js` task B2, 2026-09-25). Decide:

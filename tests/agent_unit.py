@@ -75,6 +75,39 @@ class AgentTests(unittest.TestCase):
     def test_plain_answer_is_not_plan(self):
         self.assertEqual(self.am.extract_plan('Paris is the capital of France.'), [])
 
+    def run_plan(self, plan, agent=False, **options):
+        async def llm(*args):
+            return {'success': True, 'answer': plan}
+        async def context():
+            return 'Current Directory: /home/test'
+        self.am._call_llm_api = llm
+        self.am._get_terminal_context = context
+        method = self.am.perform_agentic_search if agent else self.am.perform_autopilot
+        return asyncio.run(method('test', [], 'ollama', None, options))
+
+    def test_failed_cd_stops_writes_and_returns_failure(self):
+        self.executor.results['cd missing'] = {'success': False, 'error': 'absent'}
+        result = self.run_plan('1. cd missing\n2. forge tools.txt "trowel"\n3. story save "done"')
+        self.assertFalse(result['success'])
+        self.assertEqual([c[0] for c in self.executor.calls], ['cd missing'])
+
+    def test_later_invalid_command_prevents_all_execution(self):
+        for agent in [False, True]:
+            result = self.run_plan('1. mkdir changed\n2. forbidden command', agent=agent)
+            self.assertFalse(result['success'])
+        self.assertEqual(self.executor.calls, [])
+
+    def test_compounds_and_substitutions_are_rejected(self):
+        for command in ['ls; rm -rf x', 'ls | cat', 'echo $(rm x)', 'echo "$HOME"', 'ls && pwd']:
+            self.assertIsNotNone(self.am.validate_plan([command]), command)
+        self.assertIsNone(self.am.validate_plan(['python -c "x=1; print(x)"']))
+
+    def test_agent_failed_command_never_synthesizes_success(self):
+        self.executor.results['cat missing'] = {'success': False, 'error': 'absent'}
+        result = self.run_plan('1. cat missing\n2. ls', agent=True)
+        self.assertFalse(result['success'])
+        self.assertEqual([c[0] for c in self.executor.calls], ['cat missing'])
+
 
 if __name__ == '__main__':
     unittest.main()

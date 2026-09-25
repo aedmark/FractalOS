@@ -86,6 +86,51 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
         return None
 
 
+    def validate_plan(self, commands):
+        """Validate the entire simple-command plan before it can have side effects."""
+        for command in commands:
+            refusal = self.agent_refusal(command)
+            if refusal:
+                return refusal
+            parts = shlex.split(command)
+            if not parts or parts[0] not in self.COMMAND_WHITELIST:
+                return f"non-whitelisted command: {parts[0] if parts else '(empty)'}"
+            # The shell substitutes even inside quoted text; disallow substitutions
+            # and operators rather than auditing only the first command of a pipeline.
+            if "$" in command or any(p in {"|", "||", "&&", "&", ">", ">>", "<"} for p in parts):
+                return "use literal paths and one command per line, without shell operators"
+            quote, escaped = None, False
+            for char in command:
+                if escaped:
+                    escaped = False
+                    continue
+                if char == "\\" and quote != "'":
+                    escaped = True
+                elif quote:
+                    if char == quote:
+                        quote = None
+                elif char in "\"'":
+                    quote = char
+                elif char in ";|&<>\n":
+                    return "use one command per line, without shell operators"
+        return None
+
+    async def _execute_plan_step(self, command, current_path):
+        context = {"user_context": self.command_executor.user_context,
+                   "current_path": current_path}
+        result = json.loads(await self.command_executor.execute(command, json.dumps(context)))
+        effects = list(result.get("effects", []))
+        if result.get("effect"):
+            effects.append(result)
+        if result.get("success", bool(effects)):
+            for effect in effects:
+                if effect.get("effect") == "change_directory":
+                    current_path = effect["path"]
+                else:
+                    return {"success": False, "error": "This plan step needs an interactive effect; run it directly."}, current_path
+        result.setdefault("success", bool(effects))
+        return result, current_path
+
     def extract_plan(self, text):
         """Select the last explicit plan, keeping every command for validation.
 
@@ -233,6 +278,11 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
 
         plan_text = plan_result.get("answer", "").strip()
         
+        commands_to_execute = self.extract_plan(plan_text)
+        refusal = self.validate_plan(commands_to_execute)
+        if refusal:
+            return {"success": False, "error": f"Execution HALTED: {refusal}."}
+
         # 5. THE SAFETY INTERLOCK (Voltage Check)
         voltage = BoneDriver.audit_plan_voltage(plan_text)
         safety_status = BoneDriver.get_safety_report(voltage)
@@ -249,7 +299,6 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
                 "error": f"🛑 AUTOPILOT DISENGAGED. {safety_status}. Human confirmation required.\nPlan:\n{plan_text}"
             }
 
-        commands_to_execute = self.extract_plan(plan_text)
         if not commands_to_execute:
             return {"success": True, "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"}
 
@@ -261,37 +310,10 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
         # [[[ MEMORY INJECTION END ]]]
 
         for command_str in commands_to_execute:
-
-            refusal = self.agent_refusal(command_str)
-            if refusal:
-                execution_log += f"► {command_str}\nRefused: {refusal}\n"
-                continue
-
-            # 7. KINETIC DISCHARGE
-            # We explicitly tell the executor: "THIS IS WHERE WE ARE."
-            js_context = {
-                "user_context": self.command_executor.user_context,
-                "current_path": simulated_current_path # <--- THE FIX
-            }
-
-            exec_result_json = await self.command_executor.execute(command_str, json.dumps(js_context))
-            exec_result = json.loads(exec_result_json)
-
-            # 8. UPDATE MEMORY (Did we move?)
-            # If the command was `cd`, we must update our simulated path for the next loop.
-            if exec_result.get("success"):
-                # Direct effect check
-                if exec_result.get("effect") == "change_directory":
-                    simulated_current_path = exec_result.get("path")
-
-                # Bundled effects check
-                if exec_result.get("effects"):
-                    for effect in exec_result["effects"]:
-                        if effect.get("effect") == "change_directory":
-                            simulated_current_path = effect.get("path")
-
-            output = exec_result.get("output", "") if exec_result.get("success") else f"Error: {exec_result.get('error')}"
-            execution_log += f"► {command_str}\n{output}\n"
+            exec_result, simulated_current_path = await self._execute_plan_step(command_str, simulated_current_path)
+            if not exec_result.get("success"):
+                return {"success": False, "error": f"Execution HALTED at {command_str}: {exec_result.get('error')}\nCompleted steps:\n{execution_log}"}
+            execution_log += f"► {command_str}\n{exec_result.get('output', '')}\n"
 
         # 9. REPORT (The Aftermath)
         final_report = f"### 🍄 BONEAMANITA AUTOPILOT REPORT\n**Status:** {safety_status} (Voltage: {voltage})\n\n**Execution Log:**\n```\n{execution_log}\n```"
@@ -322,6 +344,10 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
             if warning: response["warning"] = warning
             return response
 
+        refusal = self.validate_plan(commands_to_execute)
+        if refusal:
+            return {"success": False, "error": f"Execution HALTED: {refusal}."}
+        current_path = self.fs_manager.current_path
         executed_commands_output = ""
         for command_str in commands_to_execute:
             command_str_from_plan = command_str
@@ -352,11 +378,10 @@ Create plain text with `forge filename "content"`. Respect the requested path; d
                 self.command_executor.user_context
             )
 
-            js_context = {"user_context": self.command_executor.user_context, "current_path": self.command_executor.fs_manager.current_path}
-            exec_result_json = await self.command_executor.execute(command_str, json.dumps(js_context))
-            exec_result = json.loads(exec_result_json)
-
-            output = exec_result.get("output", "") if exec_result.get("success") else f"Error: {exec_result.get('error')}"
+            exec_result, current_path = await self._execute_plan_step(command_str, current_path)
+            if not exec_result.get("success"):
+                return {"success": False, "error": f"Execution HALTED at {command_str}: {exec_result.get('error')}"}
+            output = exec_result.get("output", "")
             executed_commands_output += f"--- Output of '{command_str}' ---\n{output}\n\n"
 
         synthesizer_prompt = f'Original user question: "{prompt}"\n\nContext from file system:\n{executed_commands_output}'

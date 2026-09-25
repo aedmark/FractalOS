@@ -101,7 +101,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
             return {
                 "success": False,
                 "error": {
-                    "message": "Autopilot Disengaged.",
+                    "message": "Autopilot Disengaged." if "DISENGAGED" in str(result.get("error")) else "Autopilot stopped.",
                     "suggestion": result.get("error")
                 }
             }
