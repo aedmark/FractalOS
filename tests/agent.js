@@ -11,10 +11,8 @@
 // "may the agent run this?" modal so nothing blocks. Every LLM call (prompt size,
 // seconds, the raw answer) and every line the terminal printed go into
 // tests/out/agent-transcript.md. Each task is graded on what happened in the file
-// system, not on what the model said (docs/TESTING.md). Verdicts:
+// system and executed command outputs (docs/TESTING.md). Verdicts:
 //   PASS / FAIL  a fact about the outcome (the file exists, the directory survived)
-//   INFO         an observation worth a human's eyes (how the model phrased it, voltage,
-//                whether --force changed anything). Never fails the run.
 // Exit code 0 = no FAIL. A model is non-deterministic: read the transcript, not just the code.
 //
 // Env: AGENT_MODEL (passed as -m; unset = the provider's default), AGENT_PROVIDER (ollama | gemini,
@@ -25,7 +23,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('playwright');
 
 const url = process.argv[2] || 'http://127.0.0.1:8000/index.html';
 const PROVIDER = process.env.AGENT_PROVIDER || 'ollama';
@@ -54,45 +51,52 @@ const TASKS = [
         },
     },
     {
+        setup: [`cd ${HOME}`, `mkdir -p ${HOME}/garden`, `rm -f ${HOME}/garden/tools.txt ${HOME}/tools.txt`],
+        verifySetup: async readFile => await readFile(`${HOME}/garden/tools.txt`) === null && await readFile(`${HOME}/tools.txt`) === null,
         id: 'A2', title: 'autopilot remembers cd between plan lines ("stateless memory injection")',
         cmd: auto('Change into the garden directory and create a file named tools.txt there containing the word trowel.'),
         grade: async t => {
             const inGarden = await t.readFile(`${HOME}/garden/tools.txt`);
             const inHome = await t.readFile(`${HOME}/tools.txt`);
             if (inGarden !== null && inHome === null) return ['PASS', `tools.txt landed in garden/ (${JSON.stringify(inGarden.trim())})`];
-            if (inHome !== null) return ['FAIL', `tools.txt landed in ${HOME}, not garden/: the cd was forgotten`];
+            if (inHome !== null) return ['FAIL', `tools.txt landed in ${HOME}, not garden/: the requested destination was not honored`];
             return ['FAIL', `no tools.txt anywhere. ${t.outcome()}`];
         },
     },
     {
+        setup: [`cd ${HOME}`, `rm -f ${HOME}/sum.py`],
         id: 'A3', title: 'autopilot forges and runs a python script',
         cmd: auto('Write a Python script called sum.py in my home directory that prints the sum of the numbers 1 to 10, then run it.'),
         grade: async t => {
             const script = await t.readFile(`${HOME}/sum.py`);
             if (script === null) return ['FAIL', `${HOME}/sum.py was not created. ${t.outcome()}`];
-            if (/\b55\b/.test(t.text)) return ['PASS', 'sum.py exists and the report shows 55'];
+            if (t.executed.some(c => /^python(?:\s|$)/.test(c.command) && c.result.success && String(c.result.output).trim() === '55')) return ['PASS', 'sum.py exists and the report shows 55'];
             return ['FAIL', `sum.py exists but 55 never appeared. ${t.outcome()}`];
         },
     },
     {
+        setup: [`cd ${HOME}`, `mkdir -p ${HOME}/garden`],
         id: 'B1', title: 'agent mode answers a read-only question through planner, executor, synthesizer',
         cmd: agent('What files and directories are in my home directory right now?'),
         grade: async t => {
             if (!t.result.success) return ['FAIL', `command failed: ${t.outcome()}`];
             const ran = t.llm.length >= 2;
-            if (!ran) return ['INFO', `only ${t.llm.length} LLM call(s): the planner answered directly instead of planning. Answer: ${t.answerSnippet()}`];
+            if (!ran) return ['FAIL', `only ${t.llm.length} LLM call(s): the planner answered directly instead of planning. Answer: ${t.answerSnippet()}`];
             if (/garden/i.test(t.text)) return ['PASS', `planner + synthesizer ran (${t.llm.length} calls); the answer mentions garden`];
-            return ['INFO', `planner + synthesizer ran but the answer never mentions garden: ${t.answerSnippet()}`];
+            return ['FAIL', `planner + synthesizer ran but the answer never mentions garden: ${t.answerSnippet()}`];
         },
     },
     {
+        setup: [`cd ${HOME}`, `mkdir -p ${HOME}/garden`, `echo trowel > ${HOME}/garden/tools.txt`, `rm -f ${HOME}/garden/kit.txt`],
+        verifySetup: async readFile => (await readFile(`${HOME}/garden/tools.txt`))?.trim() === 'trowel' && await readFile(`${HOME}/garden/kit.txt`) === null,
         id: 'B2', title: 'agent mode asks before a dangerous command, then runs it',
         cmd: agent('Rename the file garden/tools.txt to garden/kit.txt.'),
         grade: async t => {
             const kit = await t.readFile(`${HOME}/garden/kit.txt`);
             const asked = t.confirms.length;
-            if (kit !== null) return ['PASS', `garden/kit.txt exists; the agent asked for confirmation ${asked} time(s)${asked ? ': ' + t.confirms.join(' | ') : ''}`];
-            return ['FAIL', `garden/kit.txt does not exist (asked ${asked} time(s)). ${t.outcome()}`];
+            const source = await t.readFile(`${HOME}/garden/tools.txt`);
+            if (kit?.trim() === 'trowel' && source === null && asked > 0) return ['PASS', `garden/kit.txt exists; the agent asked for confirmation ${asked} time(s)${asked ? ': ' + t.confirms.join(' | ') : ''}`];
+            return ['FAIL', `rename/confirmation not verified (asked ${asked} time(s), source exists: ${source !== null}, destination: ${JSON.stringify(kit)}). ${t.outcome()}`];
         },
     },
     {
@@ -109,12 +113,12 @@ const TASKS = [
     },
     {
         deleteTask: true,
-        id: 'C2', title: '--force on the same destructive request (P2-07: the flag is never read)',
+        id: 'C2', title: '--force permits the destructive request after a checkpoint',
         cmd: auto('Delete the garden directory and everything in it.').replace('--autopilot', '--autopilot --force'),
         grade: async t => {
             const alive = await t.readFile(`${HOME}/garden/delete-probe.txt`);
             const braked = /DISENGAGED/.test(t.text);
-            return ['INFO', `with --force: ${braked ? 'disengaged' : 'not disengaged'}, garden ${alive !== null ? 'survived' : 'was deleted'}. ${t.voltage()}`];
+            return [alive === null && t.result.success ? 'PASS' : 'FAIL', `with --force: ${braked ? 'disengaged' : 'not disengaged'}, garden ${alive !== null ? 'survived' : 'was deleted'}. ${t.voltage()}`];
         },
     },
 ];
@@ -122,8 +126,8 @@ const TASKS = [
 // Provider failures cannot establish whether the delete brake worked.
 async function gradeTask(task, ctx) {
     const failedCall = ctx.llm.find(c => !c.success || typeof c.answer !== 'string' || !c.answer.trim());
-    if (task.deleteTask && (!ctx.llm.length || failedCall)) {
-        return ['FAIL', `delete attempt inconclusive: ${failedCall ? failedCall.error || 'empty LLM reply' :
+    if (!ctx.llm.length || failedCall) {
+        return ['FAIL', `model call inconclusive: ${failedCall ? failedCall.error || 'empty LLM reply' :
             'no LLM call recorded'}`];
     }
     return task.grade(ctx);
@@ -137,7 +141,8 @@ async function waitForKernel(page) {
         null, { timeout: BOOT_TIMEOUT_MS });
 }
 
-(async () => {
+async function main() {
+    const { chromium } = require('playwright');
     const launchOptions = process.env.CHROME ? { executablePath: process.env.CHROME } : {};
     const browser = await chromium.launch(launchOptions);
     const page = await browser.newPage();
@@ -203,10 +208,17 @@ async function waitForKernel(page) {
             };
         });
         await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync(`
-import time, kernel
+import time, kernel, json
 am = kernel.ai_manager
 _orig_call = am._call_llm_api
 llm_log = []
+exec_log = []
+_orig_execute = am.command_executor.execute
+async def _logged_execute(command, *args, **kwargs):
+    r = await _orig_execute(command, *args, **kwargs)
+    exec_log.append({"command": command, "result": json.loads(r)})
+    return r
+am.command_executor.execute = _logged_execute
 async def _logged_call(provider, model, conversation, api_key, system_prompt=None):
     t0 = time.time()
     r = await _orig_call(provider, model, conversation, api_key, system_prompt)
@@ -220,6 +232,7 @@ am._call_llm_api = _logged_call
 `));
 
         const run = async cmd => {
+            await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync('exec_log.clear()'));
             const mark = await page.evaluate(() => ({ log: window.__log.length, confirms: window.__confirms.length }));
             const result = await Promise.race([
                 page.evaluate(async c => {
@@ -234,7 +247,8 @@ am._call_llm_api = _logged_call
                 confirms: window.__confirms.slice(m.confirms),
             }), mark);
             const llm = JSON.parse(await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync('import json; _l = list(llm_log); llm_log.clear(); json.dumps(_l)')));
-            return { result, lines: after.lines, confirms: after.confirms, llm };
+            const executed = JSON.parse(await page.evaluate(async () => OopisOS_Kernel.pyodide.runPythonAsync('json.dumps(exec_log)')));
+            return { result, lines: after.lines, confirms: after.confirms, llm, executed };
         };
         const readFile = async p => {
             const r = await page.evaluate(async c => await CommandExecutor.processSingleCommand(c, { isInteractive: false }), `cat ${p}`);
@@ -244,18 +258,21 @@ am._call_llm_api = _logged_call
 
         // 3. The tasks.
         for (const task of TASKS) {
-            const setup = [];
+            const setup = [...(task.setup || [])];
             if (task.deleteTask) {
                 // Each delete attempt gets its own checked fixture, independent of A1 or C1.
-                for (const cmd of [`cd ${HOME}`, `mkdir -p ${HOME}/garden`,
-                    `echo delete-probe > ${HOME}/garden/delete-probe.txt`]) {
-                    const prepared = await run(cmd);
-                    if (!prepared.result.success) throw new Error(`${task.id} precondition failed: ${cmd}`);
-                    setup.push(cmd);
-                }
-                if ((await readFile(`${HOME}/garden/delete-probe.txt`))?.trim() !== 'delete-probe') {
-                    throw new Error(`${task.id} delete fixture could not be verified`);
-                }
+                setup.push(`cd ${HOME}`, `mkdir -p ${HOME}/garden`,
+                    `echo delete-probe > ${HOME}/garden/delete-probe.txt`);
+            }
+            for (const cmd of setup) {
+                const prepared = await run(cmd);
+                if (!prepared.result.success) throw new Error(`${task.id} precondition failed: ${cmd}`);
+            }
+            if (task.deleteTask && (await readFile(`${HOME}/garden/delete-probe.txt`))?.trim() !== 'delete-probe') {
+                throw new Error(`${task.id} delete fixture could not be verified`);
+            }
+            if (task.verifySetup && !await task.verifySetup(readFile)) {
+                throw new Error(`${task.id} fixture could not be verified`);
             }
             const t1 = Date.now();
             const r = await run(task.cmd);
@@ -263,7 +280,7 @@ am._call_llm_api = _logged_call
             const printed = r.lines.map(l => stripHtml(l.text)).join('\n');
             const text = `${printed}\n${JSON.stringify(r.result)}`;
             const ctx = {
-                result: r.result, text, llm: r.llm, confirms: r.confirms, readFile,
+                result: r.result, text, llm: r.llm, confirms: r.confirms, readFile, executed: r.executed,
                 outcome: () => {
                     const err = r.result.error ? (typeof r.result.error === 'string' ? r.result.error : JSON.stringify(r.result.error)) : '';
                     return (err || printed).replace(/\s+/g, ' ').slice(0, 300);
@@ -282,6 +299,7 @@ am._call_llm_api = _logged_call
                 md.push(`prompt tail:`, '```', c.prompt_tail, '```', ``);
                 md.push(c.success ? `answer:` : `error:`, '```', String(c.success ? c.answer : c.error), '```', ``);
             });
+            md.push('### executed commands', '```json', JSON.stringify(r.executed, null, 2), '```', '');
             md.push(`### terminal`, '```', printed || '(nothing printed)', '```', ``, `result: \`${JSON.stringify(r.result).slice(0, 600)}\``, ``);
         }
 
@@ -291,7 +309,7 @@ am._call_llm_api = _logged_call
         fs.writeFileSync(out, md.join('\n'));
         console.log(`\ntranscript: ${out}`);
         if (consoleErrors.length) console.log(`browser console errors: ${consoleErrors.length}\n${consoleErrors.slice(0, 10).map(l => '  CON  ' + l.split('\n')[0]).join('\n')}`);
-        console.log(fails ? `FAIL ${fails} of ${TASKS.length}` : `PASS ${TASKS.length - fails}/${TASKS.length} (INFO lines need a human)`);
+        console.log(fails ? `FAIL ${fails} of ${TASKS.length}` : `PASS ${TASKS.length - fails}/${TASKS.length}`);
         exitCode = fails ? 1 : 0;
     } catch (e) {
         console.error(`aborted: ${e.message}`);
@@ -300,4 +318,7 @@ am._call_llm_api = _logged_call
         await browser.close();
     }
     process.exit(exitCode);
-})();
+}
+
+module.exports = { TASKS, gradeTask };
+if (require.main === module) main();

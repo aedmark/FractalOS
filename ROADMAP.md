@@ -130,10 +130,10 @@ Goal: the `gemini` loop and the BoneAmanita autopilot are trustworthy enough to 
 
 - [x] P2-14 Planner tool manifest is generated from the execution whitelist (including cd/mv/forge/python).
   Prompt allows actions, explains mv, requires one command list and avoids speculative story commands (2026-09-25).
-- [ ] P2-15 Separate agent harness prerequisites from behavioral verdicts. A2 depends on A1 creating garden;
-  B2 depends on A2 creating tools.txt. A failed prerequisite should be explicit, with independent fixture-based
-  checks for cd and confirmation. A2 currently diagnoses any misplaced tools.txt as "cd was forgotten" even
-  when cd failed. B2 passes on kit.txt alone, without requiring confirmation or source removal (session 9).
+- [x] P2-15 A2/B2 prepare and verify independent fixtures; A3 requires actual Python output, B2 requires
+  confirmation, source removal and preserved contents. Every failed/empty model call fails explicitly;
+  --force deletion has a real verdict. Setup and executed commands appear in transcripts. Nineteen
+  Node-only grading checks protect these criteria (2026-09-25).
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 
