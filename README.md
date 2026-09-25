@@ -1,12 +1,10 @@
-# FractalOS v0.0.5: The Little WebOS That Could
+# FractalOS v0.1: We Put Python in Your Python So You Can Write While You Code
 
 ### An AI-centric, virtual operating system built with relentless optimism and a whole lot of Python.
 
-This project is a bold exploration into creating a unique, web-based operating system where the primary interface is a generative AI. After a successful and system-wide migration, our core logic now runs on a robust Python kernel, making the OS more powerful and extensible than ever. It's a testament to what we can achieve with a can-do attitude, a lot of heart, and a little help from our friends (even the digital ones!).
+This project is a bold exploration into creating a unique, web-based operating system where the primary interface is a large language model.
 
-## What is this?
-
-FractalOS is a **Hybrid Browser-Based Operating System**. It reimagines the OS experience by placing a Large Language Model (LLM) at the center of the user interaction loop.
+FractalOS is self-described as a **Narrative Operating System**. It re-imagines the OS experience by placing a Large Language Model (LLM) at the center of the user interaction loop.
 
 Instead of clicking icons or memorizing complex CLI flags, you converse with the system. The AI acts as your intelligent agent, capable of understanding natural language, executing system commands, managing files, and even writing code on your behalf.
 
@@ -74,29 +72,13 @@ The full experience. Runs as a standalone desktop application using **Neutralino
 
 ## Features
 
-*   **🧠 AI-Powered Shell:** The `gemini` command integrates a Large Language Model directly into your terminal. Ask it to "summarize my documents," "write a Python script to calculate pi," or "tell me a story."
-*   **📁 Virtual File System:** A full Unix-like file system with support for users, groups, permissions (`chmod`, `chown`), and standard operations (`ls`, `cd`, `cp`, `mv`).
-*   **🎨 Graphical Apps:** Includes a text editor (`edit`), paint program (`paint`), process viewer (`top`), and more.
-*   **🛡️ Security:** A robust permission model with `sudo` support and a virtual `/etc/sudoers` file.
-*   **🎭 Cinematic Mode:** Toggle `cinematic` for a retro, typewriter-style aesthetic.
-*   **🐍 Real Python:** `python script.py`, `python -c "..."`, or pipe code in. Same interpreter as the kernel, with `open()` and `input()` wired to the virtual file system and the pipe, and a step budget so a runaway loop can't freeze the page.
-*   **📦 Package Management:** (Coming Soon) Install new commands and apps dynamically.
-
-## System Reference
-
-### Core Commands
-| Command | Description |
-| :--- | :--- |
-| `gemini` | Chat with the system AI. |
-| `edit` | Open the text editor. |
-| `paint` | Open the pixel art editor. |
-| `help` | List all available commands. |
-| `man <cmd>` | Show the manual page for a command. |
-| `ls`, `cd`, `pwd` | Standard file system navigation. |
-| `cat`, `grep`, `echo` | Text processing tools. |
-| `python` | Run real Python (the kernel's own CPython 3.14) on a script, `-c` code, or piped input. |
-
-*(For a full list, run `help` inside the OS)*
+*   **AI-Powered Shell:** Certain commands and programs integrate a Large Language Model directly into your terminal.
+*   **Virtual File System:** A full Unix-like file system with support for users, groups, permissions (`chmod`, `chown`), and standard operations (`ls`, `cd`, `cp`, `mv`).
+*   **Graphical Apps:** Includes a text editor (`edit`), paint program (`paint`), process viewer (`top`), and more.
+*   **Security:** A robust permission model with `sudo` support and a virtual `/etc/sudoers` file.
+*   **Cinematic Mode:** Toggle `cinematic` for a retro, typewriter-style aesthetic.
+*   **Real Python:** `python script.py`, `python -c "..."`, or pipe code in. Same interpreter as the kernel, with `open()` and `input()` wired to the virtual file system and the pipe, and a step budget so a runaway loop can't freeze the page.
+*   **Package Management:** (Coming Soon) Install new commands and apps dynamically.
 
 ---
 
@@ -251,9 +233,3 @@ things are the way they are, and [docs/TESTING.md](docs/TESTING.md) for how to c
 |**log**|Captain's Log|A personal, timestamped journal application.|
 |**basic**|Samwise BASIC|An integrated development environment for the BASIC programming language.|
 |**adventure**|Text Adventure|A classic interactive fiction game engine.|
-
-## The Road Ahead
-
-We are currently working on **Milestone 1: The AI Town Manager**, focusing on giving the AI long-term memory and the ability to perform complex, multi-step tasks autonomously. The full plan, with stable item IDs, is in [ROADMAP.md](ROADMAP.md).
-
-Join us on this journey!
