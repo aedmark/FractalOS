@@ -112,6 +112,146 @@ things are the way they are, and [docs/TESTING.md](docs/TESTING.md) for how to c
 
 ---
 
+## System Reference[](#system-reference)
+
+### Available Commands[](#available-commands)
+
+| Command<br><br>Click to sort ascending | Description<br><br>Click to sort ascending                    |
+| -------------------------------------- | ------------------------------------------------------------- |
+| **adventure**                          | Starts an interactive text adventure game.                    |
+| **agenda**                             | Schedules commands to run at specified times.                 |
+| **alias**                              | Define or display command aliases.                            |
+| **awk**                                | Pattern scanning and processing language.                     |
+| **backup**                             | Creates a secure backup of the system state.                  |
+| **base64**                             | Base64 encode or decode data.                                 |
+| **basic**                              | The Samwise BASIC Integrated Development Environment.         |
+| **bc**                                 | An arbitrary precision calculator language.                   |
+| **beep**                               | Play a short system sound.                                    |
+| **bg**                                 | Resume a job in the background.                               |
+| **binder**                             | Create and manage collections of files.                       |
+| **bulletin**                           | Manages the system-wide bulletin board.                       |
+| **cast**                               | Performs a magical spell within the OS.                       |
+| **cat**                                | Concatenate and print files.                                  |
+| **cd**                                 | Change the current directory.                                 |
+| **character**                          | A tool suite for managing tabletop RPG characters.            |
+| **check_fail**                         | A testing utility to check if a command fails.                |
+| **chgrp**                              | Change group ownership of files.                              |
+| **chidi**                              | AI-powered document and code analyst.                         |
+| **chmod**                              | Change file mode bits (permissions).                          |
+| **chown**                              | Change file owner.                                            |
+| **cinematic**                          | Toggles the cinematic typewriter effect for terminal output.  |
+| **cksum**                              | Checksum and count the bytes in a file.                       |
+| **clear**                              | Clear the terminal screen.                                    |
+| **clearfs**                            | Clears all files from the user's home directory.              |
+| **comm**                               | Compare two sorted files line by line.                        |
+| **committee**                          | Creates a collaborative project space.                        |
+| **cp**                                 | Copy files and directories.                                   |
+| **csplit**                             | Split a file into sections.                                   |
+| **cut**                                | Remove sections from each line of files.                      |
+| **date**                               | Print the system date and time.                               |
+| **delay**                              | Pause script execution for a specified time.                  |
+| **df**                                 | Report file system disk space usage.                          |
+| **diff**                               | Compare files line by line.                                   |
+| **du**                                 | Estimate file space usage.                                    |
+| **echo**                               | Display a line of text.                                       |
+| **edit**                               | A powerful text and code editor.                              |
+| **export**                             | Download a file from SamwiseOS to your local machine.         |
+| **expr**                               | Evaluate expressions.                                         |
+| **fg**                                 | Resume a job in the foreground.                               |
+| **find**                               | Search for files in a directory hierarchy.                    |
+| **forge**                              | AI-powered scaffolding and boilerplate generation.            |
+| **fsck**                               | Check and repair a file system.                               |
+| **gemini**                             | Engage in a conversation with an AI model.                    |
+| **grep**                               | Print lines that match patterns.                              |
+| **groupadd**                           | Create a new group.                                           |
+| **groupdel**                           | Delete a group.                                               |
+| **groups**                             | Print the groups a user is in.                                |
+| **head**                               | Output the first part of files.                               |
+| **help**                               | Display information about available commands.                 |
+| **history**                            | Display command history.                                      |
+| **jobs**                               | Display status of jobs in the current session.                |
+| **kill**                               | Send a signal to a process or job.                            |
+| **less**                               | Opposite of more; a file perusal filter.                      |
+| **listusers**                          | Lists all registered users on the system.                     |
+| **ln**                                 | Make links between files.                                     |
+| **log**                                | A personal, timestamped journal and log application.          |
+| **login**                              | Begin a session on the system.                                |
+| **logout**                             | Terminate a login session.                                    |
+| **ls**                                 | List directory contents.                                      |
+| **man**                                | Format and display the on-line manual pages.                  |
+| **mkdir**                              | Make directories.                                             |
+| **more**                               | File perusal filter for CRT viewing.                          |
+| **mv**                                 | Move or rename files.                                         |
+| **nc**                                 | Netcat utility for network communication.                     |
+| **netstat**                            | Shows network status and connections.                         |
+| **nl**                                 | Number lines of files.                                        |
+| **ocrypt**                             | Securely encrypt and decrypt files.                           |
+| **paint**                              | Opens the character-based art editor.                         |
+| **passwd**                             | Change user password.                                         |
+| **patch**                              | Apply a diff file to an original.                             |
+| **planner**                            | Manages shared project to-do lists.                           |
+| **play**                               | Plays a musical note or chord.                                |
+| **post_message**                       | Sends a message to a background job.                          |
+| **printf**                             | Format and print data.                                        |
+| **printscreen**                        | Captures the screen content as an image or text.              |
+| **ps**                                 | Report a snapshot of the current processes.                   |
+| **pwd**                                | Print name of current/working directory.                      |
+| **read_messages**                      | Reads all messages from a job's message queue.                |
+| **reboot**                             | Reboot the system.                                            |
+| **remix**                              | Synthesizes a new article from two source documents using AI. |
+| **removeuser**                         | Remove a user from the system.                                |
+| **rename**                             | Rename a file.                                                |
+| **reset**                              | Reset the filesystem to its initial state.                    |
+| **restore**                            | Restores the system state from a backup file.                 |
+| **ritual**                             | Perform a multi-step, atmospheric ritual.                     |
+| **rm**                                 | Remove files or directories.                                  |
+| **rmdir**                              | Remove empty directories.                                     |
+| **roll**                               | A utility for rolling polyhedral dice.                        |
+| **run**                                | Execute commands from a file.                                 |
+| **score**                              | Displays user productivity scores.                            |
+| **sed**                                | Stream editor for filtering and transforming text.            |
+| **set**                                | Set or display shell variables.                               |
+| **shuf**                               | Generate random permutations.                                 |
+| **sort**                               | Sort lines of text files.                                     |
+| **storyboard**                         | Analyzes and creates a narrative summary of files.            |
+| **su**                                 | Substitute user identity.                                     |
+| **sudo**                               | Execute a command as another user.                            |
+| **sync**                               | Synchronize data on disk with memory.                         |
+| **tail**                               | Output the last part of files.                                |
+| **theme**                              | Manages the visual and auditory theme of the OS.              |
+| **top**                                | Displays a real-time view of running processes.               |
+| **touch**                              | Change file timestamps.                                       |
+| **tr**                                 | Translate, squeeze, and/or delete characters.                 |
+| **tree**                               | List contents of directories in a tree-like format.           |
+| **unalias**                            | Remove alias definitions.                                     |
+| **uniq**                               | Report or omit repeated lines.                                |
+| **unset**                              | Unset shell variables.                                        |
+| **unzip**                              | List, test and extract compressed files in a ZIP archive.     |
+| **upload**                             | Upload files from your local machine to SamwiseOS.            |
+| **uptime**                             | Tell how long the system has been running.                    |
+| **useradd**                            | Create a new user.                                            |
+| **usermod**                            | Modify a user account.                                        |
+| **visudo**                             | Edit the sudoers file safely.                                 |
+| **wc**                                 | Print newline, word, and byte counts for each file.           |
+| **who**                                | Show who is logged on.                                        |
+| **whoami**                             | Print effective user ID.                                      |
+| **xargs**                              | Build and execute command lines from standard input.          |
+| **xor**                                | Perform XOR encryption/decryption.                            |
+| **zip**                                | Package and compress (archive) files.                         |
+
+### Graphical Applications[](#graphical-applications)
+
+|Command<br><br>Click to sort ascending|Application Name<br><br>Click to sort ascending|Description<br><br>Click to sort ascending|
+|---|---|---|
+|**edit**|SamwiseOS Editor|A full-featured text and code editor with Markdown/HTML preview.|
+|**paint**|SamwiseOS Paint|A character-based art and ASCII editor.|
+|**chidi**|Chidi Analyst|An AI-powered tool to summarize, study, and ask questions about your documents.|
+|**gemini**|Gemini Chat|An interactive, graphical chat session with the system's AI.|
+|**top**|Process Viewer|A real-time display of all running background jobs.|
+|**log**|Captain's Log|A personal, timestamped journal application.|
+|**basic**|Samwise BASIC|An integrated development environment for the BASIC programming language.|
+|**adventure**|Text Adventure|A classic interactive fiction game engine.|
+
 ## The Road Ahead
 
 We are currently working on **Milestone 1: The AI Town Manager**, focusing on giving the AI long-term memory and the ability to perform complex, multi-step tasks autonomously. The full plan, with stable item IDs, is in [ROADMAP.md](ROADMAP.md).
