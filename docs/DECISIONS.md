@@ -81,7 +81,7 @@ Every existing clone must be re-cloned or hard-reset.
 was a one-time exception: the standing rule is no rewriting of published history. If large binaries ever need
 to come back (a Neutralino binary, a big wheel), use Git LFS or a release asset, not a commit.
 
-## D-006 Storage: IndexedDB or files for the VFS, localStorage for session keys, legacy key names kept  (2026-09-24, status: accepted)
+## D-006 Storage: IndexedDB or files for the VFS, localStorage for session keys  (2026-09-24, status: accepted)
 **Context:** Two runtimes (browser, Neutralino) and two kinds of state (the VFS tree, and small session
 settings such as credentials, aliases, onboarding flag, API key).
 **Decision:** `StorageHAL` picks a backend at boot: `IndexedDBManager` (database `FractalOS` v5, store
@@ -89,8 +89,8 @@ settings such as credentials, aliases, onboarding flag, API key).
 when `window.NL_PORT` is set. Session keys stay in `localStorage`; in
 portable mode the whole localStorage is exported to a file on window close and imported at boot. The kernel
 saves the VFS through a callback (`fs_manager.set_save_function`) on every write.
-**Consequences:** Renaming any key or database is a migration; do not. The whole tree is written on every
-write (fine at current sizes). Two tabs in browser mode share one VFS through IndexedDB with no locking.
+**Consequences:** The whole tree is written on every write (fine at current sizes). Session keys are named
+`FractalOS*` (`Config.STORAGE_KEYS`); data saved under an earlier key name is not read. Two tabs in browser mode share one VFS through IndexedDB with no locking.
 
 ## D-007 Passwords use PBKDF2-HMAC-SHA256 from `cryptography`, which is why that wheel is vendored  (2026-09-24, status: accepted)
 **Context:** `users.py` hashes with `PBKDF2HMAC(SHA256, 32 bytes, 100000 iterations)` and a random 16-byte
@@ -267,3 +267,12 @@ need another level of escaping. The old ambiguous double-quoted nested example m
 not guessed from the file extension. Smoke compiles/runs the nested-string example through the real shell.
 **Consequences:** Ordinary one-line `forge` and single newline escapes continue to work. Doubled backslashes
 now deliberately protect literals; callers needing byte-for-byte text after shell parsing use `--literal`.
+
+## D-018 One agent-instruction file, `AGENTS.md`; `CLAUDE.md` imports it (2026-09-26, status: accepted)
+**Context:** `CLAUDE.md` and `AGENTS.md` were identical copies, one per coding tool, and both were deleted when
+the docs moved into `docs/`. Their session protocol, layout, command path and conventions exist nowhere else,
+and each tool only loads its own file automatically.
+**Decision:** Restore the content once, in `AGENTS.md` at the repo root. `CLAUDE.md` holds only `@AGENTS.md`,
+Claude Code's import syntax, so both tools load the same text.
+**Consequences:** Edit `AGENTS.md`, never `CLAUDE.md`. There is no second copy to drift.
+

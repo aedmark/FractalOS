@@ -10,7 +10,7 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; grading unit test green again, P2-19)._
+_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored)._
 
 **What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
 - Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **55/55**, in-OS diag **40 passed / 0 failed**,
@@ -31,6 +31,16 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   | C1 brake | `rm -rf` plan, disengaged at CRITICAL, probe survived | same |
   | C2 `--force` | checkpoint saved, `rm -r garden` ran at voltage 20.0 | checkpoint saved, `rm -rf` ran at 20.0 |
 
+- **Renames finished** (the owner's `gemini` → `samwise` and OopisOS / SamwiseOS → FractalOS). The chat app is now
+  `resources/scripts/apps/samwise_chat/` (`SamwiseChatManager`, window "Samwise Chat", launched by `samwise -c`).
+  It was broken: it still ran `gemini --chat-internal`, it dropped the chosen provider and model, and it printed
+  errors as "[object Object]". All three fixed. Checked live against llama3.1:8b: the window opens, its
+  stylesheet applies, the model replies, a missing model shows "API request failed with status 404".
+  Also fixed: the AI "thinking" message list in `boot.js`, the API-key hints in `ai_manager.js` and Chidi, the
+  `samwise` output headers and help text, README rows. `gemini` now means only the Google provider.
+- **`AGENTS.md` restored** with current paths and tests; `CLAUDE.md` imports it (D-018). D-006 no longer says
+  storage keys must never be renamed.
+- `tests/test_executor.py` runs inside the OS (`python test_executor.py`): success, no output.
 - Every autopilot write now starts with "Home checkpoint saved" (P2-02) instead of relying on the model to
   write `story save`. `--force` lets a voltage-20 delete through after that checkpoint (P2-07).
 - **Fixed this session: `sudo` with a password crashed** with "FractalOS is not defined". Commit `6300a72`
@@ -40,13 +50,8 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   P1-09 / D-011: `python` runs in the kernel. D-012 and D-014 remain covered by smoke. P1-08 / D-010 by structure.
 
 **Not verified / not done**
-- `tests/test_executor.py` cannot run under plain `python3`: it imports the kernel, which imports `pyodide`.
-  How it is meant to run (a stub? `uv`?) is not written down.
 - `samwise --dry-run` can execute plan steps (P2-16). P2-04, P2-05, P2-06, P2-17, P2-18 open.
 - Each model ran once. No Gemini key. UI apps, audio, portable mode, Firefox and Safari unverified.
-- P1-07: `neutralinojs.log` is still tracked.
-- `CLAUDE.md` and `AGENTS.md` were deleted in `8624bc7` ("musical docs"); the header of this file still points
-  at `CLAUDE.md` for the session protocol.
 
 **Gotchas for the next session**
 - **`cd` is an effect and applies after the line.** `cd x && cmd` runs `cmd` in the old directory. One
@@ -89,12 +94,10 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 1. **P2-16:** `--dry-run` must not execute. It is a safety claim the code does not keep.
 2. **P2-06:** a real timeout on LLM calls. Then P2-17 / P2-18, P2-05, P2-04.
-3. Decide where the session protocol lives now that `CLAUDE.md` is gone (open question below).
+3. **P2-20:** escape or pipe the Samwise Chat message.
 
 ## Open questions for the user
 
-- Untrack `neutralinojs.log`? (P1-07; `.idea/` is gone)
-- `CLAUDE.md` and `AGENTS.md` were removed on 2026-09-26. Is that intended, and where should the session protocol live?
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
 - Should the agent whitelist converge on "anything a user can do" with voltage as the brake? (Q-001)
 
@@ -104,6 +107,26 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 - **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `samwise` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
 Newest first. Copy the template for each new session.
+
+### Session 12: 2026-09-26: Finish the renames; restore AGENTS.md; untrack the log (P1-07, D-018)
+
+**Goal:** The owner's answers: restore anything needed from the deleted `CLAUDE.md` / `AGENTS.md`, document
+that `tests/test_executor.py` runs inside the OS, stop tracking log files, and fix any renames they missed
+(and drop the old rule against renaming).
+**Done:** Chat app renamed to Samwise Chat and made to work (see Current state). Remaining `gemini`-as-command
+and SamwiseOS text renamed. D-006's rule removed. `AGENTS.md` restored and updated, `CLAUDE.md` imports it.
+`neutralinojs.log` untracked. `test_executor.py` run in the OS. Structure, smoke 55/55, diag 40/0, grading
+22/22, units 19 OK, live chat check.
+**Changed:** `resources/scripts/apps/samwise_chat/*` (renamed from `gemini_chat`), `asset_manifest.js`, `main.js`,
+`boot.js`, `ai_manager.js`, `chidi_manager.js`, `session_manager.js`, `commands/samwise.py`, `tests/smoke.js`,
+`extras/inflate.sh`, README, `AGENTS.md`, `CLAUDE.md`, DECISIONS (D-006, D-018), TESTING, ROADMAP, this file.
+**Decisions:** D-018.
+**Problems / surprises**
+- The chat window's CSS never applied: its title-derived id did not match the stylesheet's selector.
+- Kept on purpose: `gemini` as the provider name and API-key setting, `Edmark & Gemini` in BASIC's banner, the
+  LICENSE, and `mcgoopis` / `oopismcgoopis.com` (the owner's handle and site).
+**Left undone:** P2-20, P2-16.
+**Next session should start with:** "Next steps" above.
 
 ### Session 11: 2026-09-26: Real-model rerun on current code; sudo crash fixed (P2-01)
 

@@ -65,9 +65,9 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 - [x] P1-06 Run `extras/diag.sh` headlessly (`tests/diag.js`) and make its result the pass/fail gate. First run on
   Pyodide 314 / Python 3.14: 40 `check_fail` assertions pass, 0 fail, no command errors, script reaches its
   completion banner in about 100 s. Nothing needed fixing (2026-09-24)
-- [~] P1-07 Untrack `.idea/` and `neutralinojs.log` (they are committed today; `.gitignore` alone does not remove
-  them). Owner's call, since `.idea/` is their PyCharm project. *2026-09-25:* the owner deleted `.idea/` on
-  `main`; `neutralinojs.log` is still tracked.
+- [x] P1-07 Untrack `.idea/` and `neutralinojs.log` (they were committed; `.gitignore` alone does not remove
+  them). *2026-09-25:* the owner deleted `.idea/` on `main`. *2026-09-26:* `neutralinojs.log` untracked
+  (`git rm --cached`; the file stays on disk and `*.log` is ignored), at the owner's request.
 - [x] P1-08 `tools/gen_manifest.py` writes `resources/core/manifest.json` from the directories; `bridge.js`
   fetches it instead of carrying hand-typed lists; `tests/structure.js` fails when the manifest or
   `asset_manifest.js` drifts from disk (mutation-checked both ways) (D-010, 2026-09-24)
@@ -143,6 +143,9 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   (via `exists`), C1 to FAIL when a disengagement comes back as `success: true`, and B2 to FAIL when the result
   failed. The graders now do all three; the harness has an `exists` helper backed by the kernel's `get_node`.
   22/22 grading cases, llama3.1:8b 7/7 (2026-09-26)
+- [ ] P2-20 Samwise Chat puts the user's message inside a double-quoted shell argument without escaping
+  (`samwise --chat-internal="..."` in `samwise_chat_manager.js`). A message containing `"` will most likely break
+  the command line. Not yet tested. Pass the message through stdin or escape it (found 2026-09-26)
 - [ ] P2-16 `samwise --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
   a confirmation effect despite promising not to execute. Separate planning from execution before treating
   this flag as a safe preview (found while tracing the command entry point, session 10).

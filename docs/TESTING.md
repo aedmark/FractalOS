@@ -13,7 +13,17 @@ There are four layers. The first three are automated.
 | Smoke | `tests/smoke.js` | Pyodide boots, kernel comes up, accounts and hashing work, the executor runs commands | ~40 s, headless Chromium |
 | In-OS suite | `tests/diag.js` running `extras/diag.sh` | 40+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links, scripting | ~2 min, headless Chromium, inside the OS as root |
 | Agent | `tests/agent.js` (+ `tests/fake_ollama.py`) | The `samwise` agent plans and acts against a real Ollama: seven tasks graded on the file system, transcript recorded | ~1 min with the stand-in, model-bound with Ollama; needs a machine with a model |
+| Agent graders and units | `tests/agent_grading.js`, `tests/agent_unit.py` | The harness's graders against canned outcomes; plan parsing, validation, voltage, `--force`, checkpoints, `forge` escapes | seconds, Node and host Python, no browser or model |
+| Inside the OS | `tests/test_executor.py` | The `python` command can import and drive the kernel | copy into the VFS, then `python test_executor.py` in FractalOS |
 | Manual | CONTRIBUTING.md checklist | UI, apps, sounds, portable mode | a person |
+
+## `tests/test_executor.py` runs inside FractalOS
+
+It is a Python script for the OS's own `python` command, not for the host: it puts `resources/core` on the path
+and imports `kernel`, which imports `pyodide`, so plain `python3 tests/test_executor.py` fails with
+`ModuleNotFoundError: No module named 'pyodide'`. Copy it into the virtual file system (for example with the
+`filesystem.write_file` syscall, as `tests/diag.js` does) and run `python test_executor.py` from that directory.
+2026-09-26: written to `/home/gordon/` and run as `gordon`: success, no output.
 
 ## The structure test
 
