@@ -319,3 +319,12 @@ refused plan into prose presented as an answer. A first reply with no plan is st
 Retries are silent in normal runs (the owner's spec); `--dry-run` lists them; a final halt says how many attempts.
 **Consequences:** A bad model can cost 3 calls and, with D-021, up to 3 timeouts before it halts.
 
+## D-023 Colour is ANSI in the text, rendered by the terminal (2026-09-26, status: accepted)
+**Context:** The owner asked for `tree -C` (P1-14). No command coloured its output before, and the only rich
+output path is the `display_prose` effect, which cannot be piped or redirected.
+**Decision:** Commands put ANSI SGR codes in plain output. `OutputManager` renders reset, bold and foreground
+colours (30-37, 90-97) as spans built from text nodes, never HTML; other sequences are dropped. Colours are CSS
+variables (`--ansi-*` in `main.css`), so a theme can restyle them. The typewriter path strips the codes.
+**Consequences:** As on Unix, `tree -C | cat` and `tree -C > file` keep the codes, and `cat` of such a file shows
+colour. Commands colour only when asked, so scripts and the agent see plain text by default.
+

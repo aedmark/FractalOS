@@ -7,6 +7,7 @@ def define_flags():
         'flags': [
             {'name': 'level', 'short': 'L', 'long': 'level', 'takes_value': True},
             {'name': 'dirs-only', 'short': 'd', 'long': 'dirs-only', 'takes_value': False},
+            {'name': 'color', 'short': 'C', 'long': 'color', 'takes_value': False},
         ],
         'metadata': {}
     }
@@ -54,7 +55,25 @@ def run(args, flags, user_context, **kwargs):
 
 
     dirs_only = flags.get('dirs-only', False)
-    output, dir_count, file_count = [path_arg], 0, 0
+    use_color = flags.get('color', False)
+
+    def paint(name, node):
+        # Like tree -C with the usual LS_COLORS: directories bold blue, symlinks bold cyan,
+        # executable files bold green, everything else plain.
+        if not use_color:
+            return name
+        kind = node.get('type')
+        if kind == 'directory':
+            code = "1;34"
+        elif kind == 'symlink':
+            code = "1;36"
+        elif int(node.get('mode', 0) or 0) & 0o111:
+            code = "1;32"
+        else:
+            return name
+        return f"\x1b[{code}m{name}\x1b[0m"
+
+    output, dir_count, file_count = [paint(path_arg, start_node)], 0, 0
 
     def build_tree(node, prefix="", current_depth=0):
         nonlocal dir_count, file_count
@@ -69,11 +88,11 @@ def run(args, flags, user_context, **kwargs):
 
             if child_node.get('type') == 'directory':
                 dir_count += 1
-                output.append(f"{prefix}{connector}{name}")
+                output.append(f"{prefix}{connector}{paint(name, child_node)}")
                 build_tree(child_node, new_prefix, current_depth + 1)
             elif not dirs_only:
                 file_count += 1
-                output.append(f"{prefix}{connector}{name}")
+                output.append(f"{prefix}{connector}{paint(name, child_node)}")
 
     build_tree(start_node)
 
@@ -89,7 +108,7 @@ NAME
     tree - list contents of directories in a tree-like format
 
 SYNOPSIS
-    tree [-d] [-L level] [DIRECTORY]
+    tree [-d] [-C] [-L level] [DIRECTORY]
 
 DESCRIPTION
     Recursively displays the directory structure of a given path in a
@@ -101,12 +120,17 @@ OPTIONS
         List directories only.
     -L level
         Descend only 'level' directories deep.
+    -C
+        Colour the names: directories blue, symlinks cyan, executables
+        green. The colour codes travel with the text, so they end up in
+        pipes and files too, same as the real thing.
 
 EXAMPLES
     tree
     tree /home/guest
     tree -L 2 -d
+    tree -C ~
 """
 
 def help(args, flags, user_context, **kwargs):
-    return "Usage: tree [-d] [-L level] [DIRECTORY]"
+    return "Usage: tree [-d] [-C] [-L level] [DIRECTORY]"

@@ -154,6 +154,27 @@ body {
     margin-bottom: var(--spacing-xs);
 }
 
+/* ANSI SGR colours: OutputManager turns ESC[...m in plain output into these spans (tree -C). */
+:root {
+    --ansi-black: #71717a;
+    --ansi-red: #f87171;
+    --ansi-green: #4ade80;
+    --ansi-yellow: #facc15;
+    --ansi-blue: #60a5fa;
+    --ansi-magenta: #e879f9;
+    --ansi-cyan: #22d3ee;
+    --ansi-white: #e5e5e5;
+}
+.ansi-bold { font-weight: bold; }
+.ansi-fg-30, .ansi-fg-90 { color: var(--ansi-black); }
+.ansi-fg-31, .ansi-fg-91 { color: var(--ansi-red); }
+.ansi-fg-32, .ansi-fg-92 { color: var(--ansi-green); }
+.ansi-fg-33, .ansi-fg-93 { color: var(--ansi-yellow); }
+.ansi-fg-34, .ansi-fg-94 { color: var(--ansi-blue); }
+.ansi-fg-35, .ansi-fg-95 { color: var(--ansi-magenta); }
+.ansi-fg-36, .ansi-fg-96 { color: var(--ansi-cyan); }
+.ansi-fg-37, .ansi-fg-97 { color: var(--ansi-white); }
+
 .terminal__input-line {
     display: flex;
     align-items: flex-start;

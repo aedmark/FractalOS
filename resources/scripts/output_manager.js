@@ -86,9 +86,10 @@ class OutputManager {
 
         for (const line of lines) {
             const lineClasses = Config.CSS_CLASSES.OUTPUT_LINE.split(" ");
+            const hasAnsi = line.includes("\x1b[");
             const lineAttributes = {
                 classList: [...lineClasses],
-                textContent: line,
+                textContent: hasAnsi ? "" : line,
             };
 
             if (typeClass) {
@@ -97,11 +98,47 @@ class OutputManager {
                 });
             }
 
-            fragment.appendChild(Utils.createElement("div", lineAttributes));
+            const lineDiv = Utils.createElement("div", lineAttributes);
+            if (hasAnsi) this._renderAnsi(lineDiv, line);
+            fragment.appendChild(lineDiv);
         }
 
         this.cachedOutputDiv.appendChild(fragment);
         this.cachedOutputDiv.scrollTop = this.cachedOutputDiv.scrollHeight;
+    }
+
+    /**
+     * Appends `line` to `el`, turning ANSI SGR sequences (ESC[...m) into styled spans.
+     * Supports reset (0), bold (1, 22), and foreground colours (30-37, 90-97, 39).
+     * Everything else is dropped. Text goes in as text nodes, never as HTML.
+     */
+    _renderAnsi(el, line) {
+        const sgr = /\x1b\[([0-9;]*)m/g;
+        let last = 0, fg = null, bold = false, match;
+        const push = (text) => {
+            if (!text) return;
+            if (!fg && !bold) {
+                el.appendChild(document.createTextNode(text));
+                return;
+            }
+            const span = document.createElement("span");
+            if (fg) span.classList.add(`ansi-fg-${fg}`);
+            if (bold) span.classList.add("ansi-bold");
+            span.textContent = text;
+            el.appendChild(span);
+        };
+        while ((match = sgr.exec(line)) !== null) {
+            push(line.slice(last, match.index));
+            for (const code of (match[1] || "0").split(";").map(Number)) {
+                if (code === 0) { fg = null; bold = false; }
+                else if (code === 1) bold = true;
+                else if (code === 22) bold = false;
+                else if (code === 39) fg = null;
+                else if ((code >= 30 && code <= 37) || (code >= 90 && code <= 97)) fg = code;
+            }
+            last = sgr.lastIndex;
+        }
+        push(line.slice(last));
     }
 
     async _processTypingQueue() {
@@ -121,7 +158,7 @@ class OutputManager {
     _typewriterEffect(text, options) {
         return new Promise(async (resolve) => {
             const { Config, Utils } = this.dependencies;
-            const lines = String(text).split("\n");
+            const lines = String(text).replace(/\x1b\[[0-9;]*m/g, "").split("\n");
             const characterDelay = 12;
 
             const skipHandler = (e) => {

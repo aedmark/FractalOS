@@ -80,6 +80,9 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
   `help` lists it
 - [x] P1-13 The shell prompt showed `~\$` instead of `~$` (and never `#` for root): in `terminal_ui.js`,
   `/\\$/g` treats `$` as an end-of-string anchor. Present since the first commit (fixed 2026-09-26)
+- [x] P1-14 `tree -C` colours names like the real `tree` (directories bold blue, symlinks cyan, executables
+  green), and the terminal renders ANSI colour codes (D-023). Asked for by the owner after llama3.1:8b planned
+  `tree -C` in tests/agent.js B1 (2026-09-26)
 - [ ] P1-12 Audit the other raw JS→Python crossings for `jsnull` (D-012): `kernel.write_file` /
   `create_directory` / `top_get_process_list` take JS values directly (`to_py` handles objects, not `null`),
   and `syscall_handler` args arrive via JSON (safe). A grep for `is not None` / `is None` on bridge-fed values.

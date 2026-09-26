@@ -39,6 +39,11 @@ const CHECKS = [
     { cmd: 'cat', expect: r => r.success && (r.output || '') === '' },
     { cmd: 'wc', expect: r => r.success && (r.output || '') === '' },
     { cmd: 'find /home -name "*.txt"', expect: r => r.success && (r.output || '').split('\n').length >= 2 && !/\\n/.test(r.output) },
+    // tree -C: ANSI colours like the real tree (directories bold blue, executables bold green); plain without -C.
+    { cmd: 'tree /home/Guest', expect: r => r.success && !(r.output || '').includes('\x1b') },
+    { cmd: 'chmod 755 /home/Guest/shout.py', expect: r => r.success },
+    { cmd: 'tree -C /home/Guest', expect: r => r.success && (r.output || '').startsWith('\x1b[1;34m/home/Guest\x1b[0m')
+        && (r.output || '').includes('\x1b[1;32mshout.py\x1b[0m') && (r.output || '').includes('── hello.txt') },
 ];
 
 function errorMessage(r) {
@@ -314,6 +319,25 @@ json.dumps(results)
             report(`command: ${cmd}`, ok, JSON.stringify(r).slice(0, 300));
         }
 
+        // The terminal renders ANSI SGR codes as styled spans, as text, never as HTML.
+        const ansi = await page.evaluate(async () => {
+            const { OutputManager } = dependencies;
+            // The smoke test never leaves onboarding, and output is suppressed while an app owns the screen.
+            const appActive = OutputManager.isEditorActive;
+            OutputManager.isEditorActive = false;
+            try {
+                await OutputManager.appendToOutput('plain \x1b[1;34mblue\x1b[0m <b>tail</b>', { noCinematic: true });
+            } finally {
+                OutputManager.isEditorActive = appActive;
+            }
+            const line = OutputManager.cachedOutputDiv.lastElementChild;
+            const span = line.querySelector('span.ansi-fg-34.ansi-bold');
+            return { text: line.textContent, span: span && span.textContent, color: span && getComputedStyle(span).color,
+                     html: !!line.querySelector('b') };
+        });
+        report('the terminal renders ANSI colour codes as spans', ansi.text === 'plain blue <b>tail</b>' && ansi.span === 'blue'
+            && ansi.color === 'rgb(96, 165, 250)' && ansi.html === false, JSON.stringify(ansi));
+
         // P2-20: Samwise Chat must hand the message to the model verbatim. It used to be spliced into a
         // double-quoted command line, so the shell ate quotes, expanded $VARS and ran $(...).
         await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync(`
@@ -341,6 +365,7 @@ kernel.ai_manager.continue_chat_conversation = _fake_chat
             JSON.stringify(seen.map(c => [c.history, c.engine])));
         const direct = await page.evaluate(async () => await CommandExecutor.processSingleCommand('samwise --chat-internal', { isInteractive: false }));
         report('samwise --chat-internal without a JSON message fails cleanly', direct.success === false, JSON.stringify(direct).slice(0, 200));
+
     } catch (e) {
         console.error(`aborted: ${e.message}`);
         failed++;

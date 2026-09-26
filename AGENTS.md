@@ -92,6 +92,9 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
   found" (or the CHANGELOG's "ghost limb" `ModuleNotFoundError`) is the only symptom. `node tests/structure.js`
   catches the omission (D-010). Never edit `core/manifest.json` by hand.
 - Commands must never touch the DOM or JS. Return an effect and add a `case` in `effect_handler.js`.
+- Colour in plain output is ANSI SGR (`\x1b[1;34m` ... `\x1b[0m`): bold, foreground 30-37 / 90-97, reset. The
+  terminal renders it as spans (`OutputManager._renderAnsi`, palette `--ansi-*` in `main.css`); like Unix, the
+  codes travel through pipes and into files. Only colour when asked (`-C`), so scripts see plain text (D-023).
 - Effects apply after the whole line: `cd x && cmd` runs `cmd` in the old directory. Separate lines.
 - A JS value handed straight to Python (not as JSON) may be `pyodide.ffi.jsnull`, which is not `None`.
   `kernel.execute_command` normalises stdin with `_from_js`; do the same for any new raw crossing (D-012).

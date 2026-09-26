@@ -10,10 +10,10 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20, P2-16, P2-06, P2-17 done)._
+_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20, P2-16, P2-06, P2-17 done; tree -C)._
 
 **What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
-- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **71/71**, in-OS diag **40 passed / 0 failed**,
+- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **75/75**, in-OS diag **40 passed / 0 failed**,
   no command errors, completion banner reached. `tests/agent_unit.py`: 19 tests OK.
   `tests/agent_grading.js`: **22 cases PASS** (P2-19); llama3.1:8b 7/7 again under the stricter graders.
 - **P2-01 holds on current code.** `tests/agent.js` against local Ollama: **llama3.1:8b 7/7** and
@@ -38,10 +38,12 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   stylesheet applies, the model replies, a missing model shows "API request failed with status 404".
   Also fixed: the AI "thinking" message list in `boot.js`, the API-key hints in `ai_manager.js` and Chidi, the
   `samwise` output headers and help text, README rows. `gemini` now means only the Google provider.
+- **`tree -C` works** (P1-14, D-023): directories blue, symlinks cyan, executables green, via ANSI codes the
+  terminal now renders. Smoke **75/75** (four new checks); seen in a screenshot of the real terminal.
 - **P2-17 done: rejected plans are retried** (D-022), up to 3 calls, with the reason sent back. The voltage brake
   is never retried. Units 24 OK (5 new, mutation-checked), smoke **71/71**. After it: gemma4:12b 7/7; llama3.1:8b
   7/7, 6/7, 6/7. llama's misses were not rejections, so retries cannot help them: C2 `rm -r *` (P2-21) and B1
-  `tree -C`, a flag FractalOS's `tree` lacks, failing at run time (P2-18).
+  `tree -C`, a flag FractalOS's `tree` lacked (now added, P1-14), failing at run time (P2-18).
 - **P2-06 fixed: model calls time out** (D-021). After `timeout_seconds` from `/etc/ai.conf` (default 120) a
   browser AbortSignal cancels the request. Errors name the provider and the fix: a missing Ollama model says
   `ollama pull <model>`, an unreachable one says where it looked. Smoke **69/69** (six new checks). Live against
@@ -113,7 +115,7 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 ## Next steps (in order)
 
-1. **P2-18:** remember run-time failures (llama's `tree -C`) and warn the model next time. **P2-21:** valid
+1. **P2-18:** remember run-time failures (like llama's old `tree -C`) and warn the model next time. **P2-21:** valid
    plans that do the wrong thing (llama's `rm -r *`).
 2. P2-05 (configurable Gemini model), P2-04 (Chidi, `remix`, `storyboard` against real models). P1-11, P1-12.
 
@@ -151,7 +153,8 @@ the file. Fixed by moving the message to stdin JSON; four smoke checks, which fa
 **Also done, same day:** P2-16 (D-020) and P1-13, the prompt's stray backslash.
 **Also done, same day:** P2-06 (D-021): timeouts and provider-named errors; `samwise` man page documents
 `/etc/ai.conf`. Mutation-checked: without the AbortSignal the smoke test hangs at the timeout check.
-**Also done, same day:** P2-17 (D-022), plan retries on validation rejection. P2-21 added.
+**Also done, same day:** P2-17 (D-022), plan retries on validation rejection. P2-21 added. P1-14 (D-023): `tree -C`
+and ANSI colour in the terminal.
 **Left undone:** the rest of Next steps.
 **Next session should start with:** "Next steps" above.
 
