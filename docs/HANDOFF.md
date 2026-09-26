@@ -10,10 +10,10 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored)._
+_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20 fixed)._
 
 **What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
-- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **55/55**, in-OS diag **40 passed / 0 failed**,
+- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **59/59**, in-OS diag **40 passed / 0 failed**,
   no command errors, completion banner reached. `tests/agent_unit.py`: 19 tests OK.
   `tests/agent_grading.js`: **22 cases PASS** (P2-19); llama3.1:8b 7/7 again under the stricter graders.
 - **P2-01 holds on current code.** `tests/agent.js` against local Ollama: **llama3.1:8b 7/7** and
@@ -38,6 +38,10 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   stylesheet applies, the model replies, a missing model shows "API request failed with status 404".
   Also fixed: the AI "thinking" message list in `boot.js`, the API-key hints in `ai_manager.js` and Chidi, the
   `samwise` output headers and help text, README rows. `gemini` now means only the Google provider.
+- **P2-20 fixed: a chat message could run shell commands.** Samwise Chat now sends messages as JSON on stdin
+  (D-019). Smoke **59/59** includes four new checks (quotes, a lone quote, `$HOME`, `$(...)`, backticks reach the
+  model verbatim; history and model carry through; a bare `--chat-internal` fails cleanly). A live llama3.1:8b
+  round trip still works.
 - **`AGENTS.md` restored** with current paths and tests; `CLAUDE.md` imports it (D-018). D-006 no longer says
   storage keys must never be renamed.
 - `tests/test_executor.py` runs inside the OS (`python test_executor.py`): success, no output.
@@ -94,7 +98,6 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 1. **P2-16:** `--dry-run` must not execute. It is a safety claim the code does not keep.
 2. **P2-06:** a real timeout on LLM calls. Then P2-17 / P2-18, P2-05, P2-04.
-3. **P2-20:** escape or pipe the Samwise Chat message.
 
 ## Open questions for the user
 
@@ -125,7 +128,9 @@ and SamwiseOS text renamed. D-006's rule removed. `AGENTS.md` restored and updat
 - The chat window's CSS never applied: its title-derived id did not match the stylesheet's selector.
 - Kept on purpose: `gemini` as the provider name and API-key setting, `Edmark & Gemini` in BASIC's banner, the
   LICENSE, and `mcgoopis` / `oopismcgoopis.com` (the owner's handle and site).
-**Left undone:** P2-20, P2-16.
+**Also done, same day:** P2-20 (D-019). Reproduced with a stub model: `$(touch ...)` in a chat message created
+the file. Fixed by moving the message to stdin JSON; four smoke checks, which fail on the old code.
+**Left undone:** P2-16.
 **Next session should start with:** "Next steps" above.
 
 ### Session 11: 2026-09-26: Real-model rerun on current code; sudo crash fixed (P2-01)

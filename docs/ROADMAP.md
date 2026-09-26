@@ -143,9 +143,10 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   (via `exists`), C1 to FAIL when a disengagement comes back as `success: true`, and B2 to FAIL when the result
   failed. The graders now do all three; the harness has an `exists` helper backed by the kernel's `get_node`.
   22/22 grading cases, llama3.1:8b 7/7 (2026-09-26)
-- [ ] P2-20 Samwise Chat puts the user's message inside a double-quoted shell argument without escaping
-  (`samwise --chat-internal="..."` in `samwise_chat_manager.js`). A message containing `"` will most likely break
-  the command line. Not yet tested. Pass the message through stdin or escape it (found 2026-09-26)
+- [x] P2-20 Samwise Chat spliced the user's message into `samwise --chat-internal="..."`. Worse than broken
+  quotes: the shell stripped `"`, failed on a lone `"`, expanded `$HOME`, and **ran `$(...)` as the user**. Now
+  the message, history, provider and model travel as JSON on stdin and the command line is fixed (D-019). Four
+  smoke checks, mutation-checked against the old code (2026-09-26)
 - [ ] P2-16 `samwise --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
   a confirmation effect despite promising not to execute. Separate planning from execution before treating
   this flag as a safe preview (found while tracing the command entry point, session 10).

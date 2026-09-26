@@ -10,7 +10,7 @@ def define_flags():
             {'name': 'force', 'short': 'f', 'long': 'force', 'takes_value': False, 'description': 'Override safety interlocks for High Voltage actions.'},
             {'name': 'provider', 'short': 'p', 'long': 'provider', 'takes_value': True},
             {'name': 'model', 'short': 'm', 'long': 'model', 'takes_value': True},
-            {'name': 'chat-internal', 'long': 'chat-internal', 'takes_value': True, 'hidden': True},
+            {'name': 'chat-internal', 'long': 'chat-internal', 'takes_value': False, 'hidden': True},
             {'name': 'resume-agent', 'long': 'resume-agent', 'takes_value': True, 'hidden': True},
             {'name': 'dry-run', 'long': 'dry-run', 'takes_value': False},
         ],
@@ -47,8 +47,20 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         }
 
     if flags.get('chat-internal'):
-        user_prompt = flags.get('chat-internal')
-        history = json.loads(stdin_data) if stdin_data else []
+        # Samwise Chat sends {"prompt", "history", "provider", "model"} as JSON on stdin, never on the
+        # command line, so the shell cannot expand anything the user typed (P2-20).
+        try:
+            payload = json.loads(stdin_data) if stdin_data else None
+        except (TypeError, ValueError):
+            payload = None
+        if not isinstance(payload, dict) or not isinstance(payload.get("prompt"), str) or not payload["prompt"].strip():
+            return {"success": False, "error": {
+                "message": "samwise: --chat-internal expects a JSON message on stdin.",
+                "suggestion": "This flag belongs to Samwise Chat. Open it with 'samwise -c'."}}
+        user_prompt = payload["prompt"]
+        history = payload.get("history") or []
+        provider = payload.get("provider") or provider
+        model = payload.get("model") or model
         result = await ai_manager.continue_chat_conversation(
             user_prompt,
             history,

@@ -63,11 +63,16 @@ window.SamwiseChatManager = class SamwiseChatManager extends App {
                 this.state.conversationHistory.push({ role: "user", parts: [{ text: userInput }] });
                 this.ui.toggleLoader(true);
 
-                const engine = `${this.state.provider ? ` -p ${this.state.provider}` : ""}${this.state.model ? ` -m ${this.state.model}` : ""}`;
-                const command = `samwise${engine} --chat-internal="${userInput}"`;
-                const result = await CommandExecutor.processSingleCommand(command, {
+                // The message never touches the command line: the shell would expand $(...), $VARS
+                // and quotes in it (P2-20). Everything the kernel needs travels as JSON on stdin.
+                const result = await CommandExecutor.processSingleCommand("samwise --chat-internal", {
                     isInteractive: false,
-                    stdinContent: JSON.stringify(this.state.conversationHistory.slice(0, -1))
+                    stdinContent: JSON.stringify({
+                        prompt: userInput,
+                        history: this.state.conversationHistory.slice(0, -1),
+                        provider: this.state.provider,
+                        model: this.state.model,
+                    })
                 });
 
                 this.ui.toggleLoader(false);

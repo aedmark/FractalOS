@@ -276,3 +276,13 @@ and each tool only loads its own file automatically.
 Claude Code's import syntax, so both tools load the same text.
 **Consequences:** Edit `AGENTS.md`, never `CLAUDE.md`. There is no second copy to drift.
 
+## D-019 UI apps pass user text to commands as JSON on stdin, never on the command line (2026-09-26, status: accepted)
+**Context:** P2-20. Samwise Chat built `samwise --chat-internal="<message>"`, so the shell parsed what the user
+typed: quotes vanished, `$VARS` expanded, and `$(...)` ran as a command. Escaping for this shell would mean
+tracking every quoting and substitution rule the executor has, now and later.
+**Decision:** A front-end app that hands free text to a command sends a fixed command line and puts the text in
+`stdinContent` as JSON. `samwise --chat-internal` takes no value and reads `{"prompt", "history", "provider",
+"model"}`; anything else is a clean error.
+**Consequences:** No escaping to maintain. The hidden flag's old `--chat-internal="..."` form is gone. Any new app
+that forwards user text should follow the same pattern.
+

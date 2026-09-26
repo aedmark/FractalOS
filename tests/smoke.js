@@ -218,6 +218,34 @@ json.dumps(results)
             try { ok = !!expect(r); } catch (_) { ok = false; }
             report(`command: ${cmd}`, ok, JSON.stringify(r).slice(0, 300));
         }
+
+        // P2-20: Samwise Chat must hand the message to the model verbatim. It used to be spliced into a
+        // double-quoted command line, so the shell ate quotes, expanded $VARS and ran $(...).
+        await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync(`
+import kernel
+chat_seen = []
+async def _fake_chat(prompt, history, provider, model, api_key):
+    chat_seen.append({"prompt": prompt, "history": len(history), "engine": f"{provider}/{model}"})
+    return {"success": True, "answer": "ok"}
+kernel.ai_manager.continue_chat_conversation = _fake_chat
+`));
+        const launched = await page.evaluate(async () => await CommandExecutor.processSingleCommand('samwise -c -p ollama -m stub', { isInteractive: false }));
+        await page.waitForSelector('#samwise-chat-app-container', { timeout: 10000 });
+        const chatMessages = ['she said "hi"', 'a lone " quote', 'cost $HOME and $(echo expanded) and `x`'];
+        for (const msg of chatMessages) {
+            const before = await page.$$eval('.samwise-chat-message.ai', els => els.length);
+            await page.fill('.samwise-chat-input', msg);
+            await page.press('.samwise-chat-input', 'Enter');
+            await page.waitForFunction(n => document.querySelectorAll('.samwise-chat-message.ai').length > n, before, { timeout: 20000 });
+        }
+        const seen = JSON.parse(await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('import json; json.dumps(chat_seen)')));
+        report('Samwise Chat opens with samwise -c', launched.success === true, JSON.stringify(launched));
+        report('Samwise Chat passes messages verbatim (P2-20)', seen.length === chatMessages.length && seen.every((c, i) => c.prompt === chatMessages[i]),
+            JSON.stringify(seen.map(c => c.prompt)));
+        report('Samwise Chat keeps history and the chosen model', seen.every((c, i) => c.history === 2 * i && c.engine === 'ollama/stub'),
+            JSON.stringify(seen.map(c => [c.history, c.engine])));
+        const direct = await page.evaluate(async () => await CommandExecutor.processSingleCommand('samwise --chat-internal', { isInteractive: false }));
+        report('samwise --chat-internal without a JSON message fails cleanly', direct.success === false, JSON.stringify(direct).slice(0, 200));
     } catch (e) {
         console.error(`aborted: ${e.message}`);
         failed++;
