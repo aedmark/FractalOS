@@ -90,6 +90,9 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   **7/7** (2026-09-25, session 10). Both created files, honored cd, ran Python with output 55, answered a
   read-only question, confirmed and performed mv, braked deletion, and deleted with --force. Home checkpoint
   contents verified separately by smoke. Transcripts and scoped limitations in HANDOFF; P2-08 remains open.
+  *2026-09-26:* rerun on current code (after the `samwise` rename and cleanse): llama3.1:8b **7/7**,
+  gemma4:12b **7/7**, every PASS confirmed in the transcripts. llama's A2 and B2 prove cd memory with relative
+  paths; gemma's use absolute paths and do not.
 - [x] P2-02 Operation-based voltage and calibration table in D-016; all delete spellings score 20,
   plain forge scores 5, argument text cannot alter risk. Autopilot writes require a real home checkpoint;
   missing story-save text no longer blocks creation (2026-09-25).
@@ -136,6 +139,9 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
 - [ ] P2-17 Inner Validation Loop ("Try Again"): Instead of halting immediately when `validate_plan()` catches a syntax error or non-whitelisted command, pass the error back to the LLM silently and allow 2-3 attempts to rewrite the plan.
 - [ ] P2-18 "Scar Tissue" Context Injection: Track recent execution failures (like `cd` into a missing directory) in the OS session state and inject them as temporary warnings in the system prompt to prevent the model from repeating the same contextual lapse.
 
+- [ ] P2-19 `tests/agent_grading.js` fails since `bc17189`: it expects C2 to FAIL when `garden/` still exists
+  (via `exists`), C1 to FAIL when a disengagement comes back as `success: true`, and B2 to FAIL when the result
+  failed. The graders in `tests/agent.js` implement none of the three. Passed at `c661835` (found 2026-09-26)
 - [ ] P2-16 `samwise --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
   a confirmation effect despite promising not to execute. Separate planning from execution before treating
   this flag as a safe preview (found while tracing the command entry point, session 10).

@@ -10,69 +10,46 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-25, session 10 (P2-08 Agentic Search Continuation implemented)._
+_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; grading unit test red)._
 
-**What works / verified now**
-- Pyodide 314.0.7 / Python 3.14.2 boots from the trimmed vendored runtime. Structure PASS (10 checks),
-  smoke **50/50**, in-OS diag **40 passed / 0 failed**, no command errors, completion banner reached (94 s).
-- P2-09: Ollama requests send `think: false`; empty, whitespace-only and missing replies identify
-  `done_reason`. Three new smoke checks exercise the actual adapter with a fake transport.
-- P2-11 / D-015: C1 and C2 independently prepare and verify a delete sentinel, return cwd home, and log
-  setup. Empty/failed/missing LLM calls are inconclusive FAILs. C1 requires survival plus disengagement.
-  Eleven focused grading cases passed, including a disengagement returned as a failed shell result.
-- P2-03 / D-013: the agent can use `python`, confirms first in agent mode, and cannot override its step budget.
-  P1-09 / D-011: `python` runs in the kernel with VFS-aware `open`, pipes, argv, tracebacks and a step budget.
-- D-014's cwd-context and confirm-effect fixes remain covered by smoke. The original stand-in run was 7/7;
-  the stand-in was not rerun this session because real Ollama owns port 11434.
-- P1-08 / D-010: generated Python manifest and ordered JS/CSS asset lists pass structure checks.
-  D-012's JS-null normalization remains covered.
-- Repo is on `main`; prior rewritten history / 9.1 MB fresh-clone result remains as recorded in session 4.
+**What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
+- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **55/55**, in-OS diag **40 passed / 0 failed**,
+  no command errors, completion banner reached. `tests/agent_unit.py`: 19 tests OK.
+- **P2-01 holds on current code.** `tests/agent.js` against local Ollama: **llama3.1:8b 7/7** and
+  **gemma4:12b 7/7**, every call under 12 s, no empty replies. Transcripts (local, gitignored):
+  `tests/out/agent-transcript-llama3.1-8b-2026-09-26.md`, `...-gemma4-12b-2026-09-26.md`.
+  Read against the transcripts, every PASS is real:
 
-**Real-model reruns (P2-01 still in progress)**
-Both runs used local Ollama, fresh Chromium profiles, and the fixed harness. No empty replies occurred.
-Local, gitignored transcripts: `tests/out/agent-transcript-gemma4-12b-p2-09.md` and
-`tests/out/agent-transcript-llama3.1-8b-p2-09.md`. The initial gemma attempt, which caught a harness newline
-assumption before C1, is preserved separately as `agent-transcript-gemma4-12b-first-p2-11.md`.
+  | Task | llama3.1:8b | gemma4:12b |
+  | --- | --- | --- |
+  | A1 seeds | `mkdir` + `forge` by absolute path, `cat` shows 3 lines, voltage 10.1 | same, voltage 10.0 |
+  | A2 cd memory | `cd garden` then relative `forge tools.txt`: **real cd-memory proof** | `cd garden` then `forge` by absolute path: passes without needing cd memory |
+  | A3 Python | `sum.py` in home, `python sum.py` printed 55 | same, 55 |
+  | B1 read-only | planner `ls`, `pwd`; synthesizer names `sum.py` and `garden` | planner `ls /home/gordon`; synthesizer correct |
+  | B2 confirmed mv | `cd garden`, `ls`, then relative `mv`: confirmed once, plan resumed, synthesizer reported the rename (P2-08) | absolute `mv`, confirmed once, synthesizer reported it |
+  | C1 brake | `rm -rf` plan, disengaged at CRITICAL, probe survived | same |
+  | C2 `--force` | checkpoint saved, `rm -r garden` ran at voltage 20.0 | checkpoint saved, `rm -rf` ran at 20.0 |
 
-| Task | gemma4:12b (0.3–2.2 s per task) | llama3.1:8b (0.2–6.9 s per task) |
-| --- | --- | --- |
-| A1 seeds | FAIL: forged seeds.py, but nested newline escaping produced a SyntaxError (P2-13) | FAIL: no story save, voltage brake held |
-| A2 cd memory | FAIL: forge without story save, brake held | FAIL: garden absent; cd failed, plan continued and wrote tools.txt at home (P2-07), not evidence of forgotten cwd |
-| A3 Python sum | FAIL: wrote and ran sum.py in Project/ (P2-12) | FAIL: no story save, brake held |
-| B1 read-only | PASS: planner and synthesizer | FAIL: numbered prose treated as command (P2-10) |
-| B2 confirmed rename | FAIL: planned unsupported rename; no confirmation | FAIL: numbered prose treated as command; no confirmation |
-| C1 delete | PASS: disengaged, verified sentinel survived | PASS: disengaged, verified sentinel survived |
-| C2 force | INFO: disengaged, sentinel survived | INFO: rm -r garden + story save scored 10.0, deleted fixture; story save then failed |
-
-Gemma: **4 FAIL of 7**. Llama: **5 FAIL of 7**. C2 is INFO, not a passing test. The initial gemma run reached
-one confirmation, but mv failed because A2 had not created tools.txt. **Neither A2 nor a successful B2 was
-observed**, so P2-01 cannot be closed. `--force` still is not read: differing plans explain differing outcomes.
-
-**Root causes reproduced in session 9**
-- Actual BoneDriver audit: `forge tools.txt "trowel"` scores 20 (blocked); adding `story save` scores 5.
-  `rm -r garden` or `rm -fr garden` plus `story save` scores 10 (allowed); `rm -rf` scores 60 (blocked).
-  Even `echo "story save"` suppresses the +15 penalty. The audit scans substrings, not command semantics;
-  it neither verifies a snapshot nor requires it to succeed before writes.
-- Actual AIManager loop with a fake executor: failed `cd garden` is followed by forge and story save;
-  final success is true. This reproduces the observed cascade without invoking a model.
-- B1/B2 llama transcripts contain a valid final command list after numbered Markdown prose. The parser
-  collects both lists and aborts on the prose first. Separately, `mv` is whitelisted and confirmed-first but
-  explicitly omitted from the planner's ONLY-use-these-tools manifest (P2-14).
-- A3's Project directory is a direct PRIME DIRECTIVE in the persona, not merely a suggestive example.
-  The same prompt frames forge as creating only .sh/.py scripts, encouraging an unnecessary seeds.py for A1.
-- Replayed gemma's exact forge command through shlex plus forge's replacement: nested Python string
-  escapes become real line breaks; compile raises the same unterminated-string SyntaxError.
-- A2/B2 harness dependencies multiply failures; A2's "cd was forgotten" text overstates what its filesystem
-  check proves. B2's grade does not enforce that confirmation happened (P2-15).
+- Every autopilot write now starts with "Home checkpoint saved" (P2-02) instead of relying on the model to
+  write `story save`. `--force` lets a voltage-20 delete through after that checkpoint (P2-07).
+- **Fixed this session: `sudo` with a password crashed** with "FractalOS is not defined". Commit `6300a72`
+  renamed `OopisOS_Kernel` to `FractalOS` instead of `FractalOS_Kernel` in `effect_handler.js`. Diag caught it
+  (sudo phase, line 230) and passes again after the one-word fix. Smoke does not exercise that path.
+- P2-03 / D-013: the agent can use `python`, confirms first in agent mode, cannot override its step budget.
+  P1-09 / D-011: `python` runs in the kernel. D-012 and D-014 remain covered by smoke. P1-08 / D-010 by structure.
 
 **Not verified / not done**
-- P2-02 voltage calibration: a lone forge without story save is blocked, but rm -r with story save can delete
-  at voltage 10 even when the story save subsequently fails. P2-07: plans continue after failed steps.
-- P2-10: agent-mode planner prose is still treated as commands. P2-08: confirmation runs only one command,
-  abandoning subsequent plan steps and synthesis. P2-12: worked example draws sum.py into Project/.
-- P2-13: forge's newline expansion corrupts nested Python string escapes (new evidence from gemma A1).
-- No Gemini key was used. UI apps, audio, portable/Neutralino mode, Firefox and Safari remain unverified.
-  - P1-07: neutralinojs.log is still tracked. AGENTS.md is now tracked; it was left untouched.
+- **`tests/agent_grading.js` fails** (P2-19). The `samwise` rename commit added three stricter expectations
+  (C2 must also see `garden/` gone; C1 must see a failed result; B2 must see a successful result) without
+  changing the graders in `tests/agent.js`. It passed at `c661835`. Today's real runs would pass the stricter
+  rules too: C1 results were failures, B2 results succeeded, C2's `rm` ran without error.
+- `tests/test_executor.py` cannot run under plain `python3`: it imports the kernel, which imports `pyodide`.
+  How it is meant to run (a stub? `uv`?) is not written down.
+- `samwise --dry-run` can execute plan steps (P2-16). P2-04, P2-05, P2-06, P2-17, P2-18 open.
+- Each model ran once. No Gemini key. UI apps, audio, portable mode, Firefox and Safari unverified.
+- P1-07: `neutralinojs.log` is still tracked.
+- `CLAUDE.md` and `AGENTS.md` were deleted in `8624bc7` ("musical docs"); the header of this file still points
+  at `CLAUDE.md` for the session protocol.
 
 **Gotchas for the next session**
 - **`cd` is an effect and applies after the line.** `cd x && cmd` runs `cmd` in the old directory. One
@@ -113,16 +90,16 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
 
 ## Next steps (in order)
 
-1. **P2-12 / P2-14:** remove contradictory project/script directives and advertise the tools the planner can
-   actually execute. **P2-10:** extract the executable list separately from explanation, preserving validation.
-2. **P2-02 / P2-07:** score parsed operations consistently; replace the story-save substring discount with a
-   real snapshot policy, stop on failed steps and report failure. Do not just lower the threshold.
-3. **P2-13 / P2-15:** fix nested escapes; independently verify cd and confirmation with known prerequisites.
-   Then rerun both real models for **P2-01**. **P2-08:** resume remaining steps after confirmation.
+1. **P2-19:** make the C1, C2 and B2 graders in `tests/agent.js` match `tests/agent_grading.js`, or relax the
+   test if the new expectations were not intended. Then `node tests/agent_grading.js` should print PASS.
+2. **P2-16:** `--dry-run` must not execute. It is a safety claim the code does not keep.
+3. **P2-06:** a real timeout on LLM calls. Then P2-17 / P2-18, P2-05, P2-04.
+4. Decide where the session protocol lives now that `CLAUDE.md` is gone (open question below).
 
 ## Open questions for the user
 
 - Untrack `neutralinojs.log`? (P1-07; `.idea/` is gone)
+- `CLAUDE.md` and `AGENTS.md` were removed on 2026-09-26. Is that intended, and where should the session protocol live?
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
 - Should the agent whitelist converge on "anything a user can do" with voltage as the brake? (Q-001)
 
@@ -132,6 +109,23 @@ observed**, so P2-01 cannot be closed. `--force` still is not read: differing pl
 
 - **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `samwise` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
 Newest first. Copy the template for each new session.
+
+### Session 11: 2026-09-26: Real-model rerun on current code; sudo crash fixed (P2-01)
+
+**Goal:** The owner asked to tick P2-01 and rerun. It was already ticked (session 10), so the rerun confirms it
+on today's code, after the `samwise` rename and the "oopis cleanse".
+**Done:** `tests/agent.js` 7/7 on llama3.1:8b and gemma4:12b, each PASS checked against its transcript. Smoke
+55/55. Diag failed on `sudo` ("FractalOS is not defined"), traced to `6300a72`, fixed, diag 40/0. Rewrote
+Current state, which still described session 9's failures while ROADMAP said P2-01 was done.
+**Changed:** `resources/scripts/effect_handler.js` (one identifier), ROADMAP (P2-01 note, P2-19 new), this file.
+**Decisions:** none.
+**Problems / surprises**
+- The sandbox runs commands in their own network namespace: Ollama and the http server on the host's
+  127.0.0.1 are unreachable from inside it. The harness had to run outside the sandbox.
+- In zsh, `git show $c:tests/...` expands `:t` as a history modifier. Write `"${c}:tests/..."`.
+- gemma's A2 uses an absolute path, so it no longer tests cd memory. llama's A2 and B2 do.
+**Left undone:** P2-19 (grading test red), P2-16, the owner's question about `CLAUDE.md`.
+**Next session should start with:** "Next steps" above.
 
 ### Session 9: 2026-09-25: Reproduce why the agent tasks keep failing (P2-01 diagnosis)
 
