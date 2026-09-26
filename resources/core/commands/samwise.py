@@ -234,13 +234,20 @@ async def _dry_run(ai_manager, user_prompt, provider, model, api_key, is_autopil
     if planned.get("warning"):
         parts.append(planned["warning"])
     commands = planned["commands"]
+    rejections = planned.get("rejections") or []
+    if rejections and not planned["refusal"]:
+        listed = "; ".join(rejections)
+        parts.append(f"The OS rejected {len(rejections)} earlier plan{'' if len(rejections) == 1 else 's'} ({listed}); "
+                     f"attempt {planned.get('attempts')} passed.")
 
-    if not commands:
+    if planned["refusal"]:
+        if commands:
+            parts.append(_plan_block(commands))
+        tries = f" after {planned.get('attempts')} attempts" if planned.get("attempts", 1) > 1 else ""
+        parts.append(f"**Would halt before any step runs{tries}:** {planned['refusal']}.")
+    elif not commands:
         parts.append("No commands. The model would answer directly:")
         parts.append(planned["plan_text"])
-    elif planned["refusal"]:
-        parts.append(_plan_block(commands))
-        parts.append(f"**Would halt before any step runs:** {planned['refusal']}.")
     elif is_autopilot:
         voltage = planned["voltage"]
         parts.append(_plan_block(commands))

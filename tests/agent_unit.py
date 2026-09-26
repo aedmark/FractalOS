@@ -157,6 +157,60 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(plan, ['forbidden x'])
         self.assertIsNotNone(self.am.validate_plan(plan))
 
+    # P2-17: validation rejections go back to the model, up to MAX_PLAN_ATTEMPTS calls.
+    def run_replies(self, replies, agent=False, **options):
+        calls = []
+        async def llm(provider, model, conversation, api_key, system_prompt=None):
+            calls.append(conversation)
+            if system_prompt == self.am.SYNTHESIZER_SYSTEM_PROMPT:
+                return {'success': True, 'answer': 'SYNTH'}
+            return {'success': True, 'answer': replies[min(len(calls), len(replies)) - 1]}
+        async def context():
+            return 'Current Directory: /home/test'
+        self.am._call_llm_api = llm
+        self.am._get_terminal_context = context
+        method = self.am.perform_agentic_search if agent else self.am.perform_autopilot
+        return asyncio.run(method('test', [], 'ollama', None, options)), calls
+
+    def test_rejected_plan_is_retried_with_the_reason(self):
+        for agent in [False, True]:
+            self.executor.calls.clear()
+            result, calls = self.run_replies(['1. ls | wc', '1. ls'], agent=agent)
+            self.assertTrue(result['success'], result)
+            self.assertEqual([c[0] for c in self.executor.calls], ['ls'])
+            feedback = calls[1][-1]['parts'][0]['text']
+            self.assertIn('rejected that plan', feedback)
+            self.assertIn('shell operators', feedback)
+            self.assertEqual(calls[1][-2]['parts'][0]['text'], '1. ls | wc')
+
+    def test_gives_up_after_three_attempts(self):
+        for agent in [False, True]:
+            self.executor.calls.clear()
+            result, calls = self.run_replies(['1. forbidden x'], agent=agent)
+            self.assertFalse(result['success'])
+            self.assertIn('after 3 attempts', result['error'])
+            self.assertEqual(len(calls), 3)
+            self.assertEqual(self.executor.calls, [])
+
+    def test_voltage_brake_is_not_retried(self):
+        result, calls = self.run_replies(['1. rm -fr garden', '1. ls'])
+        self.assertFalse(result['success'])
+        self.assertIn('DISENGAGED', result['error'])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.executor.calls, [])
+
+    def test_prose_after_rejection_is_not_an_answer(self):
+        result, calls = self.run_replies(['1. forbidden x', 'Sorry, I cannot do that.'], agent=True)
+        self.assertFalse(result['success'])
+        self.assertIn('no numbered plan', result['error'])
+        self.assertNotIn('Sorry', result.get('data', ''))
+
+    def test_direct_answer_on_first_try_is_kept(self):
+        result, calls = self.run_replies(['Paris is the capital of France.'], agent=True)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['data'], 'Paris is the capital of France.')
+        self.assertEqual(len(calls), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -56,7 +56,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `tests/structure.js` | Node-only, instant: the manifest and `asset_manifest.js` match the files on disk (D-010) |
 | `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |
 | `tests/agent.js`, `tests/fake_ollama.py` | Headless run of the `samwise` agent (autopilot and agent mode) through seven tasks against a real Ollama, graded on the file system, transcript to `tests/out/`; and a stand-in Ollama that proves the plumbing without a model (D-014) |
-| `tests/agent_grading.js`, `tests/agent_unit.py` | No browser, no model: the agent harness's graders against canned outcomes, and unit tests of plan parsing and validation, stop-on-failure, voltage and `--force`, checkpoints and `forge` escapes |
+| `tests/agent_grading.js`, `tests/agent_unit.py` | No browser, no model: the agent harness's graders against canned outcomes, and unit tests of plan parsing, validation and retries, stop-on-failure, voltage and `--force`, checkpoints and `forge` escapes |
 | `tests/test_executor.py` | Runs **inside FractalOS** (`python test_executor.py` after copying it into the VFS) to exercise the `python` command; it imports the kernel, so plain `python3` on the host cannot run it |
 | `docs/ROADMAP.md` | The plan, with stable item IDs |
 | `docs/HANDOFF.md` | Current state, next steps, session log |

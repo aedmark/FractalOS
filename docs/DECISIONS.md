@@ -308,3 +308,14 @@ Every failure names the provider and says what to do.
 **Consequences:** One limit per call, not per task: an agent run with a planner and a synthesizer can wait up
 to twice as long. Streaming replies would allow a shorter "no first token" limit; not done.
 
+## D-022 Rejected plans get two more tries; the voltage brake gets none (2026-09-26, status: accepted)
+**Context:** P2-17. A plan with one bad line (a shell operator, an unknown command, `python --steps`) halted the
+whole request, although telling the model why usually fixes it.
+**Decision:** `_request_valid_plan` serves both modes: up to 3 model calls, each rejection sent back with the
+reason and the allowed commands. Only `validate_plan()` rejections are retried. The voltage brake is judged
+after a valid plan exists and is final: retrying there would teach the model to phrase dangerous plans
+cheaply. After a rejection, a reply with no numbered plan is another rejection, so agent mode cannot turn a
+refused plan into prose presented as an answer. A first reply with no plan is still a direct answer.
+Retries are silent in normal runs (the owner's spec); `--dry-run` lists them; a final halt says how many attempts.
+**Consequences:** A bad model can cost 3 calls and, with D-021, up to 3 timeouts before it halts.
+

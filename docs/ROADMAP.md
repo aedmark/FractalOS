@@ -141,8 +141,18 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   --force deletion has a real verdict. Setup and executed commands appear in transcripts. Nineteen
   Node-only grading checks protect these criteria (2026-09-25).
 
-- [ ] P2-17 Inner Validation Loop ("Try Again"): Instead of halting immediately when `validate_plan()` catches a syntax error or non-whitelisted command, pass the error back to the LLM silently and allow 2-3 attempts to rewrite the plan.
+- [x] P2-17 Inner Validation Loop ("Try Again"): Instead of halting immediately when `validate_plan()` catches a syntax error or non-whitelisted command, pass the error back to the LLM silently and allow 2-3 attempts to rewrite the plan.
+  *Done 2026-09-26 (D-022):* `_request_valid_plan` makes up to 3 calls in both modes, sending the rejection and
+  the allowed commands back each time. The voltage brake is never retried. Prose after a rejection is another
+  rejection, not an answer. Silent in normal runs; `--dry-run` shows rejected attempts. 5 unit tests (fail with
+  one attempt), 2 smoke checks. **Scope:** only plans the OS rejects before running. Not covered: a step that
+  fails at run time (llama3.1:8b planned `tree -C`; FractalOS `tree` has no `-C`), which is P2-18, and valid
+  plans that do the wrong thing, which is P2-21.
 - [ ] P2-18 "Scar Tissue" Context Injection: Track recent execution failures (like `cd` into a missing directory) in the OS session state and inject them as temporary warnings in the system prompt to prevent the model from repeating the same contextual lapse.
+- [ ] P2-21 Valid plans that do the wrong thing. Asked to "delete the garden directory", llama3.1:8b twice planned
+  `cd garden` then `rm -r *`, emptying the folder but leaving it (tests/agent.js C2, 2026-09-26). It passes
+  validation, so P2-17 cannot catch it. Options: persona guidance (delete a directory by name), or a check after
+  the run that the request's target is in the state asked for
 
 - [x] P2-19 `tests/agent_grading.js` failed since `bc17189`: it expected C2 to FAIL when `garden/` still exists
   (via `exists`), C1 to FAIL when a disengagement comes back as `success: true`, and B2 to FAIL when the result

@@ -273,6 +273,16 @@ results["dry_run_changes_nothing"] = (am.fs_manager.get_node(f"{home}/dry_made")
 fake_llm.plan = "1. ls | wc"
 r3 = await samwise_cmd.run(["x"], {"provider": "ollama", "dry-run": True}, user, ai_manager=am)
 results["dry_reports_refusal"] = "Would halt" in r3.get("content", "")
+# P2-17: a rejected plan goes back to the model with the reason, and the corrected plan runs.
+replies = ["1. ls | wc", "1. echo retried-ok", "1. ls | wc", "1. echo retried-ok"]
+async def seq_llm(provider, model, conversation, api_key, system_prompt=None):
+    return {"success": True, "answer": replies.pop(0)}
+am._call_llm_api = seq_llm
+r = await am.perform_autopilot("x", [], "ollama", None, {"apiKey": None})
+r4 = await samwise_cmd.run(["x"], {"provider": "ollama", "dry-run": True, "autopilot": True}, user, ai_manager=am)
+results["retry_runs_corrected_plan"] = r.get("success") and "retried-ok" in r.get("data", "")
+results["retry_shown_in_dry_run"] = "rejected 1 earlier plan" in r4.get("content", "")
+am._call_llm_api = fake_llm
 
 json.dumps(results)
 `);
@@ -294,6 +304,8 @@ json.dumps(results)
         report('samwise --autopilot --force --dry-run shows voltage (P2-16)', agent.dry_autopilot_reports === true);
         report('--dry-run creates, moves, deletes and checkpoints nothing (P2-16)', agent.dry_run_changes_nothing === true);
         report('--dry-run reports a plan that would halt (P2-16)', agent.dry_reports_refusal === true);
+        report('a rejected plan is retried and the corrected one runs (P2-17)', agent.retry_runs_corrected_plan === true);
+        report('--dry-run shows the rejected attempts (P2-17)', agent.retry_shown_in_dry_run === true);
 
         for (const { cmd, expect } of CHECKS) {
             const r = await page.evaluate(async c => await CommandExecutor.processSingleCommand(c, { isInteractive: false }), cmd);

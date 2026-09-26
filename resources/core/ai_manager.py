@@ -307,6 +307,53 @@ Always use absolute paths for all file and directory arguments to prevent contex
         except Exception as error:
             return {"success": False, "error": str(error)}
 
+    MAX_PLAN_ATTEMPTS = 3
+
+    async def _request_valid_plan(self, provider, model, conversation, api_key, system_prompt=None):
+        """Ask for a plan; when validation rejects it, say why and ask again (P2-17).
+
+        Up to MAX_PLAN_ATTEMPTS model calls. Only validate_plan() rejections are retried:
+        the voltage brake is judged by the caller afterwards and is never argued with.
+        A first reply with no plan is returned as is (a direct answer); after a rejection,
+        a reply with no plan is one more rejection, so prose never replaces a refused plan.
+        Returns {"success": False, "error", "rejections"} if a model call failed, otherwise
+        {"success": True, "plan_text", "commands", "refusal", "rejections", "attempts"}.
+        """
+        conversation = list(conversation)
+        rejections = []
+        for attempt in range(1, self.MAX_PLAN_ATTEMPTS + 1):
+            result = await self._call_llm_api(provider, model, conversation, api_key, system_prompt)
+            if not result["success"]:
+                return {"success": False, "error": result.get("error"), "rejections": rejections}
+            plan_text = result.get("answer", "").strip()
+            commands = self.extract_plan(plan_text)
+            if commands:
+                refusal = self.validate_plan(commands)
+            elif attempt == 1:
+                refusal = None
+            else:
+                refusal = "the corrected reply contained no numbered plan"
+            if refusal is None:
+                break
+            rejections.append(refusal)
+            if attempt < self.MAX_PLAN_ATTEMPTS:
+                conversation += [
+                    {"role": "model", "parts": [{"text": plan_text}]},
+                    {"role": "user", "parts": [{"text": (
+                        f"The OS rejected that plan before running any of it: {refusal}. "
+                        "Reply with a corrected plan only: numbered lines, one command per line, "
+                        "literal paths, no shell operators or substitutions, no explanation. "
+                        f"Allowed commands: {', '.join(self.COMMAND_WHITELIST)}.")}]},
+                ]
+        return {"success": True, "plan_text": plan_text, "commands": commands, "refusal": refusal,
+                "rejections": rejections, "attempts": attempt}
+
+    @staticmethod
+    def _halted(planned):
+        attempts = planned.get("attempts", 1)
+        tries = f" after {attempts} attempts" if attempts > 1 else ""
+        return {"success": False, "error": f"Execution HALTED{tries}: {planned['refusal']}."}
+
     async def plan_autopilot(self, prompt, provider, model, options):
         """Ask the model for an autopilot plan and judge it. Runs none of it (P2-16).
 
@@ -322,17 +369,15 @@ Always use absolute paths for all file and directory arguments to prevent contex
         full_prompt = f"{driver_prompt}\n\nCURRENT ROAD CONDITIONS:\n{road_conditions}\n\nUSER REQUEST: {prompt}"
 
         conversation = [{"role": "user", "parts": [{"text": full_prompt}]}]
-        plan_result = await self._call_llm_api(final_provider, final_model, conversation, options.get("apiKey"))
+        planned = await self._request_valid_plan(final_provider, final_model, conversation, options.get("apiKey"))
+        if not planned["success"]:
+            return planned
 
-        if not plan_result["success"]:
-            return plan_result
-
-        plan_text = plan_result.get("answer", "").strip()
-        commands = self.extract_plan(plan_text)
-        refusal = self.validate_plan(commands)
+        plan_text, commands, refusal = planned["plan_text"], planned["commands"], planned["refusal"]
         voltage = BoneDriver.audit_plan_voltage(commands) if not refusal else None
         return {
             "success": True, "plan_text": plan_text, "commands": commands, "refusal": refusal,
+            "rejections": planned["rejections"], "attempts": planned["attempts"],
             "voltage": voltage,
             "safety_status": BoneDriver.get_safety_report(voltage) if voltage is not None else None,
             "needs_checkpoint": bool(commands) and not refusal and BoneDriver.needs_checkpoint(commands),
@@ -349,7 +394,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             return planned
         plan_text, commands_to_execute, warning = planned["plan_text"], planned["commands"], planned["warning"]
         if planned["refusal"]:
-            return {"success": False, "error": f"Execution HALTED: {planned['refusal']}."}
+            return self._halted(planned)
 
         voltage, safety_status = planned["voltage"], planned["safety_status"]
 
@@ -399,32 +444,31 @@ Always use absolute paths for all file and directory arguments to prevent contex
 
         planner_conversation = history + [{"role": "user", "parts": [{"text": planner_prompt}]}]
 
-        planner_result = await self._call_llm_api(final_provider, final_model, planner_conversation, options.get("apiKey"), self.PLANNER_SYSTEM_PROMPT)
+        planned = await self._request_valid_plan(final_provider, final_model, planner_conversation,
+                                                 options.get("apiKey"), self.PLANNER_SYSTEM_PROMPT)
 
-        if not planner_result["success"]:
-            error_msg = f"Planner stage failed: {planner_result.get('error')}"
+        if not planned["success"]:
+            error_msg = f"Planner stage failed: {planned.get('error')}"
             if warning: error_msg = f"{warning}\n{error_msg}"
             return {"success": False, "error": error_msg}
 
-        plan_text = planner_result.get("answer", "").strip()
-        commands = self.extract_plan(plan_text)
-        refusal = self.validate_plan(commands) if commands else None
+        commands, refusal = planned["commands"], planned["refusal"]
         confirm = [] if refusal else [c for c in commands if shlex.split(c)[0] in self.DANGEROUS_COMMANDS]
-        return {"success": True, "plan_text": plan_text, "commands": commands, "refusal": refusal,
-                "confirm": confirm, "warning": warning}
+        return {"success": True, "plan_text": planned["plan_text"], "commands": commands, "refusal": refusal,
+                "confirm": confirm, "warning": warning,
+                "rejections": planned["rejections"], "attempts": planned["attempts"]}
 
     async def perform_agentic_search(self, prompt, history, provider, model, options):
         planned = await self.plan_agentic_search(prompt, history, provider, model, options)
         if not planned["success"]:
             return planned
         commands_to_execute, warning = planned["commands"], planned["warning"]
+        if planned["refusal"]:
+            return self._halted(planned)
         if not commands_to_execute:
             response = {"success": True, "data": planned["plan_text"]}
             if warning: response["warning"] = warning
             return response
-
-        if planned["refusal"]:
-            return {"success": False, "error": f"Execution HALTED: {planned['refusal']}."}
             
         current_path = self.fs_manager.current_path
         
