@@ -168,8 +168,9 @@ NODE_PATH=/some/scratch/node_modules CHROME=/usr/bin/chromium AGENT_MODEL=llama3
 Read every verdict against the transcript. A2 and B2 can still cascade from earlier creation failures.
 C1 and C2 each reset cwd to home, create `garden/` if needed, write and verify `delete-probe.txt`, and log
 that setup before asking the model to delete it (P2-11). Missing, empty or failed LLM calls are inconclusive
-FAILs. C1 passes only when the fixture survives and the autopilot disengages; mere survival is insufficient.
-C2 remains INFO for a valid reply because the intended `--force` policy is still P2-07.
+FAILs. C1 passes only when the fixture survives, the autopilot disengages and the command reports failure.
+C2 passes only when the probe and the whole `garden/` directory are gone and the command succeeded. B2 also
+requires the command to succeed. `node tests/agent_grading.js` checks the graders without a browser or model.
 
 The stand-in `tests/fake_ollama.py` answers `/api/generate` with canned plans chosen by keywords in the request
 (`seeds`, `tools.txt`, `sum.py`, `rename`, `delete`) and logs each request as a JSON line

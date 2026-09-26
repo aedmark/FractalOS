@@ -10,11 +10,12 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; grading unit test red)._
+_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; grading unit test green again, P2-19)._
 
 **What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
 - Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **55/55**, in-OS diag **40 passed / 0 failed**,
   no command errors, completion banner reached. `tests/agent_unit.py`: 19 tests OK.
+  `tests/agent_grading.js`: **22 cases PASS** (P2-19); llama3.1:8b 7/7 again under the stricter graders.
 - **P2-01 holds on current code.** `tests/agent.js` against local Ollama: **llama3.1:8b 7/7** and
   **gemma4:12b 7/7**, every call under 12 s, no empty replies. Transcripts (local, gitignored):
   `tests/out/agent-transcript-llama3.1-8b-2026-09-26.md`, `...-gemma4-12b-2026-09-26.md`.
@@ -39,10 +40,6 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   P1-09 / D-011: `python` runs in the kernel. D-012 and D-014 remain covered by smoke. P1-08 / D-010 by structure.
 
 **Not verified / not done**
-- **`tests/agent_grading.js` fails** (P2-19). The `samwise` rename commit added three stricter expectations
-  (C2 must also see `garden/` gone; C1 must see a failed result; B2 must see a successful result) without
-  changing the graders in `tests/agent.js`. It passed at `c661835`. Today's real runs would pass the stricter
-  rules too: C1 results were failures, B2 results succeeded, C2's `rm` ran without error.
 - `tests/test_executor.py` cannot run under plain `python3`: it imports the kernel, which imports `pyodide`.
   How it is meant to run (a stub? `uv`?) is not written down.
 - `samwise --dry-run` can execute plan steps (P2-16). P2-04, P2-05, P2-06, P2-17, P2-18 open.
@@ -90,11 +87,9 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 ## Next steps (in order)
 
-1. **P2-19:** make the C1, C2 and B2 graders in `tests/agent.js` match `tests/agent_grading.js`, or relax the
-   test if the new expectations were not intended. Then `node tests/agent_grading.js` should print PASS.
-2. **P2-16:** `--dry-run` must not execute. It is a safety claim the code does not keep.
-3. **P2-06:** a real timeout on LLM calls. Then P2-17 / P2-18, P2-05, P2-04.
-4. Decide where the session protocol lives now that `CLAUDE.md` is gone (open question below).
+1. **P2-16:** `--dry-run` must not execute. It is a safety claim the code does not keep.
+2. **P2-06:** a real timeout on LLM calls. Then P2-17 / P2-18, P2-05, P2-04.
+3. Decide where the session protocol lives now that `CLAUDE.md` is gone (open question below).
 
 ## Open questions for the user
 
@@ -117,14 +112,18 @@ on today's code, after the `samwise` rename and the "oopis cleanse".
 **Done:** `tests/agent.js` 7/7 on llama3.1:8b and gemma4:12b, each PASS checked against its transcript. Smoke
 55/55. Diag failed on `sudo` ("FractalOS is not defined"), traced to `6300a72`, fixed, diag 40/0. Rewrote
 Current state, which still described session 9's failures while ROADMAP said P2-01 was done.
-**Changed:** `resources/scripts/effect_handler.js` (one identifier), ROADMAP (P2-01 note, P2-19 new), this file.
+**Changed:** `resources/scripts/effect_handler.js` (one identifier), ROADMAP (P2-01 note, P2-19 new and done), `tests/agent.js` (graders, `exists`),
+TESTING.md, this file.
 **Decisions:** none.
 **Problems / surprises**
 - The sandbox runs commands in their own network namespace: Ollama and the http server on the host's
   127.0.0.1 are unreachable from inside it. The harness had to run outside the sandbox.
 - In zsh, `git show $c:tests/...` expands `:t` as a history modifier. Write `"${c}:tests/..."`.
 - gemma's A2 uses an absolute path, so it no longer tests cd memory. llama's A2 and B2 do.
-**Left undone:** P2-19 (grading test red), P2-16, the owner's question about `CLAUDE.md`.
+**Also done:** P2-19. The graders now require C1's result to fail, C2's `garden/` directory to be gone (a new
+`exists` helper asks the kernel's file system, checked true for `/home` and false for a missing path), and B2's
+command to succeed. Grading test 22/22; llama rerun 7/7.
+**Left undone:** P2-16, the owner's question about `CLAUDE.md`.
 **Next session should start with:** "Next steps" above.
 
 ### Session 9: 2026-09-25: Reproduce why the agent tasks keep failing (P2-01 diagnosis)
