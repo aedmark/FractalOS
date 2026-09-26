@@ -21,7 +21,7 @@ class AIManager {
         if (!options.isInteractive) {
             return {
                 success: false,
-                error: "A Gemini API key is required. Please run `gemini` once in an interactive terminal to set it up.",
+                error: "A Gemini API key is required. Please run `samwise` once in an interactive terminal to set it up.",
             };
         }
 

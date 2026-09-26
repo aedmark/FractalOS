@@ -179,10 +179,10 @@ am.fs_manager.current_path = "/etc"
 ctx = await am._get_terminal_context()
 results["context_keeps_cwd"] = "Current Directory:\\n/etc" in ctx and am.fs_manager.current_path == "/etc"
 am.fs_manager.current_path = saved_path
-import commands.samwise as gemini_cmd
+import commands.samwise as samwise_cmd
 fake_llm.plan = '1. python -c "print(6 * 7)"'
-r = await gemini_cmd.run(["x"], {"provider": "ollama"}, {"name": "gordon", "group": "gordon"}, ai_manager=am)
-results["gemini_passes_confirm_effect"] = r.get("effect") == "confirm_ai_command"
+r = await samwise_cmd.run(["x"], {"provider": "ollama"}, {"name": "gordon", "group": "gordon"}, ai_manager=am)
+results["samwise_passes_confirm_effect"] = r.get("effect") == "confirm_ai_command"
 # P2-02: verify the stored pre-write contents, not just a checkpoint message.
 user = am.command_executor.user_context
 home = f"/home/{user['name']}"
@@ -209,7 +209,7 @@ json.dumps(results)
         report('agent mode halts on python --steps', agent.agent_halts_steps === true);
         report('agent mode still runs a read-only plan', agent.agent_readonly_ok === true);
         report('agent context probe keeps the shell cwd (D-014)', agent.context_keeps_cwd === true);
-        report('samwise passes the confirm effect through (D-014)', agent.gemini_passes_confirm_effect === true);
+        report('samwise passes the confirm effect through (D-014)', agent.samwise_passes_confirm_effect === true);
         report('autopilot stores a real checkpoint before writing', agent.checkpoint_before_write === true);
 
         for (const { cmd, expect } of CHECKS) {

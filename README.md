@@ -106,7 +106,7 @@ things are the way they are, and [docs/TESTING.md](docs/TESTING.md) for how to c
 | **awk**                                | Pattern scanning and processing language.                     |
 | **backup**                             | Creates a secure backup of the system state.                  |
 | **base64**                             | Base64 encode or decode data.                                 |
-| **basic**                              | The Samwise BASIC Integrated Development Environment.         |
+| **basic**                              | The Fractal BASIC Integrated Development Environment.         |
 | **bc**                                 | An arbitrary precision calculator language.                   |
 | **beep**                               | Play a short system sound.                                    |
 | **bg**                                 | Resume a job in the background.                               |
@@ -137,13 +137,13 @@ things are the way they are, and [docs/TESTING.md](docs/TESTING.md) for how to c
 | **du**                                 | Estimate file space usage.                                    |
 | **echo**                               | Display a line of text.                                       |
 | **edit**                               | A powerful text and code editor.                              |
-| **export**                             | Download a file from SamwiseOS to your local machine.         |
+| **export**                             | Download a file from FractalOS to your local machine.         |
 | **expr**                               | Evaluate expressions.                                         |
 | **fg**                                 | Resume a job in the foreground.                               |
 | **find**                               | Search for files in a directory hierarchy.                    |
 | **forge**                              | AI-powered scaffolding and boilerplate generation.            |
 | **fsck**                               | Check and repair a file system.                               |
-| **gemini**                             | Engage in a conversation with an AI model.                    |
+| **samwise**                            | Engage in a conversation with an AI model.                    |
 | **grep**                               | Print lines that match patterns.                              |
 | **groupadd**                           | Create a new group.                                           |
 | **groupdel**                           | Delete a group.                                               |
@@ -209,7 +209,7 @@ things are the way they are, and [docs/TESTING.md](docs/TESTING.md) for how to c
 | **uniq**                               | Report or omit repeated lines.                                |
 | **unset**                              | Unset shell variables.                                        |
 | **unzip**                              | List, test and extract compressed files in a ZIP archive.     |
-| **upload**                             | Upload files from your local machine to SamwiseOS.            |
+| **upload**                             | Upload files from your local machine to FractalOS.            |
 | **uptime**                             | Tell how long the system has been running.                    |
 | **useradd**                            | Create a new user.                                            |
 | **usermod**                            | Modify a user account.                                        |
@@ -225,11 +225,11 @@ things are the way they are, and [docs/TESTING.md](docs/TESTING.md) for how to c
 
 |Command<br><br>Click to sort ascending|Application Name<br><br>Click to sort ascending|Description<br><br>Click to sort ascending|
 |---|---|---|
-|**edit**|SamwiseOS Editor|A full-featured text and code editor with Markdown/HTML preview.|
-|**paint**|SamwiseOS Paint|A character-based art and ASCII editor.|
+|**edit**|FractalOS Editor|A full-featured text and code editor with Markdown/HTML preview.|
+|**paint**|FractalOS Paint|A character-based art and ASCII editor.|
 |**chidi**|Chidi Analyst|An AI-powered tool to summarize, study, and ask questions about your documents.|
-|**gemini**|Gemini Chat|An interactive, graphical chat session with the system's AI.|
+|**samwise -c**|Samwise Chat|An interactive, graphical chat session with the system's AI.|
 |**top**|Process Viewer|A real-time display of all running background jobs.|
 |**log**|Captain's Log|A personal, timestamped journal application.|
-|**basic**|Samwise BASIC|An integrated development environment for the BASIC programming language.|
+|**basic**|Fractal BASIC|An integrated development environment for the BASIC programming language.|
 |**adventure**|Text Adventure|A classic interactive fiction game engine.|

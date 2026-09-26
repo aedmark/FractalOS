@@ -1,4 +1,4 @@
-window.GeminiChatManager = class GeminiChatManager extends App {
+window.SamwiseChatManager = class SamwiseChatManager extends App {
     constructor() {
         super();
         this.state = {};
@@ -23,7 +23,7 @@ window.GeminiChatManager = class GeminiChatManager extends App {
             terminalContext: "",
         };
 
-        this.ui = new this.dependencies.GeminiChatUI(this.callbacks, this.dependencies);
+        this.ui = new this.dependencies.SamwiseChatUI(this.callbacks, this.dependencies);
         this.container = this.ui.getContainer();
         appLayer.appendChild(this.container);
 
@@ -63,7 +63,8 @@ window.GeminiChatManager = class GeminiChatManager extends App {
                 this.state.conversationHistory.push({ role: "user", parts: [{ text: userInput }] });
                 this.ui.toggleLoader(true);
 
-                const command = `gemini --chat-internal="${userInput}"`;
+                const engine = `${this.state.provider ? ` -p ${this.state.provider}` : ""}${this.state.model ? ` -m ${this.state.model}` : ""}`;
+                const command = `samwise${engine} --chat-internal="${userInput}"`;
                 const result = await CommandExecutor.processSingleCommand(command, {
                     isInteractive: false,
                     stdinContent: JSON.stringify(this.state.conversationHistory.slice(0, -1))
@@ -77,7 +78,7 @@ window.GeminiChatManager = class GeminiChatManager extends App {
                     this.ui.appendMessage(finalAnswer, "ai", true);
                 } else {
                     this.ui.appendMessage(
-                        `An error occurred: ${result.error}`,
+                        `An error occurred: ${typeof result.error === "string" ? result.error : [result.error?.message, result.error?.suggestion].filter(Boolean).join(" ")}`,
                         "ai",
                         true
                     );

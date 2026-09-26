@@ -130,7 +130,7 @@ window.ChidiManager = class ChidiManager extends App {
                     this.ui.showMessage("Response received.", true);
                 } else {
                     if (result.error && result.error.toLowerCase().includes("api key")) {
-                        this.ui.appendAiOutput("API Error", "Looks like we're missing the secret handshake (API key). Try running 'gemini' in the terminal to set it up!");
+                        this.ui.appendAiOutput("API Error", "Looks like we're missing the secret handshake (API key). Try running 'samwise' in the terminal to set it up!");
                     } else {
                         this.ui.appendAiOutput(
                             "API Error",
@@ -170,7 +170,7 @@ window.ChidiManager = class ChidiManager extends App {
                     this.ui.showMessage("Summary received.", true);
                 } else {
                     if (result.error && result.error.toLowerCase().includes("api key")) {
-                        this.ui.appendAiOutput("API Error", "Looks like we're missing the secret handshake (API key). Try running 'gemini' in the terminal to set it up!");
+                        this.ui.appendAiOutput("API Error", "Looks like we're missing the secret handshake (API key). Try running 'samwise' in the terminal to set it up!");
                     } else {
                         this.ui.appendAiOutput(
                             "API Error",
@@ -209,7 +209,7 @@ window.ChidiManager = class ChidiManager extends App {
                     this.ui.showMessage("Suggestions received.", true);
                 } else {
                     if (result.error && result.error.toLowerCase().includes("api key")) {
-                        this.ui.appendAiOutput("API Error", "Looks like we're missing the secret handshake (API key). Try running 'gemini' in the terminal to set it up!");
+                        this.ui.appendAiOutput("API Error", "Looks like we're missing the secret handshake (API key). Try running 'samwise' in the terminal to set it up!");
                     } else {
                         this.ui.appendAiOutput(
                             "API Error",

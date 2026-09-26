@@ -184,7 +184,7 @@ echo "# Networking Practice" > ./net_practice/instructions.txt
 echo "This is your portal to the 'real world'. Try not to download any viruses. Oh wait, this is a simulation. Go nuts." >> ./net_practice/instructions.txt
 echo "# The 'wget' command is not available in this version. You can use 'upload' and 'export' to move files." >> ./net_practice/instructions.txt
 
-# --- Gemini AI Command Showcase ---
+# --- Samwise AI Command Showcase ---
 echo "# Q2 Financial Report: fractalCorp" > ./reports/financials_q2.txt
 echo "## Executive Summary" >> ./reports/financials_q2.txt
 echo "Q2 was a period of explosive growth. Revenue is up 150%, mostly from our strategic pivot to selling artisanal, gluten-free rubber ducks. The 'Unicorn Cursor' feature was also a minor success." >> ./reports/financials_q2.txt

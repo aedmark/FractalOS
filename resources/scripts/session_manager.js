@@ -1,4 +1,4 @@
-// gemini/scripts/session_manager.js
+// scripts/session_manager.js
 
 class EnvironmentManager {
     constructor() { this.dependencies = {}; }

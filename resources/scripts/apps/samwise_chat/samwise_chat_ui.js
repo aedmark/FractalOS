@@ -1,4 +1,4 @@
-window.GeminiChatUI = class GeminiChatUI {
+window.SamwiseChatUI = class SamwiseChatUI {
     constructor(callbacks, dependencies) {
         this.elements = {};
         this.managerCallbacks = callbacks;
@@ -13,17 +13,17 @@ window.GeminiChatUI = class GeminiChatUI {
     _buildLayout() {
         const { Utils, UIComponents } = this.dependencies;
 
-        const appWindow = UIComponents.createAppWindow('FractalOS Gemini Chat', this.managerCallbacks.onExit);
+        const appWindow = UIComponents.createAppWindow('Samwise Chat', this.managerCallbacks.onExit);
         this.elements.container = appWindow.container;
         this.elements.main = appWindow.main;
         this.elements.footer = appWindow.footer;
 
         this.elements.messageDisplay = Utils.createElement("div", {
-            className: "gemini-chat-messages",
+            className: "samwise-chat-messages",
         });
         this.elements.loader = Utils.createElement(
             "div",
-            { className: "gemini-chat-loader hidden" },
+            { className: "samwise-chat-loader hidden" },
             [
                 Utils.createElement("span"),
                 Utils.createElement("span"),
@@ -36,7 +36,7 @@ window.GeminiChatUI = class GeminiChatUI {
         this.elements.input = Utils.createElement("input", {
             type: "text",
             placeholder: "Type your message...",
-            className: "gemini-chat-input",
+            className: "samwise-chat-input",
         });
         const sendBtn = Utils.createElement("button", {
             className: "btn btn--confirm",
@@ -44,7 +44,7 @@ window.GeminiChatUI = class GeminiChatUI {
         });
         const form = Utils.createElement(
             "form",
-            { className: "gemini-chat-form" },
+            { className: "samwise-chat-form" },
             [this.elements.input, sendBtn]
         );
 
@@ -78,7 +78,7 @@ window.GeminiChatUI = class GeminiChatUI {
         const { Utils } = this.dependencies;
 
         const messageDiv = Utils.createElement("div", {
-            className: `gemini-chat-message ${sender}`,
+            className: `samwise-chat-message ${sender}`,
         });
 
         if (processMarkdown) {
@@ -86,7 +86,7 @@ window.GeminiChatUI = class GeminiChatUI {
             messageDiv.innerHTML = sanitizedHtml;
 
             const copyBtn = Utils.createElement("button", {
-                className: "btn gemini-chat__copy-btn",
+                className: "btn samwise-chat__copy-btn",
                 textContent: "Copy",
             });
             copyBtn.addEventListener("click", async () => {

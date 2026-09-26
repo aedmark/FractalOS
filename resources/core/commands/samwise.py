@@ -39,7 +39,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
     if flags.get('chat', False):
         return {
             "effect": "launch_app",
-            "app_name": "GeminiChat",
+            "app_name": "SamwiseChat",
             "options": {
                 "provider": provider,
                 "model": model
@@ -73,7 +73,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         if result.get("success"):
             return {
                 "effect": "display_prose",
-                "header": "Gemini Response",
+                "header": "Samwise",
                 "content": result.get("data")
             }
         else:
@@ -131,7 +131,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
             if isinstance(plan_result.get("data"), str):
                 return {
                     "effect": "display_prose",
-                    "header": "Gemini Dry-Run Plan",
+                    "header": "Samwise Dry-Run Plan",
                     "content": plan_result.get("data")
                 }
             return f"Dry run invoked: '{user_prompt}'"
@@ -145,7 +145,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
     if result.get("success"):
         return {
             "effect": "display_prose",
-            "header": "Gemini Response",
+            "header": "Samwise",
             "content": result.get("data")
         }
     else:
@@ -183,7 +183,7 @@ OPTIONS
         actions (like mass deletion) without braking.
 
     -p, --provider <name>
-        Specify the AI provider (e.g., 'samwise', 'ollama').
+        Specify the AI provider (e.g., 'gemini', 'ollama').
 
     -m, --model <name>
         Specify the exact model name.

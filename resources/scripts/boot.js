@@ -34,7 +34,7 @@ async function executePythonCommand(rawCommandText, options = {}) {
     }
 
     const commandName = rawCommandText.trim().split(/\s+/)[0];
-    const aiCommands = ['gemini', 'storyboard', 'remix', 'forge', 'planner'];
+    const aiCommands = ['samwise', 'storyboard', 'remix', 'forge', 'planner'];
     let thinkingMessageDiv = null;
 
     if (aiCommands.includes(commandName) && isInteractive && !scriptingContext) {
