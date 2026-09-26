@@ -46,7 +46,7 @@ class TerminalUI {
                 .replace(/\\h/g, host)
                 .replace(/\\w/g, displayPath)
                 .replace(/\\W/g, path.substring(path.lastIndexOf("/") + 1) || "/")
-                .replace(/\\$/g, user.name === "root" ? "#" : "$")
+                .replace(/\\\$/g, user.name === "root" ? "#" : "$")
                 .replace(/\\s/g, "FractalOS")
                 .replace(/\\\\/g, "\\");
 
