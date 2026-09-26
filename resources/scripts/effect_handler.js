@@ -41,7 +41,7 @@ async function handleEffect(result, options) {
                 break;
             }
 
-            const verifyResultJson = await FractalOS.syscall("users", "verify_password", [currentUser.name, passwordToTry]);
+            const verifyResultJson = await FractalOS_Kernel.syscall("users", "verify_password", [currentUser.name, passwordToTry]);
             const verifyResult = JSON.parse(verifyResultJson);
 
             if (verifyResult.success && verifyResult.data) {
