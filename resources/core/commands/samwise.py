@@ -108,6 +108,9 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
 
     user_prompt = " ".join(args)
 
+    if is_dry_run:
+        return await _dry_run(ai_manager, user_prompt, provider, model, api_key, is_autopilot, force_override)
+
     if is_autopilot:
         result = await ai_manager.perform_autopilot(
             user_prompt, 
@@ -134,21 +137,6 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
                     "suggestion": result.get("error")
                 }
             }
-
-    if is_dry_run:
-        plan_result = await ai_manager.perform_agentic_search(user_prompt, [], provider, model, {"apiKey": api_key})
-        if plan_result.get("effect"):
-            return plan_result
-        if plan_result.get("success"):
-            if isinstance(plan_result.get("data"), str):
-                return {
-                    "effect": "display_prose",
-                    "header": "Samwise Dry-Run Plan",
-                    "content": plan_result.get("data")
-                }
-            return f"Dry run invoked: '{user_prompt}'"
-        else:
-            return plan_result
 
     result = await ai_manager.perform_agentic_search(user_prompt, [], provider, model, {"apiKey": api_key})
 
@@ -201,7 +189,9 @@ OPTIONS
         Specify the exact model name.
 
     --dry-run
-        Display the command plan without executing it.
+        Show the plan and what would happen, without running any of it: which steps
+        would ask first, or (with --autopilot) the voltage and whether it would
+        disengage. Beats --force. Only pwd and ls run, so the model can see where you are.
 
 EXAMPLES
     samwise "how do I list files?"
@@ -211,3 +201,58 @@ EXAMPLES
 
 def help(args, flags, user_context, **kwargs):
     return 'Usage: samwise [-c | --autopilot] [OPTIONS] "<prompt>"'
+
+
+def _plan_block(commands, notes=None):
+    notes = notes or {}
+    lines = [f"{i}. {c}{notes.get(c, '')}" for i, c in enumerate(commands, 1)]
+    return "```\n" + "\n".join(lines) + "\n```"
+
+
+async def _dry_run(ai_manager, user_prompt, provider, model, api_key, is_autopilot, force_override):
+    """Ask for a plan and say what would happen. Nothing in the plan runs (P2-16).
+
+    Only `pwd` and `ls -la` run, to show the model where the shell is.
+    """
+    options = {"apiKey": api_key}
+    if is_autopilot:
+        planned = await ai_manager.plan_autopilot(user_prompt, provider, model, options)
+    else:
+        planned = await ai_manager.plan_agentic_search(user_prompt, [], provider, model, options)
+    if not planned.get("success"):
+        return {"success": False, "error": {
+            "message": "samwise: the dry run could not get a plan.",
+            "suggestion": f"Reason: {planned.get('error', 'Unknown error')}"}}
+
+    header = "Samwise Dry Run" + (" (Autopilot)" if is_autopilot else "")
+    parts = ["**Nothing was executed.** This is what would happen."]
+    if planned.get("warning"):
+        parts.append(planned["warning"])
+    commands = planned["commands"]
+
+    if not commands:
+        parts.append("No commands. The model would answer directly:")
+        parts.append(planned["plan_text"])
+    elif planned["refusal"]:
+        parts.append(_plan_block(commands))
+        parts.append(f"**Would halt before any step runs:** {planned['refusal']}.")
+    elif is_autopilot:
+        voltage = planned["voltage"]
+        parts.append(_plan_block(commands))
+        parts.append(f"**Voltage:** {voltage} ({planned['safety_status']})")
+        if voltage >= 20.0 and not force_override:
+            parts.append("**Would disengage.** Nothing would run. Add `--force` to run it after a home checkpoint.")
+        else:
+            steps = "save a home checkpoint, then run every step" if planned["needs_checkpoint"] else "run every step"
+            forced = " (`--force` overrides the voltage brake)" if voltage >= 20.0 else ""
+            parts.append(f"**Would {steps}**{forced}, stopping at the first failure.")
+    else:
+        confirm = set(planned["confirm"])
+        parts.append(_plan_block(commands, {c: "    <- asks you first" for c in confirm}))
+        if confirm:
+            parts.append(f"**Would ask before {len(confirm)} step{'' if len(confirm) == 1 else 's'}**, then summarize the output.")
+        else:
+            parts.append("**Would run every step without asking**, then summarize the output.")
+
+    return {"effect": "display_prose", "header": header, "content": "\n\n".join(parts)}
+

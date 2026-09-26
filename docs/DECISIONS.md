@@ -286,3 +286,14 @@ tracking every quoting and substitution rule the executor has, now and later.
 **Consequences:** No escaping to maintain. The hidden flag's old `--chat-internal="..."` form is gone. Any new app
 that forwards user text should follow the same pattern.
 
+## D-020 `--dry-run` plans and judges, and runs nothing (2026-09-26, status: accepted)
+**Context:** P2-16. The flag promised "without executing it" but ran agent mode's plan, and the autopilot
+branch ignored it entirely.
+**Decision:** Planning (model call, plan extraction, validation, and for the autopilot the voltage audit and
+checkpoint decision) lives in `plan_agentic_search` / `plan_autopilot`. The real paths call them and then
+execute; `--dry-run` calls them and reports. Dry run is checked before any mode and outranks `--force`.
+The one thing that still runs is the context probe (`pwd`, `ls -la`), because the model needs to see where the
+shell is to make the same plan it would make for real.
+**Consequences:** A dry run costs the same model call as a real run and shows the same plan, but a model is not
+deterministic, so the real run may plan differently. No audit-log entries, confirmations or checkpoints.
+

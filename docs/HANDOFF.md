@@ -10,10 +10,10 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20 fixed)._
+_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20 fixed; P2-16 fixed)._
 
 **What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
-- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **59/59**, in-OS diag **40 passed / 0 failed**,
+- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **63/63**, in-OS diag **40 passed / 0 failed**,
   no command errors, completion banner reached. `tests/agent_unit.py`: 19 tests OK.
   `tests/agent_grading.js`: **22 cases PASS** (P2-19); llama3.1:8b 7/7 again under the stricter graders.
 - **P2-01 holds on current code.** `tests/agent.js` against local Ollama: **llama3.1:8b 7/7** and
@@ -38,6 +38,11 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   stylesheet applies, the model replies, a missing model shows "API request failed with status 404".
   Also fixed: the AI "thinking" message list in `boot.js`, the API-key hints in `ai_manager.js` and Chidi, the
   `samwise` output headers and help text, README rows. `gemini` now means only the Google provider.
+- **P2-16 fixed: `--dry-run` runs nothing** (D-020), in agent mode and with `--autopilot`, even with `--force`.
+  It shows the plan, which steps would ask first, or the voltage and whether it would disengage. Smoke **63/63**
+  (four new checks, mutation-checked against the old code); both real models still 7/7; diag 40/0. Seen live
+  with llama3.1:8b: files untouched after an agent-mode and a forced autopilot dry run.
+- **Prompt fixed** (P1-13): it showed `~\$`; now `~$`, and `#` for root.
 - **P2-20 fixed: a chat message could run shell commands.** Samwise Chat now sends messages as JSON on stdin
   (D-019). Smoke **59/59** includes four new checks (quotes, a lone quote, `$HOME`, `$(...)`, backticks reach the
   model verbatim; history and model carry through; a bare `--chat-internal` fails cleanly). A live llama3.1:8b
@@ -96,8 +101,8 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 ## Next steps (in order)
 
-1. **P2-16:** `--dry-run` must not execute. It is a safety claim the code does not keep.
-2. **P2-06:** a real timeout on LLM calls. Then P2-17 / P2-18, P2-05, P2-04.
+1. **P2-06:** a real timeout on LLM calls, and errors in the OS voice with the provider named.
+2. P2-17 / P2-18 (plan retry, failure memory), then P2-05, P2-04. P1-11, P1-12.
 
 ## Open questions for the user
 
@@ -130,7 +135,8 @@ and SamwiseOS text renamed. D-006's rule removed. `AGENTS.md` restored and updat
   LICENSE, and `mcgoopis` / `oopismcgoopis.com` (the owner's handle and site).
 **Also done, same day:** P2-20 (D-019). Reproduced with a stub model: `$(touch ...)` in a chat message created
 the file. Fixed by moving the message to stdin JSON; four smoke checks, which fail on the old code.
-**Left undone:** P2-16.
+**Also done, same day:** P2-16 (D-020) and P1-13, the prompt's stray backslash.
+**Left undone:** P2-06 and the rest of Next steps.
 **Next session should start with:** "Next steps" above.
 
 ### Session 11: 2026-09-26: Real-model rerun on current code; sudo crash fixed (P2-01)

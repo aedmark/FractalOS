@@ -264,10 +264,12 @@ Always use absolute paths for all file and directory arguments to prevent contex
         except Exception as error:
             return {"success": False, "error": str(error)}
 
-    async def perform_autopilot(self, prompt, history, provider, model, options):
-        """
-        BONEAMANITA AUTOPILOT PROTOCOL.
-        Executes tasks using the BoneDriver persona and Safety Interlocks.
+    async def plan_autopilot(self, prompt, provider, model, options):
+        """Ask the model for an autopilot plan and judge it. Runs none of it (P2-16).
+
+        Returns {"success": False, "error"} if the model call failed, otherwise
+        {"success": True, "plan_text", "commands", "refusal", "voltage", "safety_status",
+        "needs_checkpoint", "warning"}. Only `pwd` and `ls -la` run, to describe the cwd.
         """
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
 
@@ -283,14 +285,30 @@ Always use absolute paths for all file and directory arguments to prevent contex
             return plan_result
 
         plan_text = plan_result.get("answer", "").strip()
-        
-        commands_to_execute = self.extract_plan(plan_text)
-        refusal = self.validate_plan(commands_to_execute)
-        if refusal:
-            return {"success": False, "error": f"Execution HALTED: {refusal}."}
+        commands = self.extract_plan(plan_text)
+        refusal = self.validate_plan(commands)
+        voltage = BoneDriver.audit_plan_voltage(commands) if not refusal else None
+        return {
+            "success": True, "plan_text": plan_text, "commands": commands, "refusal": refusal,
+            "voltage": voltage,
+            "safety_status": BoneDriver.get_safety_report(voltage) if voltage is not None else None,
+            "needs_checkpoint": bool(commands) and not refusal and BoneDriver.needs_checkpoint(commands),
+            "warning": warning,
+        }
 
-        voltage = BoneDriver.audit_plan_voltage(commands_to_execute)
-        safety_status = BoneDriver.get_safety_report(voltage)
+    async def perform_autopilot(self, prompt, history, provider, model, options):
+        """
+        BONEAMANITA AUTOPILOT PROTOCOL.
+        Executes tasks using the BoneDriver persona and Safety Interlocks.
+        """
+        planned = await self.plan_autopilot(prompt, provider, model, options)
+        if not planned["success"]:
+            return planned
+        plan_text, commands_to_execute, warning = planned["plan_text"], planned["commands"], planned["warning"]
+        if planned["refusal"]:
+            return {"success": False, "error": f"Execution HALTED: {planned['refusal']}."}
+
+        voltage, safety_status = planned["voltage"], planned["safety_status"]
 
         print(f"[BONE] Plan Voltage: {voltage} | Status: {safety_status}")
 
@@ -304,7 +322,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             return {"success": True, "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"}
 
         execution_log = ""
-        if BoneDriver.needs_checkpoint(commands_to_execute):
+        if planned["needs_checkpoint"]:
             checkpoint = self._checkpoint_home()
             if not checkpoint.get("success"):
                 return {"success": False, "error": f"Checkpoint failed; no plan steps ran: {checkpoint.get('error')}"}
@@ -324,7 +342,14 @@ Always use absolute paths for all file and directory arguments to prevent contex
         if warning: response["warning"] = warning
         return response
 
-    async def perform_agentic_search(self, prompt, history, provider, model, options):
+    async def plan_agentic_search(self, prompt, history, provider, model, options):
+        """Ask the planner for an agent-mode plan and validate it. Runs none of it (P2-16).
+
+        Returns {"success": False, "error"} if the planner call failed, otherwise
+        {"success": True, "plan_text", "commands", "refusal", "confirm", "warning"}, where
+        `confirm` lists the steps that would ask the user first. An empty `commands`
+        means the planner answered directly. Only `pwd` and `ls -la` run, to describe the cwd.
+        """
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
         planner_context = await self._get_terminal_context()
         planner_prompt = f'User Prompt: "{prompt}"\n\n{planner_context}'
@@ -339,16 +364,24 @@ Always use absolute paths for all file and directory arguments to prevent contex
             return {"success": False, "error": error_msg}
 
         plan_text = planner_result.get("answer", "").strip()
+        commands = self.extract_plan(plan_text)
+        refusal = self.validate_plan(commands) if commands else None
+        confirm = [] if refusal else [c for c in commands if shlex.split(c)[0] in self.DANGEROUS_COMMANDS]
+        return {"success": True, "plan_text": plan_text, "commands": commands, "refusal": refusal,
+                "confirm": confirm, "warning": warning}
 
-        commands_to_execute = self.extract_plan(plan_text)
+    async def perform_agentic_search(self, prompt, history, provider, model, options):
+        planned = await self.plan_agentic_search(prompt, history, provider, model, options)
+        if not planned["success"]:
+            return planned
+        commands_to_execute, warning = planned["commands"], planned["warning"]
         if not commands_to_execute:
-            response = {"success": True, "data": plan_text}
+            response = {"success": True, "data": planned["plan_text"]}
             if warning: response["warning"] = warning
             return response
 
-        refusal = self.validate_plan(commands_to_execute)
-        if refusal:
-            return {"success": False, "error": f"Execution HALTED: {refusal}."}
+        if planned["refusal"]:
+            return {"success": False, "error": f"Execution HALTED: {planned['refusal']}."}
             
         current_path = self.fs_manager.current_path
         

@@ -194,6 +194,25 @@ from story_manager import story_manager
 chapter = story_manager.read_log(f"{home}/.story")["data"][0]["snapshot"]
 stored = am.fs_manager.get_node(f"{home}/.story/snapshots/{chapter}/checkpoint_probe.txt")
 results["checkpoint_before_write"] = r.get("success") and stored["content"] == "before" and am.fs_manager.get_node(probe)["content"] == "after"
+# P2-16: --dry-run plans and reports, and runs nothing, in agent mode and in autopilot (even with --force).
+def story_count():
+    log = story_manager.read_log(f"{home}/.story")
+    return len(log.get("data") or []) if log.get("success") else 0
+am.fs_manager.write_file(f"{home}/dry_keep.txt", "keep", user)
+chapters_before = story_count()
+fake_llm.plan = f"1. mkdir {home}/dry_made\\n2. mv {home}/dry_keep.txt {home}/dry_moved.txt"
+r = await samwise_cmd.run(["x"], {"provider": "ollama", "dry-run": True}, user, ai_manager=am)
+results["dry_agent_reports"] = r.get("effect") == "display_prose" and "asks you first" in r.get("content", "") and "Nothing was executed" in r.get("content", "")
+fake_llm.plan = f"1. rm -r {home}/dry_keep.txt"
+r2 = await samwise_cmd.run(["x"], {"provider": "ollama", "dry-run": True, "autopilot": True, "force": True}, user, ai_manager=am)
+results["dry_autopilot_reports"] = r2.get("effect") == "display_prose" and "Voltage" in r2.get("content", "") and "Nothing was executed" in r2.get("content", "")
+results["dry_run_changes_nothing"] = (am.fs_manager.get_node(f"{home}/dry_made") is None
+    and am.fs_manager.get_node(f"{home}/dry_moved.txt") is None
+    and am.fs_manager.get_node(f"{home}/dry_keep.txt") is not None
+    and story_count() == chapters_before)
+fake_llm.plan = "1. ls | wc"
+r3 = await samwise_cmd.run(["x"], {"provider": "ollama", "dry-run": True}, user, ai_manager=am)
+results["dry_reports_refusal"] = "Would halt" in r3.get("content", "")
 
 json.dumps(results)
 `);
@@ -211,6 +230,10 @@ json.dumps(results)
         report('agent context probe keeps the shell cwd (D-014)', agent.context_keeps_cwd === true);
         report('samwise passes the confirm effect through (D-014)', agent.samwise_passes_confirm_effect === true);
         report('autopilot stores a real checkpoint before writing', agent.checkpoint_before_write === true);
+        report('samwise --dry-run shows the plan and who would be asked (P2-16)', agent.dry_agent_reports === true);
+        report('samwise --autopilot --force --dry-run shows voltage (P2-16)', agent.dry_autopilot_reports === true);
+        report('--dry-run creates, moves, deletes and checkpoints nothing (P2-16)', agent.dry_run_changes_nothing === true);
+        report('--dry-run reports a plan that would halt (P2-16)', agent.dry_reports_refusal === true);
 
         for (const { cmd, expect } of CHECKS) {
             const r = await page.evaluate(async c => await CommandExecutor.processSingleCommand(c, { isInteractive: false }), cmd);

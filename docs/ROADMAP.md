@@ -78,6 +78,8 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
 - [ ] P1-10 Delete or explain `www/` (the stock Neutralino "It works" template; `documentRoot` is `/resources/`)
 - [ ] P1-11 Automated check that every module in `resources/core/commands/` exposes `run` and `man`, and that
   `help` lists it
+- [x] P1-13 The shell prompt showed `~\$` instead of `~$` (and never `#` for root): in `terminal_ui.js`,
+  `/\\$/g` treats `$` as an end-of-string anchor. Present since the first commit (fixed 2026-09-26)
 - [ ] P1-12 Audit the other raw JS→Python crossings for `jsnull` (D-012): `kernel.write_file` /
   `create_directory` / `top_get_process_list` take JS values directly (`to_py` handles objects, not `null`),
   and `syscall_handler` args arrive via JSON (safe). A grep for `is not None` / `is None` on bridge-fed values.
@@ -147,9 +149,11 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   quotes: the shell stripped `"`, failed on a lone `"`, expanded `$HOME`, and **ran `$(...)` as the user**. Now
   the message, history, provider and model travel as JSON on stdin and the command line is fixed (D-019). Four
   smoke checks, mutation-checked against the old code (2026-09-26)
-- [ ] P2-16 `samwise --dry-run` calls perform_agentic_search and can execute read/write plan steps or return
-  a confirmation effect despite promising not to execute. Separate planning from execution before treating
-  this flag as a safe preview (found while tracing the command entry point, session 10).
+- [x] P2-16 `samwise --dry-run` called perform_agentic_search and executed plan steps or asked for confirmation,
+  and `--autopilot --dry-run` ignored the flag and ran everything. Planning is now separate
+  (`plan_agentic_search`, `plan_autopilot`); dry run reports the plan, the steps that would ask first, the
+  voltage and whether it would disengage, and runs nothing, even with `--force` (D-020). Four smoke checks,
+  mutation-checked; both real models still 7/7 (2026-09-26)
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 
