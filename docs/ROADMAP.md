@@ -152,8 +152,8 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   fails at run time (llama3.1:8b planned `tree -C`; FractalOS `tree` has no `-C`), which is P2-18, and valid
   plans that do the wrong thing, which is P2-21.
 - [ ] P2-18 "Scar Tissue" Context Injection: Track recent execution failures (like `cd` into a missing directory) in the OS session state and inject them as temporary warnings in the system prompt to prevent the model from repeating the same contextual lapse.
-- [ ] P2-21 Valid plans that do the wrong thing. Asked to "delete the garden directory", llama3.1:8b twice planned
-  `cd garden` then `rm -r *`, emptying the folder but leaving it (tests/agent.js C2, 2026-09-26). It passes
+- [ ] P2-21 Valid plans that do the wrong thing. Asked to "delete the garden directory", llama3.1:8b planned `cd garden`
+  then `rm -r *` in four of seven runs, emptying the folder but leaving it (tests/agent.js C2, 2026-09-26). It passes
   validation, so P2-17 cannot catch it. Options: persona guidance (delete a directory by name), or a check after
   the run that the request's target is in the state asked for
 

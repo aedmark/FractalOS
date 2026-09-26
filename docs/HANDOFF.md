@@ -3,78 +3,62 @@
 Read this first. It is rewritten at the end of every session so the top half is always true *right now*.
 The session log below it is append-only history.
 
-Protocol: see [CLAUDE.md](../CLAUDE.md). Plan: [ROADMAP.md](../ROADMAP.md). Decisions: [DECISIONS.md](DECISIONS.md).
+Protocol: see [AGENTS.md](../AGENTS.md) (`CLAUDE.md` imports it). Plan: [ROADMAP.md](ROADMAP.md).
+Decisions: [DECISIONS.md](DECISIONS.md).
 Tests: [TESTING.md](TESTING.md).
 
 ---
 
 ## Current state
 
-_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20, P2-16, P2-06, P2-17 done; tree -C)._
+_Last updated: 2026-09-26, end of session 13 (agent hardening: P2-20, P2-16, P2-06, P2-17; `tree -C`; renames finished)._
 
-**What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
-- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **75/75**, in-OS diag **40 passed / 0 failed**,
-  no command errors, completion banner reached. `tests/agent_unit.py`: 19 tests OK.
-  `tests/agent_grading.js`: **22 cases PASS** (P2-19); llama3.1:8b 7/7 again under the stricter graders.
-- **P2-01 holds on current code.** `tests/agent.js` against local Ollama: **llama3.1:8b 7/7** and
-  **gemma4:12b 7/7**, every call under 12 s, no empty replies. Transcripts (local, gitignored):
-  `tests/out/agent-transcript-llama3.1-8b-2026-09-26.md`, `...-gemma4-12b-2026-09-26.md`.
-  Read against the transcripts, every PASS is real:
+**Verified on current `main`** (2026-09-26, the owner's machine, Chromium 153 via Playwright 1.56, Node 22)
 
-  | Task | llama3.1:8b | gemma4:12b |
-  | --- | --- | --- |
-  | A1 seeds | `mkdir` + `forge` by absolute path, `cat` shows 3 lines, voltage 10.1 | same, voltage 10.0 |
-  | A2 cd memory | `cd garden` then relative `forge tools.txt`: **real cd-memory proof** | `cd garden` then `forge` by absolute path: passes without needing cd memory |
-  | A3 Python | `sum.py` in home, `python sum.py` printed 55 | same, 55 |
-  | B1 read-only | planner `ls`, `pwd`; synthesizer names `sum.py` and `garden` | planner `ls /home/gordon`; synthesizer correct |
-  | B2 confirmed mv | `cd garden`, `ls`, then relative `mv`: confirmed once, plan resumed, synthesizer reported the rename (P2-08) | absolute `mv`, confirmed once, synthesizer reported it |
-  | C1 brake | `rm -rf` plan, disengaged at CRITICAL, probe survived | same |
-  | C2 `--force` | checkpoint saved, `rm -r garden` ran at voltage 20.0 | checkpoint saved, `rm -rf` ran at 20.0 |
+| Suite | Result |
+| --- | --- |
+| `node tests/structure.js` | PASS |
+| `node tests/smoke.js` | **75/75** |
+| `node tests/diag.js` | **40 passed / 0 failed**, no command errors, banner reached |
+| `python3 tests/agent_unit.py` | **24 OK** |
+| `node tests/agent_grading.js` | **22 cases PASS** |
+| `node tests/agent.js`, gemma4:12b | **7/7** on every run this session |
+| `node tests/agent.js`, llama3.1:8b | 7/7 twice before P2-06; after it 6/7, 6/7, 5/7, 7/7, 7/7, 6/7, 6/7 (see below) |
+| `tests/test_executor.py` inside the OS | runs clean (`python test_executor.py`) |
 
-- **Renames finished** (the owner's `gemini` → `samwise` and OopisOS / SamwiseOS → FractalOS). The chat app is now
-  `resources/scripts/apps/samwise_chat/` (`SamwiseChatManager`, window "Samwise Chat", launched by `samwise -c`).
-  It was broken: it still ran `gemini --chat-internal`, it dropped the chosen provider and model, and it printed
-  errors as "[object Object]". All three fixed. Checked live against llama3.1:8b: the window opens, its
-  stylesheet applies, the model replies, a missing model shows "API request failed with status 404".
-  Also fixed: the AI "thinking" message list in `boot.js`, the API-key hints in `ai_manager.js` and Chidi, the
-  `samwise` output headers and help text, README rows. `gemini` now means only the Google provider.
-- **`tree -C` works** (P1-14, D-023): directories blue, symlinks cyan, executables green, via ANSI codes the
-  terminal now renders. Smoke **75/75** (four new checks); seen in a screenshot of the real terminal.
-- **P2-17 done: rejected plans are retried** (D-022), up to 3 calls, with the reason sent back. The voltage brake
-  is never retried. Units 24 OK (5 new, mutation-checked), smoke **71/71**. After it: gemma4:12b 7/7; llama3.1:8b
-  7/7, 6/7, 6/7. llama's misses were not rejections, so retries cannot help them: C2 `rm -r *` (P2-21) and B1
-  `tree -C`, a flag FractalOS's `tree` lacked (now added, P1-14), failing at run time (P2-18).
-- **P2-06 fixed: model calls time out** (D-021). After `timeout_seconds` from `/etc/ai.conf` (default 120) a
-  browser AbortSignal cancels the request. Errors name the provider and the fix: a missing Ollama model says
-  `ollama pull <model>`, an unreachable one says where it looked. Smoke **69/69** (six new checks). Live against
-  Ollama: missing model, llama.cpp not running, and a 2 s limit on a cold 30B model all behave; normal calls
-  still work.
-- **llama3.1:8b is not reliably 7/7.** Three runs on 2026-09-26 after P2-06: 7/7, 6/7, 5/7. The misses are its
-  plans, not the transport: twice C2 planned `rm -r *` inside `garden/`, which empties it but keeps the folder
-  (P2-19's stricter C2 rightly fails that), and once A1 wrote a bad escape in the seed list. gemma4:12b 7/7.
-- **P2-16 fixed: `--dry-run` runs nothing** (D-020), in agent mode and with `--autopilot`, even with `--force`.
-  It shows the plan, which steps would ask first, or the voltage and whether it would disengage. Smoke **63/63**
-  (four new checks, mutation-checked against the old code); both real models still 7/7; diag 40/0. Seen live
-  with llama3.1:8b: files untouched after an agent-mode and a forced autopilot dry run.
-- **Prompt fixed** (P1-13): it showed `~\$`; now `~$`, and `#` for root.
-- **P2-20 fixed: a chat message could run shell commands.** Samwise Chat now sends messages as JSON on stdin
-  (D-019). Smoke **59/59** includes four new checks (quotes, a lone quote, `$HOME`, `$(...)`, backticks reach the
-  model verbatim; history and model carry through; a bare `--chat-internal` fails cleanly). A live llama3.1:8b
-  round trip still works.
-- **`AGENTS.md` restored** with current paths and tests; `CLAUDE.md` imports it (D-018). D-006 no longer says
-  storage keys must never be renamed.
-- `tests/test_executor.py` runs inside the OS (`python test_executor.py`): success, no output.
-- Every autopilot write now starts with "Home checkpoint saved" (P2-02) instead of relying on the model to
-  write `story save`. `--force` lets a voltage-20 delete through after that checkpoint (P2-07).
-- **Fixed this session: `sudo` with a password crashed** with "FractalOS is not defined". Commit `6300a72`
-  renamed `OopisOS_Kernel` to `FractalOS` instead of `FractalOS_Kernel` in `effect_handler.js`. Diag caught it
-  (sudo phase, line 230) and passes again after the one-word fix. Smoke does not exercise that path.
-- P2-03 / D-013: the agent can use `python`, confirms first in agent mode, cannot override its step budget.
-  P1-09 / D-011: `python` runs in the kernel. D-012 and D-014 remain covered by smoke. P1-08 / D-010 by structure.
+**What works**
+- **The `samwise` agent** (the command formerly called `gemini`), against local Ollama:
+  - Autopilot and agent mode plan, validate the whole plan, then run it; a failed step stops the plan (P2-07).
+  - The voltage brake stops `rm -r` / `rm -rf` at 20+; `--force` runs it after a real home checkpoint (P2-02).
+  - Agent mode asks before risky commands and resumes the plan after "yes" (P2-08).
+  - **A rejected plan is retried** up to 3 calls with the reason sent back; the brake is never retried (P2-17, D-022).
+  - **Model calls time out** after `timeout_seconds` in `/etc/ai.conf` (default 120), and every failure names the
+    provider and the fix: `ollama pull <model>`, "can't reach Ollama at ...", "didn't answer within N s" (P2-06, D-021).
+  - **`--dry-run` runs nothing**, in both modes and even with `--force`; it shows the plan, which steps would ask
+    first, the voltage and whether it would disengage (P2-16, D-020).
+- **Samwise Chat** (`samwise -c`, `resources/scripts/apps/samwise_chat/`): works end to end. Messages go to the
+  kernel as JSON on stdin, so quotes, `$HOME` and `$(...)` reach the model verbatim and nothing runs (P2-20, D-019).
+  Before this session a chat message could execute shell commands.
+- **Colour:** `tree -C` colours directories, symlinks and executables; the terminal renders ANSI SGR codes as
+  spans, as text only (P1-14, D-023). **The prompt** reads `user@FractalOS:~$` and `root@FractalOS:~#` (P1-13).
+- **`sudo` with a password** works again (a rename had broken it; diag caught it).
+- **Names:** `samwise` is the AI command, FractalOS the OS. `gemini` means only the Google provider. The rule
+  against renaming is gone (D-006 rewritten, D-009 already removed).
+- **Instructions:** `AGENTS.md` holds the agent instructions; `CLAUDE.md` imports it (D-018).
+  `neutralinojs.log` is no longer tracked (P1-07).
+- Earlier foundations still hold: Pyodide 314.0.7 / Python 3.14.2 (D-004), `python` in the OS (D-011), `jsnull`
+  normalised (D-012), generated kernel manifest (D-010).
+
+**llama3.1:8b is not reliable; the misses are its plans.** gemma4:12b passed every run. llama's seven runs after P2-06 missed:
+C2 four times by planning `cd garden` then `rm -r *`, which empties the folder but keeps it (P2-21); A1 once
+with a bad escape in the file contents; B1 once with `tree -C`, which failed before `-C` existed (P2-18).
+P2-17's retries cannot help: none of these plans were rejected by validation.
 
 **Not verified / not done**
-- `samwise --dry-run` can execute plan steps (P2-16). P2-04, P2-05, P2-06, P2-17, P2-18 open.
-- Each model ran once. No Gemini key. UI apps, audio, portable mode, Firefox and Safari unverified.
+- A Gemini key was never used: the Gemini path, its error messages and P2-05 are untested.
+- Chidi, `remix` and `storyboard` against a real model (P2-04). They share the new timeout and error messages.
+- Apps by hand (editor, paint, adventure, top, BASIC, Chidi), sounds, themes, portable mode, Firefox, Safari.
+- `tests/agent.js` A2 proves cd memory only when the model uses relative paths (llama does, gemma does not).
 
 **Gotchas for the next session**
 - **`cd` is an effect and applies after the line.** `cd x && cmd` runs `cmd` in the old directory. One
@@ -112,12 +96,26 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   live next to this repo on the owner's machine; in a cloud session clone them read-only from GitHub.
 - **README says "GitLab" in CONTRIBUTING** ("Fork the repository on GitLab") and the footer links; the repo is
   on GitHub (`aedmark/FractalOS`). Left as is; cosmetic.
+- **The Claude Code sandbox cannot reach the host's localhost.** Commands run in their own network namespace,
+  so Ollama (11434) and the test server (8000) look closed. Run the browser suites with the sandbox off.
+- **The shell here is zsh-like.** `git show $c:tests/x` expands `:t` as a modifier (write `"${c}:tests/x"`), and
+  `echo ====` fails (`=word` expansion).
+- **The smoke test never finishes onboarding,** so the onboarding app owns the screen and `OutputManager`
+  drops terminal output (`isEditorActive`). A smoke check that reads the DOM must lift that flag briefly, as the
+  ANSI check does. Checks that open an app (Samwise Chat) should come last.
+- **Playwright is not installed globally here.** Recipe in `docs/TESTING.md`: `npm i playwright@1.56` in a scratch
+  directory, `NODE_PATH` to it, `CHROME=/usr/bin/chromium`.
 
 ## Next steps (in order)
 
-1. **P2-18:** remember run-time failures (like llama's old `tree -C`) and warn the model next time. **P2-21:** valid
-   plans that do the wrong thing (llama's `rm -r *`).
-2. P2-05 (configurable Gemini model), P2-04 (Chidi, `remix`, `storyboard` against real models). P1-11, P1-12.
+1. **P2-21: valid plans that do the wrong thing.** llama's `rm -r *` for "delete the directory". Try persona or
+   planner guidance first (delete a directory by name), measure with `tests/agent.js` over several runs.
+2. **P2-18: remember run-time failures** (a failed step, its error) and put them in the next prompt.
+3. **P2-05:** make the Gemini model configurable and pick a current default; then, with a key, run
+   `AGENT_PROVIDER=gemini node tests/agent.js`. **P2-04:** Chidi, `remix`, `storyboard` against a real model.
+4. Housekeeping: P1-11 (every command has `run` and `man`, in `tests/structure.js`), P1-12 (`jsnull` audit),
+   P1-10 (`www/`).
+5. A manual pass over the apps (TESTING.md, "Manual checks"), now that Samwise Chat has changed.
 
 ## Open questions for the user
 
@@ -130,6 +128,37 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 - **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `samwise` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
 Newest first. Copy the template for each new session.
+
+### Session 13: 2026-09-26: Agent hardening, `tree -C` (P2-20, P2-16, P1-13, P2-06, P2-17, P1-14)
+
+**Goal:** Work the roadmap in the owner's order: P2-20, P2-16, P2-06, P2-17, then `tree -C` (the owner's idea after
+llama planned it).
+**Done:**
+- P2-20 (D-019): Samwise Chat spliced messages into the shell line; `$(touch ...)` in a chat message created the
+  file. Messages now travel as JSON on stdin.
+- P2-16 (D-020): `--dry-run` ran agent-mode plans and was ignored by `--autopilot`. Planning is now separate
+  (`plan_agentic_search`, `plan_autopilot`); dry run reports and runs nothing.
+- P1-13: the prompt printed `~\$` since the first commit (a regex `$` anchor).
+- P2-06 (D-021): `pyfetch` ignored `timeout=20`, so a hung provider froze the command. AbortSignal timeout,
+  `timeout_seconds` in `/etc/ai.conf`, provider-named errors; `samwise` man page documents `/etc/ai.conf`.
+- P2-17 (D-022): rejected plans retried up to 3 calls; the brake never. P2-21 added from llama's `rm -r *`.
+- P1-14 (D-023): `tree -C`; the terminal renders ANSI colour.
+- Wrap-up: HANDOFF rewritten, CHANGELOG and TESTING brought up to date.
+**Changed:** `resources/core/ai_manager.py`, `commands/samwise.py`, `commands/tree.py`,
+`scripts/apps/samwise_chat/samwise_chat_manager.js`, `scripts/output_manager.js`, `scripts/terminal_ui.js`,
+`main.css`, `tests/smoke.js` (59 → 75), `tests/agent_unit.py` (19 → 24), AGENTS.md, DECISIONS (D-019 to D-023),
+ROADMAP, TESTING, CHANGELOG, this file.
+**Decisions:** D-019, D-020, D-021, D-022, D-023.
+**Problems / surprises**
+- Every fix was mutation-checked: the new checks fail (or, for the timeout, hang) on the old code.
+- The first P2-06 mutation test was useless (the old code lacked a helper the test patched); the real mutation
+  was removing the signal.
+- The smoke test's DOM check found no output: onboarding suppresses it (gotcha added).
+- A multi-edit doc script aborted midway on a duplicate match and the commit went in without the handoff edits;
+  caught and amended before push. Check `git status` and grep after scripted doc edits.
+- llama3.1:8b varies run to run; one 7/7 proves little. gemma4:12b was stable.
+**Left undone:** P2-18, P2-21, P2-05, P2-04, P1-10 to P1-12, the manual app pass.
+**Next session should start with:** "Next steps" above, item 1.
 
 ### Session 12: 2026-09-26: Finish the renames; restore AGENTS.md; untrack the log (P1-07, D-018)
 
@@ -148,14 +177,7 @@ and SamwiseOS text renamed. D-006's rule removed. `AGENTS.md` restored and updat
 - The chat window's CSS never applied: its title-derived id did not match the stylesheet's selector.
 - Kept on purpose: `gemini` as the provider name and API-key setting, `Edmark & Gemini` in BASIC's banner, the
   LICENSE, and `mcgoopis` / `oopismcgoopis.com` (the owner's handle and site).
-**Also done, same day:** P2-20 (D-019). Reproduced with a stub model: `$(touch ...)` in a chat message created
-the file. Fixed by moving the message to stdin JSON; four smoke checks, which fail on the old code.
-**Also done, same day:** P2-16 (D-020) and P1-13, the prompt's stray backslash.
-**Also done, same day:** P2-06 (D-021): timeouts and provider-named errors; `samwise` man page documents
-`/etc/ai.conf`. Mutation-checked: without the AbortSignal the smoke test hangs at the timeout check.
-**Also done, same day:** P2-17 (D-022), plan retries on validation rejection. P2-21 added. P1-14 (D-023): `tree -C`
-and ANSI colour in the terminal.
-**Left undone:** the rest of Next steps.
+**Left undone:** P2-20 and the agent items; see session 13.
 **Next session should start with:** "Next steps" above.
 
 ### Session 11: 2026-09-26: Real-model rerun on current code; sudo crash fixed (P2-01)

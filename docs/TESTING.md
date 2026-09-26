@@ -76,6 +76,11 @@ printed at the end either way; the `AudioContext was not allowed to start` warni
    lists `gordon`, `Guest` and `root`; `help | head -3` starts with the banner; `mkdir /home/t` **fails** with
    "Permission denied" (Guest cannot write to `/home`); `cat /nonexistent` fails.
 
+6. Then, in the kernel with a fake model and fake transports: the Ollama adapter (`think: false`, empty replies),
+   timeouts and provider-named errors through the real `pyfetch` (P2-06), the agent's `python` rules, checkpoints,
+   `--dry-run` (P2-16), plan retries (P2-17), `tree -C` and the terminal's ANSI rendering (P1-14), and last,
+   Samwise Chat in the real UI with quotes and `$(...)` (P2-20). About 75 checks; the output lists each.
+
 The commands run as `Guest` because the test never completes onboarding; the page is still on the "create your
 main user account" dialog underneath. That is deliberate: it keeps the test independent of the onboarding UI.
 Anything that needs a logged-in user with a home directory is a job for P1-06.
@@ -142,7 +147,7 @@ trying the tools on. It starts with `rm -r -f` of its own previous output; do no
 cd resources && python3 -m http.server 8000 &
 ollama serve &                                   # a real model, or:
 python3 tests/fake_ollama.py &                   # the stand-in (plumbing only, not a model)
-AGENT_MODEL=gemma3:1b node tests/agent.js http://127.0.0.1:8000/index.html
+AGENT_MODEL=llama3.1:8b node tests/agent.js http://127.0.0.1:8000/index.html
 ```
 
 Boots the OS, onboards as `gordon`, then runs seven tasks in order: three through `samwise --autopilot`
@@ -151,10 +156,12 @@ Boots the OS, onboards as `gordon`, then runs seven tasks in order: three throug
 the confirmation dialog: the harness answers "yes" and records it), and a delete request twice, without and with
 `--force`. Each task is graded on the file system afterwards, never on the model's wording (D-014):
 
-- **PASS / FAIL**: the file exists with three lines, `tools.txt` is in `garden/` and not in `$HOME`, `55` was
-  printed, `kit.txt` exists, `garden/` survived the delete request.
-- **INFO**: what a human should read. Whether the planner planned or answered directly, whether the synthesizer
-  mentioned `garden`, the voltage report, and what `--force` did (today: nothing, P2-07). INFO never fails the run.
+- **PASS / FAIL** on facts: `seeds.txt` has three lines; `tools.txt` is in `garden/`, not `$HOME`; `python` printed
+  `55`; `kit.txt` exists and the command succeeded after a confirmation; C1 disengaged, reported failure, and the
+  probe survived; C2 (`--force`) succeeded and `garden/` itself is gone, not just emptied (P2-19).
+- **INFO** lines are for a human; a failed or empty model call is an inconclusive FAIL (D-015).
+- One run proves little: llama3.1:8b scored 5/7 to 7/7 on the same code (2026-09-26). Run a model several times
+  and read the failing task's plan before blaming the OS. gemma4:12b was 7/7 every time.
 
 Exit code 0 means no FAIL. `tests/out/agent-transcript.md` holds every LLM call (prompt size, seconds, the raw
 answer), every line the terminal printed, every confirmation, and the result JSON. **That transcript is the
@@ -200,6 +207,14 @@ The CONTRIBUTING.md checklist, made concrete:
 - Reload survives: files, users, aliases, history, the current theme.
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
+
+- **The Claude Code sandbox cannot reach the host's localhost** (own network namespace): Ollama and the test
+  server look closed. Run the browser suites with the sandbox off.
+- **Output is suppressed while an app owns the screen.** The smoke test never leaves onboarding, so
+  `OutputManager.appendToOutput` drops text (`isEditorActive`). Lift the flag for a DOM check, and put checks
+  that open an app last.
+- **A mutation check must break the fix, not the test.** Reverting a whole file can fail a test for an unrelated
+  reason (a helper the test patches is missing). Remove just the fix, for example the timeout signal.
 
 - **Ollama thinking is disabled** (P2-09). Requests send `think: false`; empty or whitespace-only responses
   report `done_reason` (including `length` when the output budget ran out). Three smoke checks exercise the
