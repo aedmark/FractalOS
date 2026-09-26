@@ -10,10 +10,10 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20 fixed; P2-16 fixed)._
+_Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sudo password crash fixed; P2-19 done; missed renames finished; AGENTS.md restored; P2-20, P2-16, P2-06 fixed)._
 
 **What works / verified now** (all on 2026-09-26, current `main` plus the one-line fix below)
-- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **63/63**, in-OS diag **40 passed / 0 failed**,
+- Pyodide 314.0.7 / Python 3.14.2 boots. Structure PASS, smoke **69/69**, in-OS diag **40 passed / 0 failed**,
   no command errors, completion banner reached. `tests/agent_unit.py`: 19 tests OK.
   `tests/agent_grading.js`: **22 cases PASS** (P2-19); llama3.1:8b 7/7 again under the stricter graders.
 - **P2-01 holds on current code.** `tests/agent.js` against local Ollama: **llama3.1:8b 7/7** and
@@ -38,6 +38,14 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
   stylesheet applies, the model replies, a missing model shows "API request failed with status 404".
   Also fixed: the AI "thinking" message list in `boot.js`, the API-key hints in `ai_manager.js` and Chidi, the
   `samwise` output headers and help text, README rows. `gemini` now means only the Google provider.
+- **P2-06 fixed: model calls time out** (D-021). After `timeout_seconds` from `/etc/ai.conf` (default 120) a
+  browser AbortSignal cancels the request. Errors name the provider and the fix: a missing Ollama model says
+  `ollama pull <model>`, an unreachable one says where it looked. Smoke **69/69** (six new checks). Live against
+  Ollama: missing model, llama.cpp not running, and a 2 s limit on a cold 30B model all behave; normal calls
+  still work.
+- **llama3.1:8b is not reliably 7/7.** Three runs on 2026-09-26 after P2-06: 7/7, 6/7, 5/7. The misses are its
+  plans, not the transport: twice C2 planned `rm -r *` inside `garden/`, which empties it but keeps the folder
+  (P2-19's stricter C2 rightly fails that), and once A1 wrote a bad escape in the seed list. gemma4:12b 7/7.
 - **P2-16 fixed: `--dry-run` runs nothing** (D-020), in agent mode and with `--autopilot`, even with `--force`.
   It shows the plan, which steps would ask first, or the voltage and whether it would disengage. Smoke **63/63**
   (four new checks, mutation-checked against the old code); both real models still 7/7; diag 40/0. Seen live
@@ -101,8 +109,8 @@ _Last updated: 2026-09-26, session 11 (both real models 7/7 on current code; sud
 
 ## Next steps (in order)
 
-1. **P2-06:** a real timeout on LLM calls, and errors in the OS voice with the provider named.
-2. P2-17 / P2-18 (plan retry, failure memory), then P2-05, P2-04. P1-11, P1-12.
+1. **P2-17 / P2-18:** plan retry and failure memory. llama's `rm -r *` and bad-escape misses are the evidence.
+2. P2-05 (configurable Gemini model), P2-04 (Chidi, `remix`, `storyboard` against real models). P1-11, P1-12.
 
 ## Open questions for the user
 
@@ -136,7 +144,9 @@ and SamwiseOS text renamed. D-006's rule removed. `AGENTS.md` restored and updat
 **Also done, same day:** P2-20 (D-019). Reproduced with a stub model: `$(touch ...)` in a chat message created
 the file. Fixed by moving the message to stdin JSON; four smoke checks, which fail on the old code.
 **Also done, same day:** P2-16 (D-020) and P1-13, the prompt's stray backslash.
-**Left undone:** P2-06 and the rest of Next steps.
+**Also done, same day:** P2-06 (D-021): timeouts and provider-named errors; `samwise` man page documents
+`/etc/ai.conf`. Mutation-checked: without the AbortSignal the smoke test hangs at the timeout check.
+**Left undone:** the rest of Next steps.
 **Next session should start with:** "Next steps" above.
 
 ### Session 11: 2026-09-26: Real-model rerun on current code; sudo crash fixed (P2-01)

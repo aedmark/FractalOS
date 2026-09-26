@@ -1,8 +1,8 @@
 import json
 import re
 import shlex
+from urllib.parse import urlsplit
 import pyodide.http as pyodide_http
-from asyncio import TimeoutError
 from audit import audit_manager
 from bone_driver import BoneDriver
 
@@ -196,6 +196,49 @@ Always use absolute paths for all file and directory arguments to prevent contex
             except json.JSONDecodeError:
                 pass
         return {"provider": None, "model": None}
+
+    DEFAULT_TIMEOUT_SECONDS = 120
+    PROVIDER_NAMES = {"ollama": "Ollama", "gemini": "Gemini", "llamacpp": "llama.cpp"}
+
+    def _request_timeout(self):
+        """Seconds to wait for one model reply: "timeout_seconds" in /etc/ai.conf, else 120 (P2-06)."""
+        node = self.fs_manager.get_node("/etc/ai.conf")
+        if node and node.get('type') == 'file':
+            try:
+                value = json.loads(node.get('content') or '{}').get("timeout_seconds")
+                if isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0:
+                    return value
+            except (json.JSONDecodeError, AttributeError):
+                pass
+        return self.DEFAULT_TIMEOUT_SECONDS
+
+    @staticmethod
+    def _error_detail(body_text):
+        """The provider's own error message from a JSON error body, if it has one."""
+        try:
+            data = json.loads(body_text)
+        except (TypeError, ValueError):
+            return (body_text or "").strip()[:200]
+        err = data.get("error") if isinstance(data, dict) else None
+        if isinstance(err, dict):
+            return str(err.get("message") or err.get("status") or "")[:200]
+        return str(err or "")[:200]
+
+    def _http_error(self, provider, model, status, detail):
+        """An HTTP error from a provider, in the OS voice, with the provider named (P2-06)."""
+        name = self.PROVIDER_NAMES.get(provider, provider)
+        said = f' It said: "{detail}"' if detail else ""
+        if provider == "ollama" and status == 404:
+            wanted = model or self.provider_config["ollama"]["defaultModel"]
+            return (f"Ollama doesn't have a model called '{wanted}'. "
+                    f"Pull it with `ollama pull {wanted}`, or pick one you have with -m.")
+        if provider == "gemini" and (status in (401, 403) or (status == 400 and "api key" in detail.lower())):
+            return f"Gemini turned down the API key (HTTP {status}).{said}"
+        if status == 429:
+            return f"{name} says we're asking too often (HTTP 429). Give it a minute.{said}"
+        if status >= 500:
+            return f"{name} had a problem on its end (HTTP {status}).{said}"
+        return f"{name} refused the request (HTTP {status}).{said}"
 
     def _resolve_provider_and_model(self, provider_flag, model_flag):
         """
@@ -508,17 +551,29 @@ Always use absolute paths for all file and directory arguments to prevent contex
         else:
             return {"success": False, "error": f"Provider '{provider}' not implemented in Python AIManager."}
 
+        name = self.PROVIDER_NAMES.get(provider, provider)
+        timeout = self._request_timeout()
+        # pyfetch has no timeout of its own. A browser AbortSignal cancels the request itself
+        # (connection and body), not just our wait for it (P2-06).
+        timeout_signal = None
         try:
-            response = await pyodide_http.pyfetch(
-                url,
-                method='POST',
-                headers=headers,
-                body=json.dumps(request_body_dict),
-                timeout=20
-            )
+            from js import AbortSignal
+            timeout_signal = AbortSignal.timeout(int(timeout * 1000))
+        except Exception:
+            pass
+        fetch_kwargs = {"method": 'POST', "headers": headers, "body": json.dumps(request_body_dict)}
+        if timeout_signal is not None:
+            fetch_kwargs["signal"] = timeout_signal
+
+        try:
+            response = await pyodide_http.pyfetch(url, **fetch_kwargs)
 
             if response.status >= 400:
-                return {"success": False, "error": f"API request failed with status {response.status}"}
+                try:
+                    detail = self._error_detail(await response.text())
+                except Exception:
+                    detail = ""
+                return {"success": False, "error": self._http_error(provider, model, response.status, detail)}
 
             response_data = await response.json()
 
@@ -538,14 +593,18 @@ Always use absolute paths for all file and directory arguments to prevent contex
             else:
                 return {"success": False, "error": "AI failed to generate a valid response structure."}
 
-        except TimeoutError:
-            if provider == "ollama":
-                return {"success": False, "error": f"Connection to Ollama timed out. Is it running on http://localhost:11434?"}
-            return {"success": False, "error": f"Network error: Request to {url} timed out."}
         except Exception as e:
-            if provider == "ollama":
-                return {"success": False, "error": f"Could not connect to Ollama. Is it running locally on http://localhost:11434? Details: {repr(e)}"}
-            return {"success": False, "error": f"Network error: Could not reach {url}. Details: {repr(e)}"}
+            if timeout_signal is not None and timeout_signal.aborted:
+                shown = int(timeout) if float(timeout).is_integer() else timeout
+                return {"success": False, "error": (
+                    f"{name} didn't answer within {shown} seconds, so I stopped waiting. A model that is still "
+                    f'loading can be slow: try again, or raise "timeout_seconds" in /etc/ai.conf.')}
+            parts = urlsplit(url)
+            where = f"{parts.scheme}://{parts.netloc}"
+            hint = {"ollama": " Is it running? Start it with `ollama serve`.",
+                    "llamacpp": " Is llama-server running?",
+                    "gemini": " Check your internet connection."}.get(provider, "")
+            return {"success": False, "error": f"Can't reach {name} at {where}.{hint} ({type(e).__name__}: {e})"}
 
     async def perform_remix(self, path1, content1, path2, content2, provider, model, api_key):
         """

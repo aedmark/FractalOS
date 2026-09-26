@@ -297,3 +297,14 @@ shell is to make the same plan it would make for real.
 **Consequences:** A dry run costs the same model call as a real run and shows the same plan, but a model is not
 deterministic, so the real run may plan differently. No audit-log entries, confirmations or checkpoints.
 
+## D-021 Model calls time out after `timeout_seconds` (default 120) via a browser AbortSignal (2026-09-26, status: accepted)
+**Context:** P2-06. `pyfetch` has no timeout; the `timeout=20` the code passed was silently ignored, so a hung or
+unreachable-but-accepting provider froze `samwise`, Chidi, `remix`, `storyboard` and the chat app forever.
+**Decision:** `_call_llm_api` passes `AbortSignal.timeout(ms)` as `pyfetch`'s `signal`, which cancels the request
+itself, connection and body, rather than only abandoning the Python wait. The limit comes from
+`"timeout_seconds"` in `/etc/ai.conf` (a positive number), else 120 s. That is generous for a local model on a
+CPU and still ends; a cold 30B model can exceed it, which the message says, along with where to raise it.
+Every failure names the provider and says what to do.
+**Consequences:** One limit per call, not per task: an agent run with a planner and a synthesizer can wait up
+to twice as long. Streaming replies would allow a shorter "no first token" limit; not done.
+

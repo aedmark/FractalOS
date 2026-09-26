@@ -134,6 +134,66 @@ json.dumps(results)
             wire[k].success === false && wire[k].error.includes('done_reason: length')));
         report('Ollama nonempty replies survive the adapter', wire.hello.success === true && wire.hello.answer === 'hello');
 
+        // P2-06: a real timeout on model calls, and errors that name the provider and say what to do.
+        // The hang, refusal and HTTP errors go through the real pyfetch with a fake JS fetcher, so the
+        // AbortSignal plumbing is exercised, not just our except branch.
+        const net = JSON.parse(await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync(`
+import json, time, kernel, ai_manager
+from pyodide.code import run_js
+am = kernel.ai_manager
+real_fetch = ai_manager.pyodide_http.pyfetch
+hang = run_js("(req, init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason)))")
+refuse = run_js("(req, init) => Promise.reject(new TypeError('Failed to fetch'))")
+def respond(status, body):
+    return run_js(f"(req, init) => Promise.resolve(new Response({json.dumps(body)}, {{status: {status}}}))")
+def use(fetcher):
+    async def fetch(url, **kw):
+        return await real_fetch(url, fetcher=fetcher, **kw)
+    ai_manager.pyodide_http.pyfetch = fetch
+out = {}
+saved_timeout = am._request_timeout
+try:
+    am._request_timeout = lambda: 0.3
+    use(hang)
+    t0 = time.time()
+    r = await am._call_llm_api("ollama", "m", [], None)
+    out["timeout"] = {"error": r.get("error", ""), "seconds": round(time.time() - t0, 2)}
+    am._request_timeout = saved_timeout
+    use(refuse)
+    out["refused"] = (await am._call_llm_api("ollama", "m", [], None)).get("error", "")
+    use(respond(404, json.dumps({"error": 'model "nope:1b" not found, try pulling it first'})))
+    out["missing_model"] = (await am._call_llm_api("ollama", "nope:1b", [], None)).get("error", "")
+    use(respond(429, json.dumps({"error": {"message": "Resource exhausted", "status": "RESOURCE_EXHAUSTED"}})))
+    out["rate_limited"] = (await am._call_llm_api("gemini", None, [], "k")).get("error", "")
+    use(respond(200, json.dumps({"response": "fine"})))
+    out["ok_through_signal"] = await am._call_llm_api("ollama", "m", [], None)
+finally:
+    am._request_timeout = saved_timeout
+    ai_manager.pyodide_http.pyfetch = real_fetch
+saved_get = am.fs_manager.get_node
+def conf(content):
+    am.fs_manager.get_node = lambda path, *a, **k: {"type": "file", "content": content} if path == "/etc/ai.conf" else saved_get(path, *a, **k)
+try:
+    out["timeout_default"] = am._request_timeout()
+    conf('{"timeout_seconds": 5}'); out["timeout_conf"] = am._request_timeout()
+    bad = []
+    for c in ['{"timeout_seconds": -1}', '{"timeout_seconds": "9"}', '{"timeout_seconds": true}', 'not json']:
+        conf(c); bad.append(am._request_timeout())
+    out["timeout_bad"] = bad
+finally:
+    am.fs_manager.get_node = saved_get
+json.dumps(out)
+`)));
+        report('LLM calls time out instead of hanging (P2-06)', net.timeout.error.includes("didn't answer within 0.3 seconds") && net.timeout.seconds < 5,
+            JSON.stringify(net.timeout));
+        report('an unreachable provider is named with a hint (P2-06)', net.refused.includes("Can't reach Ollama at http://localhost:11434") && net.refused.includes('ollama serve'), net.refused);
+        report('a missing Ollama model says how to pull it (P2-06)', net.missing_model.includes('ollama pull nope:1b'), net.missing_model);
+        report('HTTP 429 names the provider (P2-06)', net.rate_limited.startsWith('Gemini says') && net.rate_limited.includes('Resource exhausted'), net.rate_limited);
+        report('a normal reply still arrives through the timeout signal', net.ok_through_signal.success === true && net.ok_through_signal.answer === 'fine',
+            JSON.stringify(net.ok_through_signal));
+        report('timeout_seconds in /etc/ai.conf is honoured, bad values ignored', net.timeout_default === 120 && net.timeout_conf === 5
+            && net.timeout_bad.every(v => v === 120), JSON.stringify([net.timeout_default, net.timeout_conf, net.timeout_bad]));
+
         const agent = JSON.parse(await page.evaluate(async () => {
             const py = FractalOS_Kernel.pyodide;
             return await py.runPythonAsync(`

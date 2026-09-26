@@ -193,6 +193,11 @@ OPTIONS
         would ask first, or (with --autopilot) the voltage and whether it would
         disengage. Beats --force. Only pwd and ls run, so the model can see where you are.
 
+CONFIGURATION
+    /etc/ai.conf is JSON. "provider" and "model" set the defaults that -p and -m
+    override. "timeout_seconds" is how long to wait for one reply before giving
+    up (default 120). A big model loading from a cold start can need more.
+
 EXAMPLES
     samwise "how do I list files?"
     samwise --autopilot "create a folder named 'Void' and put a readme in it"

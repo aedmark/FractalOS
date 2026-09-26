@@ -104,9 +104,12 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
 - [ ] P2-04 Chidi and `remix` / `storyboard` verified against Gemini and Ollama with a recorded transcript
 - [ ] P2-05 Gemini model and endpoint are hard-coded (`gemini-1.5-flash`, `v1beta`); make the model configurable
   through `/etc/ai.conf` for Gemini as it already is for Ollama, and pick a current default
-- [ ] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named.
-  Note: `_call_llm_api` passes `timeout=20` to `pyfetch`, which has no such parameter; there is no timeout at all
-  today and the `TimeoutError` branch is dead (found 2026-09-25, P2-01)
+- [x] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named.
+  `_call_llm_api` passed `timeout=20`, which `pyfetch` ignores: a hung provider froze the command forever. Now a
+  browser `AbortSignal.timeout` cancels the request after `timeout_seconds` from `/etc/ai.conf` (default 120),
+  and timeouts, unreachable providers, a missing Ollama model, rejected keys, 429 and 5xx each get a message
+  naming the provider and the fix (D-021). Six smoke checks through the real `pyfetch` with a fake fetcher;
+  without the signal the timeout check hangs. Seen live against Ollama (2026-09-26)
 - [x] P2-07 Entire plans validated before execution; failed steps halt with failure. `--force` overrides
   voltage only, not validation/checkpoint failure/step-budget limits. Simple command policy and recovery
   scope documented in D-016 (2026-09-25).
