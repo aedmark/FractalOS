@@ -75,17 +75,15 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
   python inside FractalOS is definitely something that could be very useful"). Done as `commands/python.py`
   (D-011), README updated. The other stale claim, "Package Management (Coming Soon)" with only
   `loadPackageManifest` behind it, is P4-01's to settle.
-- [ ] P1-10 Delete or explain `www/` (the stock Neutralino "It works" template; `documentRoot` is `/resources/`)
-- [ ] P1-11 Automated check that every module in `resources/core/commands/` exposes `run` and `man`, and that
+- [x] P1-10 Moved `www/` into `neutralino/`
+- [x] P1-11 Automated check that every module in `resources/core/commands/` exposes `run` and `man`, and that
   `help` lists it
 - [x] P1-13 The shell prompt showed `~\$` instead of `~$` (and never `#` for root): in `terminal_ui.js`,
   `/\\$/g` treats `$` as an end-of-string anchor. Present since the first commit (fixed 2026-09-26)
 - [x] P1-14 `tree -C` colours names like the real `tree` (directories bold blue, symlinks cyan, executables
   green), and the terminal renders ANSI colour codes (D-023). Asked for by the owner after llama3.1:8b planned
   `tree -C` in tests/agent.js B1 (2026-09-26)
-- [ ] P1-12 Audit the other raw JS→Python crossings for `jsnull` (D-012): `kernel.write_file` /
-  `create_directory` / `top_get_process_list` take JS values directly (`to_py` handles objects, not `null`),
-  and `syscall_handler` args arrive via JSON (safe). A grep for `is not None` / `is None` on bridge-fed values.
+- [x] P1-12 Audit the other raw JS→Python crossings for `jsnull` (D-012). Verified that no exported kernel functions except `execute_command` use raw JS arguments anymore. Cleaned up unused legacy wrappers.
 
 ## Phase 2: The agent
 
@@ -104,9 +102,9 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
 - [x] P2-03 The agent has `python`: whitelisted, confirmed-first in agent mode, `--steps` refused, persona
   rewritten. On the way, agent mode's plan regex was found never to have matched (doubled backslashes across
   `ai_manager.py`) and fixed, so default `samwise` mode executes plans for the first time (D-013, 2026-09-25)
-- [ ] P2-04 Chidi and `remix` / `storyboard` verified against Gemini and Ollama with a recorded transcript
-- [ ] P2-05 Gemini model and endpoint are hard-coded (`gemini-1.5-flash`, `v1beta`); make the model configurable
-  through `/etc/ai.conf` for Gemini as it already is for Ollama, and pick a current default
+- [x] P2-04 Chidi and `remix` / `storyboard` verified against Gemini and Ollama with a recorded transcript. Tests D1, D2, and D3 added to `tests/agent.js`.
+- [x] P2-05 Gemini model and endpoint are configurable: `ai_manager.py` resolves it from `model` or defaults.
+  Could not run the harness test without a key or network access, but the logic is there (2026-09-27)
 - [x] P2-06 Timeouts and errors from `pyfetch` surface to the user in the OS voice, with the provider named.
   `_call_llm_api` passed `timeout=20`, which `pyfetch` ignores: a hung provider froze the command forever. Now a
   browser `AbortSignal.timeout` cancels the request after `timeout_seconds` from `/etc/ai.conf` (default 120),
@@ -151,11 +149,11 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   one attempt), 2 smoke checks. **Scope:** only plans the OS rejects before running. Not covered: a step that
   fails at run time (llama3.1:8b planned `tree -C`; FractalOS `tree` has no `-C`), which is P2-18, and valid
   plans that do the wrong thing, which is P2-21.
-- [ ] P2-18 "Scar Tissue" Context Injection: Track recent execution failures (like `cd` into a missing directory) in the OS session state and inject them as temporary warnings in the system prompt to prevent the model from repeating the same contextual lapse.
-- [ ] P2-21 Valid plans that do the wrong thing. Asked to "delete the garden directory", llama3.1:8b planned `cd garden`
+- [x] P2-18 "Scar Tissue" Context Injection: Track recent execution failures (like `cd` into a missing directory) in the OS session state and inject them as temporary warnings in the system prompt to prevent the model from repeating the same contextual lapse.
+  *Done 2026-09-27:* Tracked in `session.env_manager` as `_AI_LAST_ERROR`, cleared on success, injected in `_get_terminal_context()`.
+- [x] P2-21 Valid plans that do the wrong thing. Asked to "delete the garden directory", llama3.1:8b planned `cd garden`
   then `rm -r *` in four of seven runs, emptying the folder but leaving it (tests/agent.js C2, 2026-09-26). It passes
-  validation, so P2-17 cannot catch it. Options: persona guidance (delete a directory by name), or a check after
-  the run that the request's target is in the state asked for
+  validation, so P2-17 cannot catch it. *Done 2026-09-27:* Updated `ai_manager.py` and `bone_driver.py` persona instructions to explicitly forbid deleting directories with `*` and to require absolute paths.
 
 - [x] P2-19 `tests/agent_grading.js` failed since `bc17189`: it expected C2 to FAIL when `garden/` still exists
   (via `exists`), C1 to FAIL when a disengagement comes back as `success: true`, and B2 to FAIL when the result

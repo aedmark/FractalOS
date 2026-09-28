@@ -29,6 +29,7 @@ window.OnboardingUI = class OnboardingUI {
             case 1: this._renderStep1(state); break;
             case 2: this._renderStep2(state); break;
             case 3: this._renderStep3(state); break;
+            case 4: this._renderStep4(state); break;
             case 'complete': this._renderComplete(state); break;
         }
     }
@@ -111,7 +112,51 @@ window.OnboardingUI = class OnboardingUI {
         rootPasswordInput.focus();
     }
 
+
     _renderStep3(state) {
+        const { Utils } = this.dependencies;
+        const form = Utils.createElement('form');
+        
+        const providerSelect = Utils.createElement('select', { name: 'provider', required: true });
+        providerSelect.append(
+            Utils.createElement('option', { value: 'ollama', textContent: 'Ollama (Local)' }),
+            Utils.createElement('option', { value: 'gemini', textContent: 'Gemini (Cloud)' })
+        );
+        providerSelect.value = state.userData.aiProvider || 'ollama';
+
+        const modelInput = Utils.createElement('input', { type: 'text', placeholder: 'Model Name (e.g. gemma3:latest)', name: 'aiModel' });
+        modelInput.value = state.userData.aiModel || '';
+
+        const nextButton = Utils.createElement('button', { type: 'submit', textContent: 'Next →' });
+
+        form.append(
+            Utils.createElement('h1', { textContent: 'AI Configuration' }),
+            Utils.createElement('p', { textContent: 'Choose the default AI provider and model for Samwise, Chidi, and Autopilot. You can change this later in /etc/ai.conf.' }),
+            Utils.createElement('label', { textContent: 'Provider:' }),
+            providerSelect,
+            Utils.createElement('label', { textContent: 'Default Model (Leave empty for system default):' }),
+            modelInput,
+            nextButton
+        );
+
+        if (state.error) {
+            form.prepend(Utils.createElement('div', { className: 'onboarding-error', textContent: state.error }));
+        }
+
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            this.callbacks.onNextStep(state.step, {
+                aiProvider: providerSelect.value,
+                aiModel: modelInput.value.trim()
+            });
+        };
+
+        this.elements.card.append(this._createHeader(state), form);
+        providerSelect.focus();
+    }
+
+    _renderStep4(state) {
+
         const { Utils } = this.dependencies;
         const finishButton = Utils.createElement('button', { textContent: 'Finish & Reboot' });
         finishButton.onclick = this.callbacks.onFinish;

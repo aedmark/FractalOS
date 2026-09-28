@@ -7,6 +7,22 @@ class AIManager {
         this.dependencies = dependencies;
     }
 
+
+    async getAvailableModels(provider) {
+        if (!FractalOS_Kernel || !FractalOS_Kernel.isReady) {
+            if (provider === "gemini") return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
+            return ["gemma3:latest", "llama3.1:8b", "llama3.2:3b", "qwen2.5:7b"];
+        }
+        try {
+            const resultJson = await FractalOS_Kernel.syscall("ai", "get_available_models", [provider]);
+            return JSON.parse(resultJson);
+        } catch (e) {
+            console.error("Failed to fetch models:", e);
+            if (provider === "gemini") return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
+            return ["gemma3:latest", "llama3.1:8b", "llama3.2:3b", "qwen2.5:7b"];
+        }
+    }
+
     async getApiKey(provider, options = {}) {
         const {StorageManager, ModalManager, OutputManager, Config} = this.dependencies;
         if (provider !== "gemini") {

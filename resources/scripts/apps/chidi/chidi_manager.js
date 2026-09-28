@@ -16,7 +16,15 @@ window.ChidiManager = class ChidiManager extends App {
         this._initializeState(options.initialFiles, options.launchOptions);
         this.isActive = true;
 
+        
         this.ui = new this.dependencies.ChidiUI(this.state, this.callbacks, this.dependencies);
+        this.dependencies.AIManager.getAvailableModels(this.state.provider).then(models => {
+            if (!models.includes(this.state.model) && this.state.model) {
+                models.unshift(this.state.model);
+            }
+            this.ui.updateModels(models, this.state.model);
+        });
+
         this.container = this.ui.getContainer();
         appLayer.appendChild(this.container);
 
@@ -75,7 +83,14 @@ window.ChidiManager = class ChidiManager extends App {
             model: this.state.model
         };
 
-        const resultJson = FractalOS_Kernel.chidi_analysis(JSON.stringify(jsContext), context, analysisType, question);
+        const resultJson = await FractalOS_Kernel.syscall("ai", "perform_chidi_analysis", [], {
+            files_context: context,
+            analysis_type: analysisType,
+            question: question,
+            provider: jsContext.provider,
+            model: jsContext.model,
+            api_key: jsContext.api_key
+        });
 
         try {
             const result = JSON.parse(resultJson);

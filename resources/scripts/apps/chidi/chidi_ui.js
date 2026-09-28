@@ -8,6 +8,18 @@ window.ChidiUI = class ChidiUI {
         this._buildAndShow(initialState);
     }
 
+    
+    updateModels(models, currentModel) {
+        this.elements.modelSelect.innerHTML = '';
+        for (const m of models) {
+            const option = document.createElement('option');
+            option.value = m;
+            option.textContent = m;
+            if (m === currentModel) option.selected = true;
+            this.elements.modelSelect.appendChild(option);
+        }
+    }
+
     getContainer() {
         return this.elements.container;
     }
@@ -64,6 +76,9 @@ window.ChidiUI = class ChidiUI {
             ]
         );
 
+        this.elements.modelSelect = Utils.createElement("select", { className: "chidi-btn" });
+        this.elements.modelSelect.onchange = (e) => this.callbacks.onModelChange(e.target.value);
+        headerControlsRight.appendChild(this.elements.modelSelect);
         appWindow.header.append(headerControlsLeft, this.elements.mainTitle, headerControlsRight, exitBtn);
 
 

@@ -42,6 +42,17 @@ if (manifest) {
     report('manifest lists are sorted (generated, not hand-edited)', ['core', 'apps', 'commands'].every(sorted));
 }
 
+const COMMANDS_DIR = path.join(CORE, 'commands');
+const commands = modulesOnDisk(COMMANDS_DIR);
+const missingRun = [], missingMan = [];
+commands.forEach(cmd => {
+    const src = fs.readFileSync(path.join(COMMANDS_DIR, cmd + '.py'), 'utf8');
+    if (!/^def\s+run\s*\(/m.test(src) && !/def\s+run\s*\(/.test(src)) missingRun.push(cmd);
+    if (!/^def\s+man\s*\(/m.test(src) && !/def\s+man\s*\(/.test(src)) missingMan.push(cmd);
+});
+report(`every command exposes "run" (${commands.length})`, missingRun.length === 0, `missing run: ${missingRun.join(', ')}`);
+report(`every command exposes "man" (${commands.length})`, missingMan.length === 0, `missing man: ${missingMan.join(', ')}`);
+
 const bridge = fs.readFileSync(path.join(RES, 'bridge.js'), 'utf8');
 report('bridge.js fetches core/manifest.json', /core\/manifest\.json/.test(bridge));
 report('bridge.js has no hand-typed commandFiles list', !/const commandFiles\s*=\s*\[/.test(bridge));

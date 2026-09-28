@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 import pyodide.http as pyodide_http
 from audit import audit_manager
 from bone_driver import BoneDriver
+from session import env_manager
 
 class AIManager:
     """
@@ -44,7 +45,7 @@ class AIManager:
 Rename a file with `mv old_path new_path`, never `rename`.
 Create plain text with `forge filename "content"`. Respect the requested path; do not invent a project folder.
 Verify deletions using `ls`, do not attempt to `cd` into directories you just deleted. If you anticipate a command might intentionally fail (like a verification step), append `|| true` to it.
-To remove directories, use `rmdir` if they are empty, or `rm -r` (not just `rm`). Use `rm` only for files.
+To remove directories, use `rmdir directory_name` if they are empty, or `rm -r directory_name` (not just `rm`). Never `cd` into a directory to delete its contents with `*`. Use `rm` only for files.
 Always use absolute paths for all file and directory arguments to prevent context loss."""
 
         self.FORGE_SYSTEM_PROMPT = "You are an expert file generator. Your task is to generate the raw content for a file based on the user's description. Respond ONLY with the raw file content itself. Do not include explanations, apologies, or any surrounding text like ```language ...``` or 'Here is the content you requested:'."
@@ -268,6 +269,24 @@ Always use absolute paths for all file and directory arguments to prevent contex
 
         return final_provider, final_model, warning_message
 
+
+    async def get_available_models(self, provider):
+        if provider == "gemini":
+            return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"]
+        elif provider == "ollama":
+            import pyodide.http
+            import json
+            try:
+                response = await pyodide.http.pyfetch("http://localhost:11434/api/tags", method="GET")
+                if response.status == 200:
+                    data = await response.json()
+                    return [m.get("name") for m in data.get("models", [])]
+            except Exception:
+                pass
+            return ["gemma3:latest", "llama3.1:8b", "llama3.2:3b", "qwen2.5:7b"]
+        elif provider == "llamacpp":
+            return ["Ternary-Bonsai"]
+        return []
     async def _get_terminal_context(self):
         context = json.dumps({"user_context": self.command_executor.user_context,
                               "current_path": self.fs_manager.current_path})
@@ -280,7 +299,13 @@ Always use absolute paths for all file and directory arguments to prevent contex
         pwd_output = pwd_result.get("output", "(unknown)")
         ls_output = ls_result.get("output", "(empty)")
 
-        return f"## FractalOS Session Context ##\nCurrent Directory:\n{pwd_output}\n\nDirectory Listing:\n{ls_output}"
+        context_str = f"## FractalOS Session Context ##\nCurrent Directory:\n{pwd_output}\n\nDirectory Listing:\n{ls_output}"
+        
+        last_error = env_manager.get('_AI_LAST_ERROR')
+        if last_error:
+            context_str += f"\n\nRecent Execution Failure (Do not repeat this mistake!):\n{last_error}"
+            
+        return context_str
 
     def _checkpoint_home(self):
         """Create a real pre-write story chapter; abort the plan if it cannot be saved.
@@ -421,9 +446,12 @@ Always use absolute paths for all file and directory arguments to prevent contex
         for command_str in commands_to_execute:
             exec_result, simulated_current_path = await self._execute_plan_step(command_str, simulated_current_path)
             if not exec_result.get("success"):
-                return {"success": False, "error": f"Execution HALTED at {command_str}: {exec_result.get('error')}\nCompleted steps:\n{execution_log}"}
+                error_msg = f"Execution HALTED at {command_str}: {exec_result.get('error')}"
+                env_manager.set('_AI_LAST_ERROR', error_msg)
+                return {"success": False, "error": f"{error_msg}\nCompleted steps:\n{execution_log}"}
             execution_log += f"► {command_str}\n{exec_result.get('output', '')}\n"
 
+        env_manager.unset('_AI_LAST_ERROR')
         final_report = f"### 🍄 BONEAMANITA AUTOPILOT REPORT\n**Status:** {safety_status} (Voltage: {voltage})\n\n**Execution Log:**\n```\n{execution_log}\n```"
         
         response = {"success": True, "data": final_report}
@@ -512,10 +540,13 @@ Always use absolute paths for all file and directory arguments to prevent contex
 
             exec_result, current_path = await self._execute_plan_step(command_str, current_path)
             if not exec_result.get("success"):
-                return {"success": False, "error": f"Execution HALTED at {command_str}: {exec_result.get('error')}"}
+                error_msg = f"Execution HALTED at {command_str}: {exec_result.get('error')}"
+                env_manager.set('_AI_LAST_ERROR', error_msg)
+                return {"success": False, "error": error_msg}
             output = exec_result.get("output", "")
             executed_commands_output += f"--- Output of '{command_str}' ---\n{output}\n\n"
 
+        env_manager.unset('_AI_LAST_ERROR')
         synthesizer_prompt = f'Original user question: "{prompt}"\n\nContext from file system:\n{executed_commands_output}'
         synthesizer_result = await self._call_llm_api(final_provider, final_model, [{"role": "user", "parts": [{"text": synthesizer_prompt}]}], options.get("apiKey"), self.SYNTHESIZER_SYSTEM_PROMPT)
 
@@ -557,6 +588,8 @@ Always use absolute paths for all file and directory arguments to prevent contex
         request_body_dict = {}
 
         if provider == "gemini":
+            gemini_model = model or provider_config["defaultModel"]
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent"
             if not api_key:
                 return {"success": False, "error": "Gemini API key is missing."}
             headers["x-goog-api-key"] = api_key

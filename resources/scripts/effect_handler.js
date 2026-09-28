@@ -542,8 +542,8 @@ async function handleEffect(result, options) {
 
         case 'capture_screenshot_png': {
             try {
-                const target = document.getElementById('terminal') || document.body;
-                const canvas = await html2canvas(target);
+                const target = document.getElementById('terminal-bezel') || document.getElementById('terminal') || document.body;
+                const canvas = await html2canvas(target, { backgroundColor: null });
                 const dataUrl = canvas.toDataURL('image/png');
                 const link = document.createElement('a');
                 link.href = dataUrl;

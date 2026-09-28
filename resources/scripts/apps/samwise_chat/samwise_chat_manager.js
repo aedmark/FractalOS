@@ -23,7 +23,15 @@ window.SamwiseChatManager = class SamwiseChatManager extends App {
             terminalContext: "",
         };
 
-        this.ui = new this.dependencies.SamwiseChatUI(this.callbacks, this.dependencies);
+        
+        this.ui = new this.dependencies.SamwiseChatUI(this.state, this.callbacks, this.dependencies);
+        this.dependencies.AIManager.getAvailableModels(this.state.provider).then(models => {
+            if (!models.includes(this.state.model) && this.state.model) {
+                models.unshift(this.state.model);
+            }
+            this.ui.updateModels(models, this.state.model);
+        });
+
         this.container = this.ui.getContainer();
         appLayer.appendChild(this.container);
 

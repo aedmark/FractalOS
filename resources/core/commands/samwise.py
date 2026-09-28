@@ -37,12 +37,17 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
     force_override = flags.get('force', False)
 
     if flags.get('chat', False):
+        if ai_manager:
+            final_provider, final_model, _ = ai_manager._resolve_provider_and_model(provider, model)
+        else:
+            final_provider, final_model = provider, model
+
         return {
             "effect": "launch_app",
             "app_name": "SamwiseChat",
             "options": {
-                "provider": provider,
-                "model": model
+                "provider": final_provider,
+                "model": final_model
             }
         }
 

@@ -101,6 +101,61 @@ const TASKS = [
             return [deleted && t.result.success ? 'PASS' : 'FAIL', `with --force: ${braked ? 'disengaged' : 'not disengaged'}, garden ${deleted ? 'was deleted' : alive !== null ? 'survived' : 'lost the probe but the directory remains'}. ${t.voltage()}`];
         },
     },
+    {
+        setup: [`cd ${HOME}`, `echo "Cats are fluffy." > cat.txt`, `echo "Dogs are loyal." > dog.txt`],
+        id: 'D1', title: 'remix command synthesizes two files',
+        cmd: `remix ${engine} cat.txt dog.txt`,
+        grade: async t => {
+            const output = stripHtml(t.text).toLowerCase();
+            if (output.includes('cats') || output.includes('dogs') || output.includes('fluffy') || output.includes('loyal')) {
+                return ['PASS', `remix generated a synthesis: ${t.answerSnippet()}`];
+            }
+            return ['FAIL', `remix output did not contain expected concepts. ${t.outcome()}`];
+        },
+    },
+    {
+        setup: [`cd ${HOME}`, `echo "const x = 1;" > code.js`],
+        id: 'D2', title: 'storyboard command analyzes a file',
+        cmd: `storyboard ${engine.replace('-p ', '--provider ').replace('-m ', '--model ')} code.js`,
+        grade: async t => {
+            if (t.result.success && t.llm.length > 0) return ['PASS', `storyboard analyzed the file: ${t.answerSnippet()}`];
+            return ['FAIL', `storyboard failed to analyze. ${t.outcome()}`];
+        },
+    },
+    {
+        setup: [`cd ${HOME}`, `echo "Hello world" > doc.txt`],
+        id: 'D3', title: 'chidi_analysis API analyzes files (headless)',
+        cmd: `echo "chidi test bypass"`, // Not a real command since we invoke the API directly
+        runOverride: async (page, runHelpers) => {
+            // Chidi is a UI app, so we invoke the kernel API it uses directly
+            const llmLogBefore = await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('import json; json.dumps(list(llm_log))'));
+            
+            const resultJson = await page.evaluate(async (args) => {
+                const ctx = await createKernelContext();
+                const ctxObj = JSON.parse(ctx);
+                ctxObj.provider = args.p;
+                ctxObj.model = args.m;
+                const files = JSON.stringify([{name: "doc.txt", path: "/home/gordon/doc.txt", content: "Hello world"}]);
+                return await FractalOS_Kernel.kernel.chidi_analysis(JSON.stringify(ctxObj), files, "summarize", null);
+            }, { p: runHelpers.PROVIDER, m: runHelpers.MODEL });
+            
+            const r = JSON.parse(resultJson);
+            const llm = JSON.parse(await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('import json; _l = list(llm_log); llm_log.clear(); json.dumps(_l)')));
+            
+            return {
+                result: r,
+                lines: [],
+                confirms: [],
+                llm: llm,
+                executed: [],
+                overrideOutcome: r.success ? r.data : (r.error || 'chidi failed')
+            };
+        },
+        grade: async t => {
+            if (t.result.success && t.llm.length > 0) return ['PASS', `chidi generated a summary: ${t.outcome()}`];
+            return ['FAIL', `chidi failed to summarize. ${t.outcome()}`];
+        },
+    },
 ];
 
 async function gradeTask(task, ctx) {
@@ -252,13 +307,21 @@ am._call_llm_api = _logged_call
                 throw new Error(`${task.id} fixture could not be verified`);
             }
             const t1 = Date.now();
-            const r = await run(task.cmd);
+            
+            let r;
+            if (task.runOverride) {
+                r = await task.runOverride(page, { PROVIDER, MODEL });
+            } else {
+                r = await run(task.cmd);
+            }
+            
             const seconds = ((Date.now() - t1) / 1000).toFixed(1);
             const printed = r.lines.map(l => stripHtml(l.text)).join('\n');
             const text = `${printed}\n${JSON.stringify(r.result)}`;
             const ctx = {
                 result: r.result, text, llm: r.llm, confirms: r.confirms, readFile, exists, executed: r.executed,
                 outcome: () => {
+                    if (r.overrideOutcome) return String(r.overrideOutcome).slice(0, 300);
                     const err = r.result.error ? (typeof r.result.error === 'string' ? r.result.error : JSON.stringify(r.result.error)) : '';
                     return (err || printed).replace(/\s+/g, ' ').slice(0, 300);
                 },

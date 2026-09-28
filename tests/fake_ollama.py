@@ -68,6 +68,12 @@ def answer_for(prompt):
     if "User Prompt:" in prompt:
         m = re.search(r'User Prompt: "(.*?)"', prompt, re.DOTALL)
         return "planner", _planner_plan(m.group(1) if m else prompt)
+    if "synthesize the following two documents" in prompt.lower():
+        return "remix", "A synthesized article about Cats being fluffy and Dogs being loyal."
+    if "file context:" in prompt:
+        return "storyboard", "The files show some code."
+    if "summary of the following document" in prompt.lower():
+        return "chidi", "Summary: Hello world."
     return "chat", "Hello from the stand-in. I am not a model."
 
 

@@ -15,7 +15,7 @@ window.OnboardingManager = class OnboardingManager extends App {
 
         this.state = {
             step: 1,
-            maxSteps: 3,
+            maxSteps: 4,
             userData: {
                 username: '',
                 password: '',
@@ -78,6 +78,7 @@ window.OnboardingManager = class OnboardingManager extends App {
                     this.ui.update(this.state);
                 }
             },
+
             onFinish: async () => {
                 this.ui.showSpinner();
                 const result = await UserManager.performFirstTimeSetup(this.state.userData);
@@ -88,6 +89,12 @@ window.OnboardingManager = class OnboardingManager extends App {
 
                     StorageManager.saveItem(Config.STORAGE_KEYS.ONBOARDING_COMPLETE, true, "Onboarding Status");
                     StorageManager.saveItem(Config.STORAGE_KEYS.LAST_CREATED_USER, this.state.userData.username, "Last Created User");
+                    
+                    const aiConf = {
+                        provider: this.state.userData.aiProvider || "ollama",
+                        model: this.state.userData.aiModel || null
+                    };
+                    await FractalOS_Kernel.syscall("filesystem", "write_file", ["/etc/ai.conf", JSON.stringify(aiConf, null, 2), "root"]);
 
                     await this.dependencies.StorageHAL.saveLocalStorage(
                         this.dependencies.StorageManager.exportLocalStorage()
@@ -99,6 +106,7 @@ window.OnboardingManager = class OnboardingManager extends App {
                         window.location.reload();
                     }, 3000);
                 } else {
+
                     const errorMessage = typeof result.error === 'object' && result.error.message
                         ? result.error.message
                         : result.error;

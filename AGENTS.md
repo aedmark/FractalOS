@@ -51,7 +51,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `resources/core/apps/*.py` | Kernel-side state for the apps (editor undo stack, paint, adventure, top, log, basic) |
 | `resources/dep/` | Vendored third-party code: `pyodide/` (trimmed, D-004), Tone.js, marked, DOMPurify, html2canvas |
 | `resources/start_server.sh`, `stop_server.sh` | `python3 -m http.server 8000` from `resources/` |
-| `neutralino.config.json`, `resources/neutralino.js`, `www/` | Desktop (Portable) mode. `www/` is the untouched Neutralino template, not the app |
+| `neutralino.config.json`, `resources/neutralino.js`, `neutralino/www/` | Desktop (Portable) mode. `neutralino/www/` is the untouched Neutralino template, not the app |
 | `extras/diag.sh`, `extras/inflate.sh` | In-OS shell scripts: a 1,400-line command test suite and a demo-world generator (see `docs/TESTING.md`) |
 | `tests/structure.js` | Node-only, instant: the manifest and `asset_manifest.js` match the files on disk (D-010) |
 | `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |

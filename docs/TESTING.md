@@ -208,8 +208,6 @@ The CONTRIBUTING.md checklist, made concrete:
 
 ## Known pitfalls (already hit, already fixed: don't re-discover these)
 
-- **The Claude Code sandbox cannot reach the host's localhost** (own network namespace): Ollama and the test
-  server look closed. Run the browser suites with the sandbox off.
 - **Output is suppressed while an app owns the screen.** The smoke test never leaves onboarding, so
   `OutputManager.appendToOutput` drops text (`isEditorActive`). Lift the flag for a DOM check, and put checks
   that open an app last.

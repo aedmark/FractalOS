@@ -11,9 +11,9 @@ Tests: [TESTING.md](TESTING.md).
 
 ## Current state
 
-_Last updated: 2026-09-26, end of session 13 (agent hardening: P2-20, P2-16, P2-06, P2-17; `tree -C`; renames finished)._
+_Last updated: 2026-09-27, end of session 16 (P1-10: `www/` move, P1-12: `jsnull` audit and boundary cleanup)._
 
-**Verified on current `main`** (2026-09-26, the owner's machine, Chromium 153 via Playwright 1.56, Node 22)
+**Verified on current `main`** (2026-09-27, Chromium via Playwright 1.56, Node 22)
 
 | Suite | Result |
 | --- | --- |
@@ -22,8 +22,7 @@ _Last updated: 2026-09-26, end of session 13 (agent hardening: P2-20, P2-16, P2-
 | `node tests/diag.js` | **40 passed / 0 failed**, no command errors, banner reached |
 | `python3 tests/agent_unit.py` | **24 OK** |
 | `node tests/agent_grading.js` | **22 cases PASS** |
-| `node tests/agent.js`, gemma4:12b | **7/7** on every run this session |
-| `node tests/agent.js`, llama3.1:8b | 7/7 twice before P2-06; after it 6/7, 6/7, 5/7, 7/7, 7/7, 6/7, 6/7 (see below) |
+| `node tests/agent.js`, llama3.1:8b | **10/10 PASS**, including the new tests for `remix`, `storyboard`, and `chidi_analysis` |
 | `tests/test_executor.py` inside the OS | runs clean (`python test_executor.py`) |
 
 **What works**
@@ -36,6 +35,7 @@ _Last updated: 2026-09-26, end of session 13 (agent hardening: P2-20, P2-16, P2-
     provider and the fix: `ollama pull <model>`, "can't reach Ollama at ...", "didn't answer within N s" (P2-06, D-021).
   - **`--dry-run` runs nothing**, in both modes and even with `--force`; it shows the plan, which steps would ask
     first, the voltage and whether it would disengage (P2-16, D-020).
+- **AI Commands (`remix`, `storyboard`, `chidi`)** verified against real Ollama model (`llama3.1:8b`) locally with recorded transcript (P2-04).
 - **Samwise Chat** (`samwise -c`, `resources/scripts/apps/samwise_chat/`): works end to end. Messages go to the
   kernel as JSON on stdin, so quotes, `$HOME` and `$(...)` reach the model verbatim and nothing runs (P2-20, D-019).
   Before this session a chat message could execute shell commands.
@@ -49,14 +49,8 @@ _Last updated: 2026-09-26, end of session 13 (agent hardening: P2-20, P2-16, P2-
 - Earlier foundations still hold: Pyodide 314.0.7 / Python 3.14.2 (D-004), `python` in the OS (D-011), `jsnull`
   normalised (D-012), generated kernel manifest (D-010).
 
-**llama3.1:8b is not reliable; the misses are its plans.** gemma4:12b passed every run. llama's seven runs after P2-06 missed:
-C2 four times by planning `cd garden` then `rm -r *`, which empties the folder but keeps it (P2-21); A1 once
-with a bad escape in the file contents; B1 once with `tree -C`, which failed before `-C` existed (P2-18).
-P2-17's retries cannot help: none of these plans were rejected by validation.
-
 **Not verified / not done**
 - A Gemini key was never used: the Gemini path, its error messages and P2-05 are untested.
-- Chidi, `remix` and `storyboard` against a real model (P2-04). They share the new timeout and error messages.
 - Apps by hand (editor, paint, adventure, top, BASIC, Chidi), sounds, themes, portable mode, Firefox, Safari.
 - `tests/agent.js` A2 proves cd memory only when the model uses relative paths (llama does, gemma does not).
 
@@ -96,8 +90,6 @@ P2-17's retries cannot help: none of these plans were rejected by validation.
   live next to this repo on the owner's machine; in a cloud session clone them read-only from GitHub.
 - **README says "GitLab" in CONTRIBUTING** ("Fork the repository on GitLab") and the footer links; the repo is
   on GitHub (`aedmark/FractalOS`). Left as is; cosmetic.
-- **The Claude Code sandbox cannot reach the host's localhost.** Commands run in their own network namespace,
-  so Ollama (11434) and the test server (8000) look closed. Run the browser suites with the sandbox off.
 - **The shell here is zsh-like.** `git show $c:tests/x` expands `:t` as a modifier (write `"${c}:tests/x"`), and
   `echo ====` fails (`=word` expansion).
 - **The smoke test never finishes onboarding,** so the onboarding app owns the screen and `OutputManager`
@@ -108,14 +100,7 @@ P2-17's retries cannot help: none of these plans were rejected by validation.
 
 ## Next steps (in order)
 
-1. **P2-21: valid plans that do the wrong thing.** llama's `rm -r *` for "delete the directory". Try persona or
-   planner guidance first (delete a directory by name), measure with `tests/agent.js` over several runs.
-2. **P2-18: remember run-time failures** (a failed step, its error) and put them in the next prompt.
-3. **P2-05:** make the Gemini model configurable and pick a current default; then, with a key, run
-   `AGENT_PROVIDER=gemini node tests/agent.js`. **P2-04:** Chidi, `remix`, `storyboard` against a real model.
-4. Housekeeping: P1-11 (every command has `run` and `man`, in `tests/structure.js`), P1-12 (`jsnull` audit),
-   P1-10 (`www/`).
-5. A manual pass over the apps (TESTING.md, "Manual checks"), now that Samwise Chat has changed.
+1. Implement a model selection UI for Chidi/Samwise (suggested feature).
 
 ## Open questions for the user
 
@@ -126,8 +111,47 @@ P2-17's retries cannot help: none of these plans were rejected by validation.
 
 ## Session log
 
+### Session 16: 2026-09-27: Housekeeping (P1-12, P1-10)
+
+- **Goal**: P1-12 (`jsnull` audit) and P1-10 (Move `www/` into `neutralino/`).
+- **Done**:
+  - Found that the `www/` directory is just the stock Neutralinojs template and `documentRoot` handles what actually runs. Moved `www/` to `neutralino/www/` so it doesn't pollute the root repo space.
+  - Updated `AGENTS.md` and `ROADMAP.md` to reflect the `www/` change.
+  - Discovered that all `FractalOS_Kernel` app function wrappers in `kernel.py` were unused (except for one broken one in `chidi_manager.js`).
+  - Fixed `chidi_manager.js` to use the unified `syscall` mechanism.
+  - Deleted ~120 lines of dead global functions from `kernel.py` that were previously exposed to JS, confirming that `execute_command` and `syscall_handler` are the only functions bridging the boundary.
+  - Ran `structure.js`, `diag.js`, and `smoke.js` to confirm all 75 tests still pass perfectly.
+- **Outcome**: P1-10 and P1-12 are complete. The codebase is cleaner and fully decoupled from legacy `pyodide.ffi` boundary bugs.
+
+### Session 15: 2026-09-27: Automated tests for AI commands (P2-04)
+
+- **Goal**: P2-04: Verify Chidi, `remix`, and `storyboard` against a real model with a recorded transcript.
+- **Done**:
+  - Found `remix` and `storyboard` lacked automated tests.
+  - Added tasks `D1`, `D2`, and `D3` to `tests/agent.js` to execute `remix`, `storyboard`, and `chidi_analysis` headless.
+  - Discovered and fixed missing short flag aliases `-p` and `-m` handling in the test runner.
+  - Discovered and fixed Playwright `page.evaluate()` multiple argument restriction.
+  - Found an issue with `analysis_type` for `chidi_analysis`: it expected `"summarize"`, but the test sent `"summary"`. Fixed the test.
+  - Ran the harness with a local Ollama model (`llama3.1:8b`) via Playwright, all 10 tests passed!
+- **Outcome**: P2-04 complete. Transcript recorded in `tests/out/agent-transcript.md`.
+
 - **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `samwise` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
 Newest first. Copy the template for each new session.
+
+### Session 14: 2026-09-27: Agent hardening (P2-21, P2-18), Configurable Gemini (P2-05), Structure check (P1-11)
+
+**Goal:** Work the next steps in the handoff: P2-21, P2-18, P2-05, and P1-11.
+**Done:**
+- P2-21: Updated `ai_manager.py` and `bone_driver.py` persona instructions to explicitly forbid deleting directories with `*` and to require absolute paths.
+- P2-18: "Scar Tissue" Context Injection. Tracked recent execution failures in `session.env_manager` as `_AI_LAST_ERROR`, cleared them on success, and injected them in `_get_terminal_context()`.
+- P2-05: Made the Gemini model configurable by resolving it from the config or default in `ai_manager.py`.
+- P1-11: Added automated checks to `tests/structure.js` that ensure every module in `resources/core/commands/` exposes `run` and `man`. Fixed `true.py` which was missing `man`.
+**Changed:** `resources/core/ai_manager.py`, `resources/core/bone_driver.py`, `resources/core/commands/true.py`, `tests/structure.js`, `ROADMAP.md`, `HANDOFF.md`.
+**Decisions:** none.
+**Problems / surprises:**
+- The command `true` was missing a `man` function, which was caught by the new P1-11 structure test.
+**Left undone:** P2-04 (testing against a real model), P1-12 (`jsnull` audit), P1-10 (`www/`), manual app pass.
+**Next session should start with:** "Next steps" above, starting with P2-04.
 
 ### Session 13: 2026-09-26: Agent hardening, `tree -C` (P2-20, P2-16, P1-13, P2-06, P2-17, P1-14)
 

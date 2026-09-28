@@ -1,19 +1,36 @@
 window.SamwiseChatUI = class SamwiseChatUI {
-    constructor(callbacks, dependencies) {
+    constructor(initialState, callbacks, dependencies) {
         this.elements = {};
         this.managerCallbacks = callbacks;
         this.dependencies = dependencies;
-        this._buildLayout();
+        this._buildLayout(initialState);
+    }
+
+    
+    updateModels(models, currentModel) {
+        this.elements.modelSelect.innerHTML = '';
+        for (const m of models) {
+            const option = document.createElement('option');
+            option.value = m;
+            option.textContent = m;
+            if (m === currentModel) option.selected = true;
+            this.elements.modelSelect.appendChild(option);
+        }
     }
 
     getContainer() {
         return this.elements.container;
     }
 
-    _buildLayout() {
+    _buildLayout(initialState) {
         const { Utils, UIComponents } = this.dependencies;
 
         const appWindow = UIComponents.createAppWindow('Samwise Chat', this.managerCallbacks.onExit);
+        
+        this.elements.modelSelect = Utils.createElement('select', { className: 'app-header__select' });
+        this.elements.modelSelect.onchange = (e) => this.managerCallbacks.onModelChange(e.target.value);
+        appWindow.header.insertBefore(this.elements.modelSelect, appWindow.header.querySelector('.app-header__exit-btn'));
+
         this.elements.container = appWindow.container;
         this.elements.main = appWindow.main;
         this.elements.footer = appWindow.footer;

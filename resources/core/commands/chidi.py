@@ -105,6 +105,10 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
     provider = flags.get("provider")
     model = flags.get("model")
 
+    ai_manager = kwargs.get("ai_manager")
+    if ai_manager:
+        provider, model, _ = ai_manager._resolve_provider_and_model(provider, model)
+
     return {
         "effect": "launch_app",
         "app_name": "Chidi",
