@@ -84,6 +84,11 @@ Goal: a repo a new session can clone fast, read in ten minutes, and verify in on
   green), and the terminal renders ANSI colour codes (D-023). Asked for by the owner after llama3.1:8b planned
   `tree -C` in tests/agent.js B1 (2026-09-26)
 - [x] P1-12 Audit the other raw JS→Python crossings for `jsnull` (D-012). Verified that no exported kernel functions except `execute_command` use raw JS arguments anymore. Cleaned up unused legacy wrappers.
+- [ ] P1-15 `ls` has no `-F` and treats it as a path ("ls: cannot access '-F'"). gemma4:12b planned `ls -F` for
+  tests/agent.js B1 (2026-09-27). Add `-F`, and decide whether unknown flags should say "invalid option"
+- [ ] P1-16 `tests/smoke.js` prints uncaught page errors but still passes. `models.includes is not a function`
+  (the model pickers from `93bae32`) went unnoticed that way until a check was added (2026-09-27). Fail on
+  `pageerror`, with an explicit allow-list if anything is expected
 
 ## Phase 2: The agent
 
@@ -153,7 +158,14 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   *Done 2026-09-27:* Tracked in `session.env_manager` as `_AI_LAST_ERROR`, cleared on success, injected in `_get_terminal_context()`.
 - [x] P2-21 Valid plans that do the wrong thing. Asked to "delete the garden directory", llama3.1:8b planned `cd garden`
   then `rm -r *` in four of seven runs, emptying the folder but leaving it (tests/agent.js C2, 2026-09-26). It passes
-  validation, so P2-17 cannot catch it. *Done 2026-09-27:* Updated `ai_manager.py` and `bone_driver.py` persona instructions to explicitly forbid deleting directories with `*` and to require absolute paths.
+  validation, so P2-17 cannot catch it. Session 14 added persona guidance (delete by name, never `*`; absolute
+  paths); measured on 2026-09-27 it still planned `rm -r *` in 1 of 5 runs, and a new variant, `cd garden` then
+  `rm -r .`, which FractalOS's `rm` carried out by deleting `garden/` itself. **Done 2026-09-27 (D-024):**
+  `validate_plan` rejects `rm` of `*`, `.` or `..` (any last path component), so P2-17 sends the reason back
+  and the model re-plans; `rm` itself now refuses `.`, `..` and `/` like GNU `rm` (`rm -rf ..` deleted the
+  caller's home before). Evidence: llama3.1:8b C2 10/10 and 10/10; with its bad first plan injected, it
+  corrected to `rm -r /home/gordon/garden` 5/5; in full runs it proposed `rm -r .` once and `rm -r *` twice
+  unprompted, each rejected and corrected. 3 unit tests, 9 smoke checks, all failing on the old code
 
 - [x] P2-19 `tests/agent_grading.js` failed since `bc17189`: it expected C2 to FAIL when `garden/` still exists
   (via `exists`), C1 to FAIL when a disengagement comes back as `success: true`, and B2 to FAIL when the result
@@ -168,6 +180,12 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   (`plan_agentic_search`, `plan_autopilot`); dry run reports the plan, the steps that would ask first, the
   voltage and whether it would disengage, and runs nothing, even with `--force` (D-020). Four smoke checks,
   mutation-checked; both real models still 7/7 (2026-09-26)
+- [ ] P2-22 The persona should say `python` has the standard library only: llama3.1:8b wrote `import numpy`
+  for tests/agent.js A3 and the run halted (1 of 3 runs, 2026-09-27)
+- [ ] P2-23 A redundant last step can fail a plan whose goal was met: after P2-21's retry, llama3.1:8b planned
+  `rm -r /home/gordon/garden` then `rmdir /home/gordon/garden`, which failed, so C2 reported failure with the
+  directory gone (1 of 3 full runs, 2026-09-27). Options: persona guidance, or let `rmdir`/`rm` of a path the
+  plan already deleted count as done
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 

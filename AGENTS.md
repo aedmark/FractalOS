@@ -122,8 +122,8 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
   script, not bash) inside the OS as root and grades its `check_fail` assertions and error lines. About two
   minutes. Run it after any change to the kernel, the executor or a command.
 - **Agent harness:** `AGENT_MODEL=<ollama model> node tests/agent.js http://127.0.0.1:8000/index.html` with Ollama
-  on `localhost:11434` (or `python3 tests/fake_ollama.py &` for a plumbing-only run). Seven tasks, PASS/FAIL on
-  file-system facts; transcript in `tests/out/agent-transcript.md`. Needs a machine with a model. Local
+  on `localhost:11434` (or `python3 tests/fake_ollama.py &` for a plumbing-only run). Ten tasks (`AGENT_TASKS=C2`
+  runs a subset), PASS/FAIL on file-system facts; transcript in `tests/out/agent-transcript.md`. Needs a machine with a model. Local
   recipe (Playwright in a scratch directory, system Chromium) in `docs/TESTING.md`.
 - **Grader and agent unit tests:** `node tests/agent_grading.js` and `python3 tests/agent_unit.py`. Seconds, no
   browser or model. Run them after touching `tests/agent.js`, `ai_manager.py` or `bone_driver.py`.

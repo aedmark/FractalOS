@@ -98,6 +98,10 @@ Always use absolute paths for all file and directory arguments to prevent contex
             operators = {"|", "&&", "&", ">", ">>", "<"}
             if "$" in command or any(p in operators for p in parts) or ("||" in parts and parts[-2:] != ["||", "true"]):
                 return "use literal paths and one command per line, without shell operators"
+            if parts[0] == "rm" and any(a.rstrip("/").rsplit("/", 1)[-1] in ("*", ".", "..") for a in parts[1:]):
+                return ("`rm` of `*`, `.` or `..` deletes through the current directory, not the directory "
+                        "you mean; to delete a directory, remove it by name with its full path "
+                        "(`rm -r /full/path/to/directory`)")
             quote, escaped = None, False
             for i, char in enumerate(command):
                 if escaped:

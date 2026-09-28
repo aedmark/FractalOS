@@ -79,7 +79,8 @@ printed at the end either way; the `AudioContext was not allowed to start` warni
 6. Then, in the kernel with a fake model and fake transports: the Ollama adapter (`think: false`, empty replies),
    timeouts and provider-named errors through the real `pyfetch` (P2-06), the agent's `python` rules, checkpoints,
    `--dry-run` (P2-16), plan retries (P2-17), `tree -C` and the terminal's ANSI rendering (P1-14), and last,
-   Samwise Chat in the real UI with quotes and `$(...)` (P2-20). About 75 checks; the output lists each.
+   Samwise Chat in the real UI with quotes and `$(...)` (P2-20) and its model picker. `rm` refusing `.`, `..`
+   and `/` (P2-21) is in the command list. About 85 checks; the output lists each.
 
 The commands run as `Guest` because the test never completes onboarding; the page is still on the "create your
 main user account" dialog underneath. That is deliberate: it keeps the test independent of the onboarding UI.
@@ -150,18 +151,25 @@ python3 tests/fake_ollama.py &                   # the stand-in (plumbing only, 
 AGENT_MODEL=llama3.1:8b node tests/agent.js http://127.0.0.1:8000/index.html
 ```
 
-Boots the OS, onboards as `gordon`, then runs seven tasks in order: three through `samwise --autopilot`
+Boots the OS, onboards as `gordon`, then runs ten tasks in order. `AGENT_TASKS=C2` (or `C1,C2`) runs only those,
+which is how to measure one task over many runs. The first seven: three through `samwise --autopilot`
 (make `garden/seeds.txt`; `cd garden` then make `tools.txt` there, which checks the cd memory; forge and run
 `sum.py`), two through agent mode (a read-only question, then `mv garden/tools.txt garden/kit.txt`, which needs
 the confirmation dialog: the harness answers "yes" and records it), and a delete request twice, without and with
-`--force`. Each task is graded on the file system afterwards, never on the model's wording (D-014):
+`--force`. Then D1 `remix` and D2 `storyboard` against the model, and D3 the Chidi app's kernel call
+(`ai.perform_chidi_analysis`, the syscall `chidi_manager.js` makes; the summary must mention the file's
+"Hello world"). Each task is graded on the file system afterwards, never on the model's wording (D-014):
 
 - **PASS / FAIL** on facts: `seeds.txt` has three lines; `tools.txt` is in `garden/`, not `$HOME`; `python` printed
   `55`; `kit.txt` exists and the command succeeded after a confirmation; C1 disengaged, reported failure, and the
   probe survived; C2 (`--force`) succeeded and `garden/` itself is gone, not just emptied (P2-19).
 - **INFO** lines are for a human; a failed or empty model call is an inconclusive FAIL (D-015).
 - One run proves little: llama3.1:8b scored 5/7 to 7/7 on the same code (2026-09-26). Run a model several times
-  and read the failing task's plan before blaming the OS. gemma4:12b was 7/7 every time.
+  and read the failing task's plan before blaming the OS. gemma4:12b was 7/7 every time. After P2-21
+  (2026-09-27): llama 9/10, 10/10, 10/10; gemma 10/10 twice.
+- **A task the model rarely gets wrong can still hide a rule.** To test how a model answers a rejection, replace
+  its first reply: wrap `_call_llm_api` so the first call returns the bad plan and later calls reach the model
+  (that is how P2-21's retry was measured, 5/5).
 
 Exit code 0 means no FAIL. `tests/out/agent-transcript.md` holds every LLM call (prompt size, seconds, the raw
 answer), every line the terminal printed, every confirmation, and the result JSON. **That transcript is the
@@ -211,6 +219,10 @@ The CONTRIBUTING.md checklist, made concrete:
 - **Output is suppressed while an app owns the screen.** The smoke test never leaves onboarding, so
   `OutputManager.appendToOutput` drops text (`isEditorActive`). Lift the flag for a DOM check, and put checks
   that open an app last.
+- **A harness task that calls the kernel directly breaks when the kernel is cleaned up.** D3 called
+  `FractalOS_Kernel.kernel.chidi_analysis`, a wrapper session 16 deleted, and aborted every run after it (so D1
+  to D3 never printed a summary line). Call what the app calls (`FractalOS_Kernel.syscall(...)`).
+- **Check `stdout` of a full run for `aborted:`.** An abort after nine PASS lines is not 9/10.
 - **A mutation check must break the fix, not the test.** Reverting a whole file can fail a test for an unrelated
   reason (a helper the test patches is missing). Remove just the fix, for example the timeout signal.
 

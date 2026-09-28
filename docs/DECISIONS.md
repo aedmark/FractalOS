@@ -328,3 +328,16 @@ variables (`--ansi-*` in `main.css`), so a theme can restyle them. The typewrite
 **Consequences:** As on Unix, `tree -C | cat` and `tree -C > file` keep the codes, and `cat` of such a file shows
 colour. Commands colour only when asked, so scripts and the agent see plain text by default.
 
+## D-024 Deleting goes by name: the validator rejects `rm` of `*`, `.` or `..`, and `rm` refuses `.`, `..` and `/` (2026-09-27, status: accepted)
+**Context:** P2-21. Asked to delete `garden/`, llama3.1:8b planned `cd garden` then `rm -r *` (empties it,
+leaves it) or `rm -r .`. Persona guidance cut the first from 4 in 7 runs to 1 in 5 but did not stop it, and it
+cannot stop a new phrasing. `rm -r .` exposed an OS bug: FractalOS's `rm` removed the current directory, and
+`rm -rf ..` removed its parent, where GNU `rm` refuses both.
+**Decision:** Two layers. `validate_plan()` rejects an `rm` whose operand's last path component is `*`, `.` or
+`..`, with a reason that says to remove the directory by name with its full path; P2-17 sends it back and the
+model re-plans (it counts as a rejection, so the voltage brake still judges the corrected plan). `rm` refuses
+`.` and `..` (any last component) and `/` for everyone, with GNU's messages.
+**Consequences:** The agent cannot empty a directory in place with `rm dir/*`; it can delete and recreate it, or
+delete by pattern (`rm dir/*.txt` is allowed). This is a rule about `rm` only, not a general "wrong plan" check:
+a valid plan that does something else wrong still runs. Users hit the `rm` refusals too, as on Linux.
+

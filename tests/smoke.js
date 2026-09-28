@@ -44,6 +44,16 @@ const CHECKS = [
     { cmd: 'chmod 755 /home/Guest/shout.py', expect: r => r.success },
     { cmd: 'tree -C /home/Guest', expect: r => r.success && (r.output || '').startsWith('\x1b[1;34m/home/Guest\x1b[0m')
         && (r.output || '').includes('\x1b[1;32mshout.py\x1b[0m') && (r.output || '').includes('── hello.txt') },
+    // P2-21: rm refuses '.', '..' and '/' like GNU rm; `cd dir` then `rm -r .` used to delete dir itself.
+    { cmd: 'mkdir /home/Guest/keep', expect: r => r.success },
+    { cmd: 'cd /home/Guest/keep', expect: r => r.success },
+    { cmd: 'rm -r .', expect: r => !r.success && /refusing to remove '\.' or '\.\.' directory: skipping '\.'/.test(errorMessage(r)) },
+    { cmd: 'rm -rf ..', expect: r => !r.success && /refusing to remove/.test(errorMessage(r)) },
+    { cmd: 'rm -r /home/Guest/keep/.', expect: r => !r.success && /refusing to remove/.test(errorMessage(r)) },
+    { cmd: 'cd /', expect: r => r.success },
+    { cmd: 'rm -rf /', expect: r => !r.success && /dangerous to operate recursively on '\/'/.test(errorMessage(r)) },
+    { cmd: 'cat /home/Guest/hello.txt', expect: r => r.success && r.output === 'hello' },
+    { cmd: 'rm -r /home/Guest/keep', expect: r => r.success },
 ];
 
 function errorMessage(r) {
@@ -363,6 +373,13 @@ kernel.ai_manager.continue_chat_conversation = _fake_chat
             JSON.stringify(seen.map(c => c.prompt)));
         report('Samwise Chat keeps history and the chosen model', seen.every((c, i) => c.history === 2 * i && c.engine === 'ollama/stub'),
             JSON.stringify(seen.map(c => [c.history, c.engine])));
+        // The model picker is filled from the kernel's list; the syscall's {success, data} envelope once reached it raw.
+        const picker = await page.waitForFunction(() => {
+            const options = [...document.querySelectorAll('#samwise-chat-app-container select.app-header__select option')];
+            return options.length > 1 && { values: options.map(o => o.value), selected: options.find(o => o.selected)?.value };
+        }, null, { timeout: 20000 }).then(h => h.jsonValue(), e => ({ error: e.message.split('\n')[0] }));
+        report('Samwise Chat lists models and selects the chosen one', picker.selected === 'stub' && picker.values.length > 1,
+            JSON.stringify(picker));
         const direct = await page.evaluate(async () => await CommandExecutor.processSingleCommand('samwise --chat-internal', { isInteractive: false }));
         report('samwise --chat-internal without a JSON message fails cleanly', direct.success === false, JSON.stringify(direct).slice(0, 200));
 

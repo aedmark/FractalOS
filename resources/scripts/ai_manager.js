@@ -9,18 +9,19 @@ class AIManager {
 
 
     async getAvailableModels(provider) {
-        if (!FractalOS_Kernel || !FractalOS_Kernel.isReady) {
-            if (provider === "gemini") return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
-            return ["gemma3:latest", "llama3.1:8b", "llama3.2:3b", "qwen2.5:7b"];
-        }
+        const fallback = provider === "gemini"
+            ? ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"]
+            : ["gemma3:latest", "llama3.1:8b", "llama3.2:3b", "qwen2.5:7b"];
+        if (!FractalOS_Kernel || !FractalOS_Kernel.isReady) return fallback;
         try {
-            const resultJson = await FractalOS_Kernel.syscall("ai", "get_available_models", [provider]);
-            return JSON.parse(resultJson);
+            // The syscall answers {success, data}; the list is in data.
+            const result = JSON.parse(await FractalOS_Kernel.syscall("ai", "get_available_models", [provider]));
+            if (result.success && Array.isArray(result.data)) return result.data;
+            console.error("Failed to fetch models:", result.error);
         } catch (e) {
             console.error("Failed to fetch models:", e);
-            if (provider === "gemini") return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
-            return ["gemma3:latest", "llama3.1:8b", "llama3.2:3b", "qwen2.5:7b"];
         }
+        return fallback;
     }
 
     async getApiKey(provider, options = {}) {

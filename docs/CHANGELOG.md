@@ -28,6 +28,11 @@
 - **Safety Calibration:** Tuned the "Voltage" costs to distinguish between "Creation" (High Cost) and "Execution" (Medium Cost), enabling smoother developer workflows.
 
 ### 🐛 Bug Fixes
+- **`rm -r .` deleted the directory you were in, and `rm -rf ..` its parent.** `rm` now refuses `.`, `..` and `/`,
+  like GNU `rm`. The agent's plans may not `rm` `*`, `.` or `..` at all: it is told to delete a directory by name
+  and re-plans (it used to `cd` into a folder and empty it with `rm -r *`, leaving the folder behind).
+- **The model pickers in Samwise Chat and Chidi stayed empty** (`models.includes is not a function`): the model
+  list came back wrapped in the kernel's reply envelope.
 - **A Samwise Chat message could run shell commands:** messages were pasted into a command line, so `$(...)` executed, `$HOME` expanded and quotes vanished. Messages now reach the model exactly as typed.
 - **Samwise Chat did not work at all after the rename:** it still called `gemini`, ignored the chosen provider and model, printed errors as `[object Object]`, and its stylesheet never applied. All fixed.
 - **`--dry-run` executed the plan** in agent mode, and `--autopilot --dry-run` ignored the flag.

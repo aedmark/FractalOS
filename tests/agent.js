@@ -8,6 +8,7 @@ const PROVIDER = process.env.AGENT_PROVIDER || 'ollama';
 const MODEL = process.env.AGENT_MODEL || '';
 const BOOT_TIMEOUT_MS = 120000;
 const TASK_TIMEOUT_MS = Number(process.env.AGENT_TIMEOUT_MS || 10 * 60 * 1000);
+const ONLY = (process.env.AGENT_TASKS || '').split(',').map(s => s.trim()).filter(Boolean);
 const OUT_DIR = path.join(__dirname, 'out');
 const USER = { username: 'gordon', password: 'hunter2', rootPassword: 'rootpw' };
 const HOME = `/home/${USER.username}`;
@@ -124,21 +125,14 @@ const TASKS = [
     },
     {
         setup: [`cd ${HOME}`, `echo "Hello world" > doc.txt`],
-        id: 'D3', title: 'chidi_analysis API analyzes files (headless)',
-        cmd: `echo "chidi test bypass"`, // Not a real command since we invoke the API directly
+        id: 'D3', title: 'Chidi analysis (the kernel call the Chidi app makes) summarizes a file',
+        cmd: `syscall ai.perform_chidi_analysis (summarize doc.txt)`, // not a shell command: Chidi is a UI app
         runOverride: async (page, runHelpers) => {
-            // Chidi is a UI app, so we invoke the kernel API it uses directly
-            const llmLogBefore = await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('import json; json.dumps(list(llm_log))'));
-            
-            const resultJson = await page.evaluate(async (args) => {
-                const ctx = await createKernelContext();
-                const ctxObj = JSON.parse(ctx);
-                ctxObj.provider = args.p;
-                ctxObj.model = args.m;
-                const files = JSON.stringify([{name: "doc.txt", path: "/home/gordon/doc.txt", content: "Hello world"}]);
-                return await FractalOS_Kernel.kernel.chidi_analysis(JSON.stringify(ctxObj), files, "summarize", null);
-            }, { p: runHelpers.PROVIDER, m: runHelpers.MODEL });
-            
+            // The same syscall resources/scripts/apps/chidi/chidi_manager.js makes.
+            const resultJson = await page.evaluate(async (args) => FractalOS_Kernel.syscall('ai', 'perform_chidi_analysis', [], {
+                files_context: '--- doc.txt ---\nHello world', analysis_type: 'summarize', question: null,
+                provider: args.p, model: args.m || null, api_key: null,
+            }), { p: runHelpers.PROVIDER, m: runHelpers.MODEL });
             const r = JSON.parse(resultJson);
             const llm = JSON.parse(await page.evaluate(async () => FractalOS_Kernel.pyodide.runPythonAsync('import json; _l = list(llm_log); llm_log.clear(); json.dumps(_l)')));
             
@@ -152,7 +146,7 @@ const TASKS = [
             };
         },
         grade: async t => {
-            if (t.result.success && t.llm.length > 0) return ['PASS', `chidi generated a summary: ${t.outcome()}`];
+            if (t.result.success && /hello/i.test(String(t.result.data))) return ['PASS', `chidi generated a summary: ${t.outcome()}`];
             return ['FAIL', `chidi failed to summarize. ${t.outcome()}`];
         },
     },
@@ -290,7 +284,9 @@ am._call_llm_api = _logged_call
 
         const exists = async p => page.evaluate(async q => !!(await dependencies.FileSystemManager.getNodeByPath(q)), p);
 
-        for (const task of TASKS) {
+        const selected = ONLY.length ? TASKS.filter(t => ONLY.includes(t.id)) : TASKS;
+        if (ONLY.length && selected.length !== ONLY.length) throw new Error(`unknown task id in AGENT_TASKS=${ONLY.join(',')}`);
+        for (const task of selected) {
             const setup = [...(task.setup || [])];
             if (task.deleteTask) {
                 setup.push(`cd ${HOME}`, `mkdir -p ${HOME}/garden`,
@@ -349,7 +345,7 @@ am._call_llm_api = _logged_call
         fs.writeFileSync(out, md.join('\n'));
         console.log(`\ntranscript: ${out}`);
         if (consoleErrors.length) console.log(`browser console errors: ${consoleErrors.length}\n${consoleErrors.slice(0, 10).map(l => '  CON  ' + l.split('\n')[0]).join('\n')}`);
-        console.log(fails ? `FAIL ${fails} of ${TASKS.length}` : `PASS ${TASKS.length - fails}/${TASKS.length}`);
+        console.log(fails ? `FAIL ${fails} of ${selected.length}` : `PASS ${selected.length}/${selected.length}`);
         exitCode = fails ? 1 : 0;
     } catch (e) {
         console.error(`aborted: ${e.message}`);

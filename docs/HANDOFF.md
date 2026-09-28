@@ -11,18 +11,20 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-_Last updated: 2026-09-27, end of session 16 (P1-10: `www/` move, P1-12: `jsnull` audit and boundary cleanup)._
+_Last updated: 2026-09-27, end of session 17 (P2-21: delete by name; `rm` refuses `.`, `..`, `/`; model pickers fixed)._
 
 **Verified on current `main`** (2026-09-27, Chromium via Playwright 1.56, Node 22)
 
 | Suite | Result |
 | --- | --- |
 | `node tests/structure.js` | PASS |
-| `node tests/smoke.js` | **75/75** |
+| `node tests/smoke.js` | **85/85** |
 | `node tests/diag.js` | **40 passed / 0 failed**, no command errors, banner reached |
-| `python3 tests/agent_unit.py` | **24 OK** |
+| `python3 tests/agent_unit.py` | **26 OK** |
 | `node tests/agent_grading.js` | **22 cases PASS** |
-| `node tests/agent.js`, llama3.1:8b | **10/10 PASS**, including the new tests for `remix`, `storyboard`, and `chidi_analysis` |
+| `node tests/agent.js`, llama3.1:8b | 9/10, **10/10**, **10/10** (the miss: A3 imported `numpy`, P2-22) |
+| `node tests/agent.js`, gemma4:12b | **10/10** twice |
+| `AGENT_TASKS=C2 node tests/agent.js`, llama3.1:8b | **10/10** twice (P2-21) |
 | `tests/test_executor.py` inside the OS | runs clean (`python test_executor.py`) |
 
 **What works**
@@ -35,10 +37,16 @@ _Last updated: 2026-09-27, end of session 16 (P1-10: `www/` move, P1-12: `jsnull
     provider and the fix: `ollama pull <model>`, "can't reach Ollama at ...", "didn't answer within N s" (P2-06, D-021).
   - **`--dry-run` runs nothing**, in both modes and even with `--force`; it shows the plan, which steps would ask
     first, the voltage and whether it would disengage (P2-16, D-020).
-- **AI Commands (`remix`, `storyboard`, `chidi`)** verified against real Ollama model (`llama3.1:8b`) locally with recorded transcript (P2-04).
+  - **Deleting goes by name (P2-21, D-024).** A plan that `rm`s `*`, `.` or `..` is rejected and the model
+    re-plans; `rm` refuses `.`, `..` and `/` like GNU `rm`. Before, `cd garden` + `rm -r .` deleted the
+    folder you stood in and `rm -rf ..` its parent.
+  - Recent failures are fed into the next prompt (P2-18); the Gemini model is configurable (P2-05).
+- **AI Commands (`remix`, `storyboard`, Chidi)** pass against llama3.1:8b and gemma4:12b (P2-04, tasks D1 to D3).
+- **Model choice:** onboarding asks for a provider and model; Samwise Chat and Chidi have a model picker, which
+  lists the Ollama install's models (it was empty until session 17's fix).
 - **Samwise Chat** (`samwise -c`, `resources/scripts/apps/samwise_chat/`): works end to end. Messages go to the
   kernel as JSON on stdin, so quotes, `$HOME` and `$(...)` reach the model verbatim and nothing runs (P2-20, D-019).
-  Before this session a chat message could execute shell commands.
+  Before session 13 a chat message could execute shell commands.
 - **Colour:** `tree -C` colours directories, symlinks and executables; the terminal renders ANSI SGR codes as
   spans, as text only (P1-14, D-023). **The prompt** reads `user@FractalOS:~$` and `root@FractalOS:~#` (P1-13).
 - **`sudo` with a password** works again (a rename had broken it; diag caught it).
@@ -100,7 +108,13 @@ _Last updated: 2026-09-27, end of session 16 (P1-10: `www/` move, P1-12: `jsnull
 
 ## Next steps (in order)
 
-1. Implement a model selection UI for Chidi/Samwise (suggested feature).
+1. **P1-16:** make `tests/smoke.js` fail on uncaught page errors (the empty model picker hid behind a passing run).
+2. **P2-22 and P2-23:** llama's remaining misses: `import numpy` in A3; a redundant `rmdir` after a successful
+   `rm -r` in C2. Measure with `AGENT_TASKS=A3` / `C2` over several runs.
+3. **P1-15:** `ls -F` (gemma planned it; `ls` treated it as a path).
+4. A manual pass over the apps (TESTING.md, "Manual checks"), including onboarding's new AI step and the model
+   pickers in Samwise Chat and Chidi.
+5. With a Gemini key: `AGENT_PROVIDER=gemini node tests/agent.js`.
 
 ## Open questions for the user
 
@@ -110,6 +124,36 @@ _Last updated: 2026-09-27, end of session 16 (P1-10: `www/` move, P1-12: `jsnull
 ---
 
 ## Session log
+
+Newest first. Copy the template for each new session.
+
+### Session 17: 2026-09-27: P2-21 closed with a check, not only a prompt (D-024); two regressions from sessions 15-16 fixed
+
+**Goal:** The owner: "continue with P2-21". Session 14 had ticked it with persona guidance but never measured it.
+**Done:**
+- Measured first: C2 ×5 on llama3.1:8b, current code: 4 PASS, 1 `cd garden` + `rm -r *`. Guidance alone was
+  not enough. A full run then showed a new variant, `rm -r .`, which FractalOS's `rm` executed by deleting the
+  current directory; `rm -rf ..` deleted the caller's home.
+- D-024: `validate_plan` rejects `rm` of `*`, `.`, `..`, so P2-17's retry re-plans; `rm` refuses `.`, `..`, `/`.
+  Man page updated. 3 unit tests and 9 smoke checks, each failing on the old code.
+- Evidence: C2 10/10 twice; injected bad first plan corrected 5/5; full runs llama 9/10, 10/10, 10/10 and
+  gemma 10/10 twice, with `rm -r .` once and `rm -r *` twice rejected and corrected unprompted.
+- `tests/agent.js`: `AGENT_TASKS` selects tasks. D3 called `kernel.chidi_analysis`, deleted in session 16, and
+  aborted every full run since, so session 15's 10/10 did not hold on current `main`; D3 now makes the Chidi app's
+  syscall, and must mention the file's content.
+- The model pickers from `93bae32` never filled: `AIManager.getAvailableModels` returned the syscall envelope, not
+  the list. Fixed; smoke check added (fails without the fix).
+**Changed:** `resources/core/ai_manager.py`, `commands/rm.py`, `scripts/ai_manager.js`, `tests/agent.js`,
+`tests/agent_unit.py` (24 → 26), `tests/smoke.js` (75 → 85), DECISIONS (D-024), ROADMAP (P2-21; P1-15, P1-16,
+P2-22, P2-23 new), TESTING, CHANGELOG, AGENTS.md, this file.
+**Decisions:** D-024.
+**Problems / surprises**
+- The smoke run printed `[pageerror] models.includes is not a function` and still said PASS (P1-16).
+- `rm -r .` is not a model quirk to prompt away: it was an OS bug any user could hit.
+- In C1, a rejected `rm -r *` came back as `rm -r /home/gordon/garden` and the brake still disengaged: retries do
+  not get around the voltage brake.
+**Left undone:** P2-22, P2-23, P1-15, P1-16, the manual pass, Gemini.
+**Next session should start with:** "Next steps" above, item 1.
 
 ### Session 16: 2026-09-27: Housekeeping (P1-12, P1-10)
 
@@ -136,7 +180,6 @@ _Last updated: 2026-09-27, end of session 16 (P1-10: `www/` move, P1-12: `jsnull
 - **Outcome**: P2-04 complete. Transcript recorded in `tests/out/agent-transcript.md`.
 
 - **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `samwise` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
-Newest first. Copy the template for each new session.
 
 ### Session 14: 2026-09-27: Agent hardening (P2-21, P2-18), Configurable Gemini (P2-05), Structure check (P1-11)
 

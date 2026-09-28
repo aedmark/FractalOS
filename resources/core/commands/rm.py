@@ -25,7 +25,14 @@ def run(args, flags, user_context, **kwargs):
     output_messages = []
 
     for path in args:
+        # Like GNU rm: never '.' or '..' (they name the directory you are in or above), never '/'.
+        if path.rstrip('/').rsplit('/', 1)[-1] in ('.', '..'):
+            output_messages.append(f"rm: refusing to remove '.' or '..' directory: skipping '{path}'")
+            continue
         abs_path = fs_manager.get_absolute_path(path)
+        if abs_path == '/':
+            output_messages.append("rm: it is dangerous to operate recursively on '/'")
+            continue
         node = fs_manager.get_node(abs_path)
 
         if not node:
@@ -73,6 +80,8 @@ SYNOPSIS
 
 DESCRIPTION
     Removes each specified file. By default, it does not remove directories.
+    It refuses to remove '.' or '..' (the directory you are in, or its parent)
+    and '/'. To delete a directory, name it: rm -r old_project
 
 OPTIONS
     -f, --force

@@ -205,6 +205,21 @@ class AgentTests(unittest.TestCase):
         self.assertIn('no numbered plan', result['error'])
         self.assertNotIn('Sorry', result.get('data', ''))
 
+    # P2-21: `rm` of `*`, `.` or `..` deletes through the current directory; the plan is rejected and retried.
+    def test_rm_star_is_rejected(self):
+        for command in ['rm -r *', 'rm *', 'rm -rf /home/test/garden/*', 'rm -r garden/* || true',
+                        'rm -r .', 'rm -rf ..', 'rm -r ./', 'rm -r /home/test/garden/.']:
+            self.assertIn('by name', self.am.validate_plan([command]) or '', command)
+        for command in ['rm -r /home/test/garden', 'rm /home/test/garden/*.txt', 'rm notes.txt']:
+            self.assertIsNone(self.am.validate_plan([command]), command)
+
+    def test_rm_star_is_retried_as_delete_by_name(self):
+        result, calls = self.run_replies(['1. cd /home/test/garden\n2. rm -r *', '1. rm -r /home/test/garden'],
+                                         force_override=True)
+        self.assertTrue(result['success'], result)
+        self.assertEqual([c[0] for c in self.executor.calls], ['rm -r /home/test/garden'])
+        self.assertIn('by name', calls[1][-1]['parts'][0]['text'])
+
     def test_direct_answer_on_first_try_is_kept(self):
         result, calls = self.run_replies(['Paris is the capital of France.'], agent=True)
         self.assertTrue(result['success'])
