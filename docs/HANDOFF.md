@@ -5,7 +5,7 @@ The session log below it is append-only history.
 
 Protocol: see [AGENTS.md](../AGENTS.md) (`CLAUDE.md` imports it). Plan: [ROADMAP.md](ROADMAP.md).
 Decisions: [DECISIONS.md](DECISIONS.md).
-Tests: [TESTING.md](TESTING.md).
+Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ---
 

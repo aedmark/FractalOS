@@ -27,6 +27,9 @@ Sessions are short-lived and context resets between them, so the repo carries th
 2. Rewrite the **Current state** and **Next steps** sections of `docs/HANDOFF.md` so they are true right now.
 3. Add a session-log entry at the top of the log using the template in HANDOFF.md.
 4. Never leave "Current state" describing something that is no longer true. Handoff docs that lie are worse than none.
+5. When the user asks for a devlog entry (usually at a milestone or the end of a working day), add a new
+   `<article class="dev-diary">` at the top of `docs/devlog.html`, in the same plain, first-person voice as the
+   entries below it. It is written for readers, not agents: say what changed and why it matters, not file names.
 
 ## Layout
 
@@ -62,6 +65,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `docs/HANDOFF.md` | Current state, next steps, session log |
 | `docs/DECISIONS.md` | Append-only decision record |
 | `docs/TESTING.md` | How to run and read the tests, and the pitfalls already hit |
+| `docs/devlog.html` | The public dev diary, newest entry first (HTML fragments, one `<article>` per entry) |
 | `README.md`, `docs/CONTRIBUTING.md`, `docs/CHANGELOG.md` | Public-facing docs. Keep them consistent with the files above; they do not replace them |
 
 ## How a command runs

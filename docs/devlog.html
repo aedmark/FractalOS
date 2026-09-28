@@ -1,0 +1,559 @@
+<!--
+  FractalOS dev diary. Newest entry first. Each entry is one
+  <article class="dev-diary">; copy the newest one's shape for the next.
+  Entries before 2026-09-27 were written retroactively from the git history
+  and the session log in docs/HANDOFF.md.
+-->
+
+<article class="dev-diary">
+  <header>
+    <h1>FractalOS Dev Diary: Samwise Learns Some Manners</h1>
+    <p class="date">September 27, 2026</p>
+    <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
+  </header>
+
+  <p>
+    Four days ago FractalOS was a pile of ideas that had never been run
+    end to end. Today every automated test passes, a local language model
+    can drive the whole system through ten graded tasks, and the list of
+    known holes is short enough to read in one sitting.
+  </p>
+
+  <p>
+    This entry covers the last round of work and where things stand.
+  </p>
+
+  <h2>Learning from the Last Mistake</h2>
+
+  <p>
+    Yesterday's testing showed that the smaller model, llama3.1:8b, had a
+    habit worth breaking. Asked to delete a folder, it would step inside it
+    and delete everything there, leaving an empty folder behind. The plan
+    was perfectly legal, so none of the safety checks objected. It just
+    didn't do what was asked.
+  </p>
+
+  <p>
+    Samwise's instructions now say plainly: delete a directory by its name,
+    never by stepping into it and deleting <code>*</code>, and always use
+    full paths.
+  </p>
+
+  <p>
+    Samwise also has a short-term memory for failure. When a step goes wrong,
+    the error is kept, and the next time the model is asked for a plan it is
+    told, in effect, "this is what went wrong last time; don't do it again."
+    A successful run clears the note. Internally we call this scar tissue.
+  </p>
+
+  <h2>Every AI Command Gets Tested</h2>
+
+  <p>
+    Samwise isn't the only part of FractalOS that talks to a model.
+    <code>remix</code>, <code>storyboard</code> and the Chidi document reader
+    do too, and until now nobody had ever run them against a real one.
+  </p>
+
+  <p>
+    The agent test run now includes all three. The latest run against
+    llama3.1:8b passed all ten tasks. That model varies from run to run, so
+    one clean sweep is encouraging rather than conclusive; more runs will
+    tell.
+  </p>
+
+  <h2>Choosing Your Own Model</h2>
+
+  <p>
+    Until now the AI provider and model lived in a config file most people
+    would never find. The first-run setup now has an AI step: pick Ollama
+    (local) or Gemini (cloud), and optionally a model name. Samwise Chat and
+    Chidi gained a model picker that lists the models your Ollama install
+    actually has.
+  </p>
+
+  <p>
+    The Gemini model is no longer hard-coded either, though it is still the
+    one path nobody has tested: we have never run FractalOS with a Gemini
+    key.
+  </p>
+
+  <h2>Sweeping Up</h2>
+
+  <ul>
+    <li>
+      A new structural test checks that every one of the 124 commands has
+      both a <code>run</code> function and a manual page. It immediately
+      caught <code>true</code>, which had no manual page.
+    </li>
+    <li>
+      About 120 lines of old kernel functions, exposed to the browser but
+      called by nothing, are gone. Everything now crosses between JavaScript
+      and Python through two doors, which makes the boundary much easier to
+      reason about.
+    </li>
+    <li>
+      The stock Neutralino template folder moved out of the project root and
+      into <code>neutralino/</code>, where it belongs.
+    </li>
+  </ul>
+
+  <h2>Where the Project Stands</h2>
+
+  <p>Every automated suite is green:</p>
+
+  <ul>
+    <li>Structure checks: pass</li>
+    <li>Browser smoke test: 75 of 75</li>
+    <li>The in-OS diagnostic script: 40 passed, 0 failed</li>
+    <li>Agent unit tests: 24 pass; grader self-test: 22 cases pass</li>
+    <li>Real-model agent run (llama3.1:8b): 10 of 10</li>
+  </ul>
+
+  <p>What has <em>not</em> been checked is just as important:</p>
+
+  <ul>
+    <li>Anything involving a Gemini key</li>
+    <li>
+      The graphical apps by hand: the editor, paint, the adventure engine,
+      <code>top</code>, BASIC and Chidi
+    </li>
+    <li>Sounds, themes, and the portable desktop build</li>
+    <li>Firefox and Safari</li>
+  </ul>
+
+  <h2>Next: Hands on the Apps</h2>
+
+  <p>
+    The agent has had most of the attention this week. Next it's time to sit
+    down with the apps themselves, one at a time, finish the model-selection
+    work, and get a Gemini key through the full test run.
+  </p>
+
+  <p>
+    Two bigger questions are still open: what "long-term memory" should mean
+    for Samwise, and whether the agent should eventually be allowed any
+    command a user can run, with the voltage brake as its only limit.
+  </p>
+</article>
+
+<article class="dev-diary">
+  <header>
+    <h1>FractalOS Dev Diary: Closing the Back Doors</h1>
+    <p class="date">September 26, 2026</p>
+    <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
+  </header>
+
+  <p>
+    When you give a language model a shell, the interesting bugs are not the
+    ones where something crashes. They are the ones where something works
+    that shouldn't. Today was mostly about those.
+  </p>
+
+  <h2>A Chat Window That Could Run Commands</h2>
+
+  <p>
+    Samwise Chat is the conversational side of Samwise: you type, the model
+    answers. Under the hood, the chat app pasted your message into a shell
+    command line and ran it.
+  </p>
+
+  <p>
+    That meant a message containing <code>$(touch hello)</code> didn't reach
+    the model at all. The shell ran it first and created the file.
+    <code>$HOME</code> was replaced by your home directory, and quotation
+    marks disappeared.
+  </p>
+
+  <p>
+    Messages now travel to the kernel as a sealed package of data, never as
+    part of a command line. What you type is exactly what the model reads.
+    This is now a rule for every app: user text never goes on the command
+    line.
+  </p>
+
+  <h2>A Rehearsal That Wasn't</h2>
+
+  <p>
+    <code>samwise --dry-run</code> is supposed to show what Samwise would do
+    without doing it. In practice agent mode ran the plan anyway, and
+    autopilot ignored the flag entirely.
+  </p>
+
+  <p>
+    Planning and doing are now two separate steps inside Samwise. A dry run
+    stops after planning and reports the plan, which steps would ask
+    permission first, the plan's voltage, and whether the safety brake would
+    engage. It runs nothing, even when combined with <code>--force</code>.
+  </p>
+
+  <h2>Waiting Forever</h2>
+
+  <p>
+    If the model server stalled, Samwise stalled with it, forever. The
+    timeout in the code had never done anything: the function it was passed
+    to quietly ignores that setting.
+  </p>
+
+  <p>
+    Model calls now give up after two minutes by default, adjustable in
+    <code>/etc/ai.conf</code>. The error messages also got a lot more useful.
+    Instead of a generic failure, you now see things like "can't reach Ollama
+    at localhost:11434", or a reminder to run <code>ollama pull</code> for a
+    model you don't have.
+  </p>
+
+  <h2>A Second Chance for a Bad Plan</h2>
+
+  <p>
+    FractalOS checks every plan before running any of it. Until today, a
+    rejected plan was simply the end of the conversation. Now the model is
+    told why its plan was rejected and gets up to two more tries.
+  </p>
+
+  <p>
+    The safety brake is the exception. A plan that is stopped for being too
+    destructive is not retried. Asking again until the model finds a way
+    around the brake would defeat the purpose of having one.
+  </p>
+
+  <h2>Small Things That Matter</h2>
+
+  <ul>
+    <li>
+      <strong><code>sudo</code> with a password had stopped working</strong>
+      after a rename. The in-OS diagnostic script caught it the first time
+      it ran.
+    </li>
+    <li>
+      <strong>The prompt had read <code>~\$</code> instead of
+      <code>~$</code></strong> since the very first commit, and never showed
+      <code>#</code> for root.
+    </li>
+    <li>
+      <strong>The <code>gemini</code> command is now <code>samwise</code>
+      everywhere.</strong> "Gemini" now only means Google's model provider.
+      The chat app, which the rename had broken completely, works again.
+    </li>
+    <li>
+      <strong>The terminal speaks colour.</strong> llama3.1:8b kept trying
+      <code>tree -C</code> in its plans. FractalOS's <code>tree</code> had
+      no <code>-C</code>, so we added it: directories, links and executables
+      are now coloured, and the terminal renders standard ANSI colour codes
+      for any command that wants them.
+    </li>
+  </ul>
+
+  <h2>How Each Fix Was Proven</h2>
+
+  <p>
+    Every fix today came with a test, and every test was checked the hard
+    way: put the bug back and confirm the test fails. A test that passes
+    either way proves nothing.
+  </p>
+
+  <p>
+    Running the agent tests over and over also showed something worth
+    knowing. The larger model, gemma4:12b, passed all seven tasks every
+    time. llama3.1:8b scored between five and seven. Its misses were bad
+    plans of its own, not faults in the OS, and that set up tomorrow's work.
+  </p>
+</article>
+
+<article class="dev-diary">
+  <header>
+    <h1>FractalOS Dev Diary: Handing a Model the Keys</h1>
+    <p class="date">September 25, 2026</p>
+    <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
+  </header>
+
+  <p>
+    FractalOS was always meant to be an operating system with a language
+    model at the centre. Today, for the first time, a real model actually
+    drove it.
+  </p>
+
+  <h2>The Agent That Never Acted</h2>
+
+  <p>
+    The AI command (then called <code>gemini</code>, now
+    <code>samwise</code>) has two modes. <em>Autopilot</em> plans and runs
+    commands on its own, watched by a safety brake. <em>Agent mode</em> plans,
+    asks permission for risky steps, runs the plan, then summarises what it
+    found.
+  </p>
+
+  <p>
+    While giving the agent access to the new <code>python</code> command, I
+    found that agent mode had never run a single plan. The code that reads a
+    numbered plan out of the model's reply was broken by 58 doubled
+    backslashes, a copy-and-paste accident, so no plan line ever matched.
+    The model's plan was simply handed back as the answer. The same accident
+    had put literal <code>\n</code> characters into every prompt sent to
+    Ollama.
+  </p>
+
+  <h2>A Test Track for the Agent</h2>
+
+  <p>
+    To stop guessing, I built a test track: seven tasks such as "create a
+    file", "move this into a folder" and "delete this directory". Each run
+    is graded by looking at what actually changed in the file system, not by
+    what the model says it did. Every prompt, reply and timing is saved to a
+    transcript.
+  </p>
+
+  <p>
+    A stand-in model server answers with canned plans, so the plumbing can
+    be tested without a real model. That alone found two bugs:
+  </p>
+
+  <ul>
+    <li>
+      <strong>The agent always thought it was in <code>/</code>.</strong>
+      The step that looks around before planning reset the current directory
+      to the root. Every plan the OS ever built said "Current Directory: /".
+    </li>
+    <li>
+      <strong>Agent mode crashed instead of asking permission.</strong> The
+      confirmation dialog for risky commands had never once appeared.
+    </li>
+  </ul>
+
+  <h2>Meeting Real Models</h2>
+
+  <p>
+    Then came the real thing, with two local models through Ollama.
+  </p>
+
+  <p>
+    gemma4:12b "thinks" before answering by default, and it spent its entire
+    output budget thinking: 3,296 tokens, 74 seconds, and an empty reply.
+    With thinking switched off, the same request produced a clean two-line
+    plan in one second.
+  </p>
+
+  <p>
+    llama3.1:8b was quick and obedient in autopilot, but chatty in agent
+    mode. The OS tried to run its explanations as commands.
+  </p>
+
+  <p>
+    Neither model was the real problem, though. The real problem was what
+    they revealed:
+  </p>
+
+  <ul>
+    <li>
+      The safety brake scored the <em>words</em> in a plan, not the
+      operations. Rearranging the flags of an <code>rm</code> command changed
+      its danger score from 60 to 10.
+    </li>
+    <li>
+      Autopilot ran a plan line by line and carried on after a failed step.
+    </li>
+    <li>
+      <code>forge</code>, the file-writing tool built for the AI, mangled
+      Python code that contained its own escaped strings.
+    </li>
+    <li>
+      The planner was told about commands it wasn't allowed to use.
+    </li>
+  </ul>
+
+  <h2>Rebuilding the Brakes</h2>
+
+  <p>
+    Each of those is now fixed:
+  </p>
+
+  <ol>
+    <li>Plans are checked in full before the first step runs</li>
+    <li>Execution stops at the first failed step</li>
+    <li>The brake prices the operation itself, whatever its spelling</li>
+    <li>
+      Before autopilot writes anything, it saves a real, verified checkpoint
+      of your home directory
+    </li>
+    <li>
+      Agent mode picks up the plan where it left off after you say "yes"
+    </li>
+    <li>The planner sees exactly the tools it may use</li>
+  </ol>
+
+  <p>
+    By the end of the day both models passed all seven tasks, and the AI
+    command had its new name: <code>samwise</code>.
+  </p>
+</article>
+
+<article class="dev-diary">
+  <header>
+    <h1>FractalOS Dev Diary: Clearing the Attic</h1>
+    <p class="date">September 24, 2026</p>
+    <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
+  </header>
+
+  <p>
+    FractalOS sat quietly for most of the year. Coming back to it, the first
+    job was not new features. It was making the project something a person
+    (or an AI coding agent) could pick up, understand, and trust.
+  </p>
+
+  <h2>415 Megabytes of Python We Didn't Use</h2>
+
+  <p>
+    FractalOS runs a real Python interpreter inside the browser, using
+    Pyodide. The project carried a full copy of it: 413 files, 415 MB, and
+    hundreds of packages the OS never loads.
+  </p>
+
+  <p>
+    It now carries 9 files and 16 MB: the interpreter itself plus the one
+    package the kernel needs, the cryptography library used for passwords.
+    It is also newer, moving from Python 3.13 to Python 3.14.
+  </p>
+
+  <p>
+    The old copies still lived on in the git history, so a fresh clone
+    downloaded 335 MB. With some careful history surgery, a clone is now
+    about 9 MB.
+  </p>
+
+  <h2>Writing Things Down</h2>
+
+  <p>
+    The project now has a small set of working documents:
+  </p>
+
+  <ul>
+    <li>A roadmap, with a permanent ID for every item</li>
+    <li>A decision record, explaining <em>why</em> things are the way they are</li>
+    <li>A testing guide, including every trap already fallen into</li>
+    <li>
+      A handoff note, rewritten at the end of every session, so the next
+      session (mine or an agent's) starts from the truth
+    </li>
+  </ul>
+
+  <p>
+    This diary is the newest member of that family.
+  </p>
+
+  <h2>Tests That Run Themselves</h2>
+
+  <p>
+    FractalOS already had a 1,400-line diagnostic script that exercises its
+    commands from inside the OS. The catch was that someone had to open the
+    OS, log in and run it by hand.
+  </p>
+
+  <p>
+    A headless browser now does all of that: it boots FractalOS, completes
+    the first-run setup, logs in as root, runs the script, and grades every
+    line. First result: 40 passed, 0 failed, and nothing in the kernel needed
+    changing for Python 3.14.
+  </p>
+
+  <p>
+    A quick smoke test and a structure check joined it. The structure check
+    catches the most common mistake in this codebase: adding a file and
+    forgetting to register it. The list of kernel files is now generated,
+    not typed by hand.
+  </p>
+
+  <h2>Python Inside the OS</h2>
+
+  <p>
+    The README had promised Python inside FractalOS for a while. Now it's
+    real. <code>python script.py</code>, <code>python -c "..."</code>, or
+    piping code in all work, running in the same interpreter as the kernel.
+  </p>
+
+  <p>
+    <code>open()</code> reads and writes the FractalOS file system and
+    respects its permissions. A step budget stops a runaway loop before it
+    can freeze the page.
+  </p>
+
+  <p>
+    Building it turned up an old bug. When JavaScript passed "nothing" to
+    Python, Python didn't see nothing: it saw a special stand-in object.
+    Commands that asked "was I given any input?" got the wrong answer, and
+    <code>wc</code> with no input crashed. It is now converted once, at the
+    front door, for every command.
+  </p>
+</article>
+
+<article class="dev-diary">
+  <header>
+    <h1>FractalOS Dev Diary: It's Alive!</h1>
+    <p class="date">December 27, 2025</p>
+    <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
+  </header>
+
+  <p>
+    FractalOS is an operating system that runs in a web browser, built
+    around a simple idea: instead of memorising commands, you talk to the
+    system, and a language model helps it act on your behalf.
+  </p>
+
+  <h2>Two Halves, One Contract</h2>
+
+  <p>
+    The heart of FractalOS is a Python kernel running inside the browser. It
+    owns everything that matters: the file system, users and permissions,
+    processes, and roughly 120 commands.
+  </p>
+
+  <p>
+    The JavaScript side is the stage manager. It draws the terminal and the
+    windows, plays sounds, and handles the browser.
+  </p>
+
+  <p>
+    The two meet through what I call the effect contract. When the kernel
+    wants something only the browser can do, like playing a chord or opening
+    an editor, it doesn't reach into the page. It returns a short
+    description of the effect it wants, and the front end carries it out.
+    This keeps the logic testable and the display replaceable.
+  </p>
+
+  <h2>The First Apps</h2>
+
+  <p>
+    The first public version, in November, arrived with a text editor, a
+    paint program, a process viewer, a text adventure engine, a BASIC
+    interpreter, and Chidi, a reader that can answer questions about your
+    documents. It can also run as a desktop app through Neutralinojs,
+    saving to real files instead of browser storage.
+  </p>
+
+  <h2>BoneAmanita Takes the Wheel</h2>
+
+  <p>
+    The big addition over the holidays was an autopilot. You describe what
+    you want, and the model plans and runs the commands itself.
+  </p>
+
+  <p>
+    Letting a model loose on a file system needs a conscience, so every plan
+    is given a "voltage": a risk score. Listing files is low voltage;
+    deleting them is high. Past a threshold, autopilot refuses to continue
+    unless you force it.
+  </p>
+
+  <p>
+    <code>forge</code>, the file-writing command, was reworked for the
+    model's use, so it can write whole files cleanly instead of wrestling
+    code through <code>echo</code> and redirection.
+  </p>
+
+  <h2>What Comes Next</h2>
+
+  <p>
+    It runs. The autopilot plans, the kernel executes, and the terminal
+    shows the result. Whether all of it works as intended, and whether the
+    brakes hold when a real model is driving, is a question for proper
+    tests.
+  </p>
+</article>
