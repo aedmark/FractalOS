@@ -202,9 +202,9 @@ yet; these are placeholders for the owner to shape.
 
 ## Phase 4: Packages and extensibility
 
-- [ ] P4-01 Package management: define what a package is (a command file? an app? a Pyodide wheel?), how it is
+- [x] P4-01 Package management: define what a package is (a command file? an app? a Pyodide wheel?), how it is
   installed into the VFS, and how `/etc/pkg_manifest.json` feeds `help` and tab completion
-- [ ] P4-02 Loading extra Pyodide wheels at runtime from `resources/dep/pyodide/` for packages that need them,
+- [x] P4-02 Loading extra Pyodide wheels at runtime from `resources/dep/pyodide/` for packages that need them,
   with the lock file kept honest (D-004)
 
 ## Phase 5: Networking and portable mode (open questions)

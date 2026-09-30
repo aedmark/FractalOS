@@ -63,7 +63,22 @@ const FractalOS_Kernel = {
                 indexURL: pyodideIndexURL
             });
 
-            await this.pyodide.loadPackage(["cryptography"]);
+            let packagesToLoad = ["cryptography"];
+            try {
+                const manifestNode = await FileSystemManager.getNode("/etc/pkg_manifest.json");
+                if (manifestNode && manifestNode.content) {
+                    const manifest = JSON.parse(manifestNode.content);
+                    for (const pkgName of Object.keys(manifest)) {
+                        if (manifest[pkgName].wheels && Array.isArray(manifest[pkgName].wheels)) {
+                            packagesToLoad.push(...manifest[pkgName].wheels);
+                        }
+                    }
+                }
+            } catch(e) {
+                console.warn("Failed to parse pkg_manifest.json for wheels:", e);
+            }
+            packagesToLoad = [...new Set(packagesToLoad)];
+            await this.pyodide.loadPackage(packagesToLoad);
             await OutputManager.appendToOutput("Python runtime loaded. Loading kernel...", { typeClass: Config.CSS_CLASSES.CONSOLE_LOG_MSG });
 
             this.pyodide.FS.mkdir('/core');
@@ -86,8 +101,11 @@ const FractalOS_Kernel = {
             this.kernel = this.pyodide.pyimport("kernel");
             this.kernel.initialize_kernel(this.saveFileSystemToDB.bind(this));
 
-            const pythonCommands = this.kernel.MODULE_DISPATCHER["executor"].commands.toJs();
-            Config.COMMANDS_MANIFEST.push(...pythonCommands);
+            const pythonCommandsJson = await this.kernel.syscall_handler(JSON.stringify({ module: "executor", "function": "get_all_commands", args: [], kwargs: {} }));
+            const parsedCommands = JSON.parse(pythonCommandsJson);
+            if (parsedCommands.success && parsedCommands.data) {
+                Config.COMMANDS_MANIFEST.push(...parsedCommands.data);
+            }
             Config.COMMANDS_MANIFEST.sort();
 
             try {

@@ -558,6 +558,21 @@ async function handleEffect(result, options) {
             break;
         }
 
+        case "update_commands_manifest":
+            try {
+                const request = { module: "executor", "function": "get_all_commands" };
+                const res = await FractalOS_Kernel.syscall_handler(JSON.stringify(request));
+                const parsed = JSON.parse(res);
+                if (parsed.success && parsed.data) {
+                    Config.COMMANDS_MANIFEST = parsed.data;
+                    Config.COMMANDS_MANIFEST.push(...Config.JS_NATIVE_COMMANDS);
+                    Config.COMMANDS_MANIFEST.sort();
+                }
+            } catch (e) {
+                console.error("Failed to update commands manifest:", e);
+            }
+            break;
+
         case 'toggle_cinematic_mode':
             UIStateManager.toggleCinematicMode(result.mode);
             break;

@@ -7,7 +7,8 @@ def run(args, flags, user_context, stdin_data=None, commands=None, **kwargs):
     if args:
         cmd_name = args[0]
         try:
-            command_module = import_module(f"commands.{cmd_name}")
+            from kernel import MODULE_DISPATCHER
+            command_module = MODULE_DISPATCHER["executor"]._load_command_module(cmd_name)
             help_func = getattr(command_module, 'help', None)
 
             if help_func and callable(help_func):

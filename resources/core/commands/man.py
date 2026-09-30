@@ -16,7 +16,8 @@ def run(args, flags, user_context, **kwargs):
     cmd_name = args[0]
 
     try:
-        command_module = import_module(f"commands.{cmd_name}")
+        from kernel import MODULE_DISPATCHER
+        command_module = MODULE_DISPATCHER["executor"]._load_command_module(cmd_name)
         man_func = getattr(command_module, 'man', None)
 
         if man_func and callable(man_func):

@@ -24,6 +24,21 @@ class CommandExecutor:
     def set_ai_manager(self, ai_manager_instance):
         self.ai_manager = ai_manager_instance
 
+    def get_all_commands(self):
+        all_commands = list(self.commands)
+        pkg_node = self.fs_manager.get_node("/etc/pkg_manifest.json")
+        if pkg_node:
+            try:
+                import json
+                manifest = json.loads(pkg_node.get("content", "{}"))
+                for c in manifest.keys():
+                    if c not in all_commands:
+                        all_commands.append(c)
+                all_commands.sort()
+            except:
+                pass
+        return all_commands
+
     def set_js_native_commands(self, command_list):
         self.js_native_commands = set(command_list)
 
@@ -54,7 +69,7 @@ class CommandExecutor:
         if command_name in self._flag_def_cache:
             return self._flag_def_cache[command_name]
         try:
-            command_module = import_module(f"commands.{command_name}")
+            command_module = self._load_command_module(command_name)
             define_func = getattr(command_module, 'define_flags', None)
             if define_func and callable(define_func):
                 definitions = define_func()
@@ -469,6 +484,18 @@ class CommandExecutor:
         if metadata.get('root_required') and self.user_context.get('name') != 'root':
             return json.dumps({"success": False, "error": f"{command_name}: permission denied. You must be root to run this command."})
 
+        all_commands = list(self.commands)
+        pkg_node = self.fs_manager.get_node("/etc/pkg_manifest.json")
+        if pkg_node:
+            try:
+                manifest = json.loads(pkg_node.get("content", "{}"))
+                for c in manifest.keys():
+                    if c not in all_commands:
+                        all_commands.append(c)
+                all_commands.sort()
+            except:
+                pass
+                
         kwargs_for_run = {
             "users": self.users,
             "user_groups": self.user_groups,
@@ -479,7 +506,7 @@ class CommandExecutor:
             "api_key": self.api_key,
             "session_start_time": self.session_start_time,
             "session_stack": self.session_stack,
-            "commands": self.commands,
+            "commands": all_commands,
             "signal": signal
         }
         result = await self.run_command_by_name(
@@ -504,15 +531,25 @@ class CommandExecutor:
             )
 
         if command_name not in self.commands:
-            return json.dumps({
-                "success": False,
-                "error": {
-                    "message": f"{command_name}: command not found",
-                    "suggestion": "Check the spelling or run 'help' to see all available commands."
-                }
-            })
+            is_pkg = False
+            pkg_node = self.fs_manager.get_node("/etc/pkg_manifest.json")
+            if pkg_node:
+                try:
+                    manifest = json.loads(pkg_node.get("content", "{}"))
+                    if command_name in manifest:
+                        is_pkg = True
+                except:
+                    pass
+            if not is_pkg:
+                return json.dumps({
+                    "success": False,
+                    "error": {
+                        "message": f"{command_name}: command not found",
+                        "suggestion": "Check the spelling or run 'help' to see all available commands."
+                    }
+                })
         try:
-            command_module = import_module(f"commands.{command_name}")
+            command_module = self._load_command_module(command_name)
             run_func = getattr(command_module, 'run', None)
             if not run_func:
                 return json.dumps({"success": False, "error": f"Command '{command_name}' is not runnable."})
@@ -543,5 +580,31 @@ class CommandExecutor:
                     "suggestion": "An internal error occurred in the command. Please check your arguments."
                 }
             })
+
+
+    def _load_command_module(self, command_name):
+        from importlib import import_module
+        try:
+            return import_module(f"commands.{command_name}")
+        except ImportError:
+            # Check user packages
+            pkg_path = f"/etc/packages/commands/{command_name}.py"
+            node = self.fs_manager.get_node(pkg_path)
+            if node and node.get("type") == "file":
+                content = node.get("content", "")
+                import importlib.util
+                import sys
+                spec = importlib.util.spec_from_loader(command_name, loader=None)
+                module = importlib.util.module_from_spec(spec)
+                # To support internal imports if needed
+                sys.modules[f"commands.{command_name}"] = module
+                try:
+                    exec(content, module.__dict__)
+                    return module
+                except Exception as e:
+                    import traceback
+                    tb = traceback.format_exc()
+                    raise ImportError(f"Failed to execute package {command_name}:\n{e}\n{tb}")
+            raise ImportError(f"No module named {command_name}")
 
 command_executor = CommandExecutor()
