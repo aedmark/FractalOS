@@ -77,15 +77,21 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
         source = args[1]
         content = None
         
+        DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/aedmark/fractalos-packages/main/packages"
+
         if source.startswith("http://") or source.startswith("https://"):
             content, err = await _fetch_url(source)
             if err:
                 return {"success": False, "error": {"message": f"pkg install: failed to fetch URL", "suggestion": err}}
         else:
             node = fs_manager.get_node(source)
-            if not node or node.get("type") != "file":
-                return {"success": False, "error": {"message": f"pkg install: file '{source}' not found", "suggestion": "Check the path."}}
-            content = node.get("content", "")
+            if node and node.get("type") == "file":
+                content = node.get("content", "")
+            else:
+                registry_url = f"{DEFAULT_REGISTRY_URL}/{source}.py"
+                content, err = await _fetch_url(registry_url)
+                if err or not content or content.strip() == "404: Not Found" or content.startswith("404:"):
+                    return {"success": False, "error": {"message": f"pkg install: package '{source}' not found locally or in registry.", "suggestion": f"Checked local path and {registry_url}"}}
             
         # Parse the package
         import importlib.util
@@ -170,10 +176,11 @@ DESCRIPTION
 
 EXAMPLES
     pkg list
+    pkg install <name>          # Fetches from official fractalos-packages repo
     pkg install https://example.com/my_command.py
     pkg install /home/guest/my_script.py
     pkg remove my_script
 """
 
 def help(args, flags, user_context, **kwargs):
-    return "Usage: pkg [list | install <url|path> | remove <name>]"
+    return "Usage: pkg [list | install <name|url|path> | remove <name>]"
