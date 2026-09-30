@@ -11,12 +11,12 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-The core OS, the VFS, accounts, permissions, testing, and Phases 1, 2, 3, and 4 are complete. 
-A package manager (`pkg`) now exists allowing runtime installation of pure-Python command extensions. Commands are placed directly into the VFS and dynamically compiled and executed by `executor.py`. Required Pyodide wheels are resolved and loaded on OS boot.
+The core OS, the VFS, accounts, permissions, testing, and Phases 1 through 5 are complete. 
+The system supports Portable Mode (Desktop) with deep host filesystem integration via `mount host <path>`, and features a fully functional WebRTC networking stack backed by a custom signaling server.
 ## Next steps
 
-1. Read `docs/ROADMAP.md` and review Phase 5: Networking and portable mode.
-2. Decide whether the signaling server for WebSockets is in scope (P5-01).
+1. Officially declare 1.0.
+2. Define Phase 6 or enter maintenance mode.
 ## Open questions for the user
 
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
@@ -25,6 +25,18 @@ A package manager (`pkg`) now exists allowing runtime installation of pure-Pytho
 ---
 
 ## Session log
+
+### Session 22: 2026-09-30: Phase 5 (Networking and Portable Mode)
+
+**Goal:** Implement Phase 5 open questions (WebSockets, Portable Mode verification, Host Mounting).
+**Done:** P5-01, P5-02, P5-03.
+**Changed:** `extras/signaling_server.py`, `resources/core/commands/mount.py`, `resources/core/filesystem.py`, `resources/scripts/fs_manager.js`, `resources/bridge.js`, `resources/scripts/effect_handler.js`, `resources/core/commands/cat.py`, `resources/core/commands/grep.py`, `resources/core/commands/ls.py`, `resources/core/commands/edit.py`, `resources/core/commands/python.py`, `docs/ROADMAP.md`.
+**Decisions:** Built a lightweight Python WebSocket server for signaling. Verified Neutralino 6.2.0 on Linux. Implemented `mount host <dir>` using an asynchronous VFS bridge approach, adding `host_mount` and `host_file` nodes that fetch content from Neutralino's filesystem API lazily via JavaScript Promises, and updating core commands to `async def run()`.
+**Problems / surprises:** 
+- Python `open()` inside executing scripts is synchronous and cannot access the asynchronous Neutralino file API. We successfully patched `python.py`'s `open` mock to gracefully raise an `OSError(1)` if a script attempts to natively open a host-mounted file. However, `python /mnt/host/script.py` executes flawlessly because the command reads the file via the bridge before calling `exec()`.
+**Left undone:** The roadmap is officially complete!
+**Next session should start with:** Reviewing the system for 1.0 release or defining Phase 6.
+
 
 ### Session 21: 2026-09-30: Package Management (P4-01, P4-02)
 

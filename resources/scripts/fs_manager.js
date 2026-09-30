@@ -205,7 +205,7 @@ class FileSystemManager {
             if (isDirectory) {
                 resultJson = await FractalOS_Kernel.syscall("filesystem", "create_directory", [absolutePath, kernelContext]);
             } else {
-                resultJson = await FractalOS_Kernel.syscall("filesystem", "write_file", [absolutePath, content, kernelContext]);
+                resultJson = await FractalOS_Kernel.syscall("filesystem", "write_file_async", [absolutePath, content, kernelContext]);
             }
             const result = JSON.parse(resultJson);
             if (result.success) {

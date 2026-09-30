@@ -89,6 +89,8 @@ def _make_open(user_context):
             raise ValueError("python: the FractalOS file system is text-only; binary modes are not supported")
         path = fs_manager.get_absolute_path(str(file))
         node = fs_manager.get_node(path)
+        if node and node.get('type') in ('host_file', 'host_mount'):
+            raise OSError(1, 'Operation not supported on host files inside Python scripts. Use shell commands instead.', path)
         wants_read = 'r' in mode or '+' in mode
         wants_write = any(m in mode for m in "wax+")
 
@@ -160,7 +162,7 @@ def _fail(message, suggestion, output=""):
     }
 
 
-def run(args, flags, user_context, stdin_data=None, **kwargs):
+async def run(args, flags, user_context, stdin_data=None, **kwargs):
     code_flag = flags.get('code')
     steps_flag = flags.get('steps')
 
@@ -173,7 +175,7 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
         if not validation.get("success"):
             return _fail(f"python: can't open '{script_path}': {validation.get('error')}",
                          "Check the path, and that you can read the file.")
-        source = validation["node"].get('content', '')
+        source = await fs_manager.get_node_content(validation["node"])
         filename = validation["resolvedPath"]
         argv = [filename] + list(args[1:])
     elif stdin_data is not None:

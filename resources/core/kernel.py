@@ -31,8 +31,9 @@ MODULE_DISPATCHER = {
     "adventure": adventure_manager, "top": top_app, "log": log_app, "basic": basic_app, "audit": audit_manager
 }
 
-def initialize_kernel(save_function):
+def initialize_kernel(save_function, read_host_function=None, write_host_function=None):
     fs_manager.set_save_function(save_function)
+    fs_manager.set_host_callbacks(read_host_function, write_host_function)
 
 async def syscall_handler(request_json):
     """

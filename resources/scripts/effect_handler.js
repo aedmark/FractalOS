@@ -541,6 +541,68 @@ async function handleEffect(result, options) {
             break;
         }
 
+        case 'mount_host':
+            if (typeof Neutralino === 'undefined') {
+                await OutputManager.appendToOutput("Error: 'mount host' is only available in portable mode.", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+            try {
+                const hostPath = await Neutralino.os.showFolderDialog('Select a folder to mount');
+                if (!hostPath) {
+                    await OutputManager.appendToOutput("Mount cancelled.");
+                    break;
+                }
+                
+                await OutputManager.appendToOutput(`Mounting ${hostPath} to ${result.mountPoint}...`);
+                
+                async function walkHostDir(currentPath) {
+                    const entries = await Neutralino.filesystem.readDirectory(currentPath);
+                    const children = {};
+                    for (const entry of entries) {
+                        if (entry.entry === '.' || entry.entry === '..') continue;
+                        const entryPath = currentPath + '/' + entry.entry;
+                        if (entry.type === 'DIRECTORY') {
+                            children[entry.entry] = {
+                                type: 'host_mount',
+                                host_path: entryPath,
+                                children: await walkHostDir(entryPath),
+                                owner: 'root', group: 'root', mode: 0o755, mtime: new Date().toISOString()
+                            };
+                        } else if (entry.type === 'FILE') {
+                            try {
+                                const stats = await Neutralino.filesystem.getStats(entryPath);
+                                children[entry.entry] = {
+                                    type: 'host_file',
+                                    host_path: entryPath,
+                                    size: stats.size,
+                                    owner: 'root', group: 'root', mode: 0o644, mtime: new Date().toISOString()
+                                };
+                            } catch(e) { console.error("Error statting", entryPath); }
+                        }
+                    }
+                    return children;
+                }
+                
+                const tree = await walkHostDir(hostPath);
+                const mountNode = {
+                    type: 'host_mount',
+                    host_path: hostPath,
+                    children: tree,
+                    owner: 'root', group: 'root', mode: 0o755, mtime: new Date().toISOString()
+                };
+                
+                const resJson = await FractalOS_Kernel.syscall("filesystem", "mount_host_tree", [result.mountPoint, mountNode]);
+                const parsed = JSON.parse(resJson);
+                if (!parsed.success) {
+                    await OutputManager.appendToOutput(`Mount failed: ${parsed.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                } else {
+                    
+                    await OutputManager.appendToOutput(`Successfully mounted to ${result.mountPoint}`, { typeClass: Config.CSS_CLASSES.SUCCESS_MSG });
+                }
+            } catch (e) {
+                await OutputManager.appendToOutput(`Mount error: ${e.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+            }
+            break;
         case 'capture_screenshot_png': {
             try {
                 const target = document.getElementById('terminal-bezel') || document.getElementById('terminal') || document.body;

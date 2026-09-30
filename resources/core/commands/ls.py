@@ -49,7 +49,7 @@ def _format_long(path, name, node, indicator=""):
 
     if node.get('type') == 'symlink':
         size_val = len(node.get('target', '').encode('utf-8'))
-    elif node.get('type') == 'file':
+    elif node.get('type') in ('file', 'host_file'):
         size_val = len(node.get('content', '').encode('utf-8'))
     else:
         size_val = 4096
@@ -88,7 +88,7 @@ def _get_sort_key_for_node(flags):
         def size_key(item):
             node = item[1]
             if node.get('type') == 'symlink': return len(node.get('target', '').encode('utf-8'))
-            if node.get('type') == 'file': return len(node.get('content', '').encode('utf-8'))
+            if node.get('type') in ('file', 'host_file'): return len(node.get('content', '').encode('utf-8'))
             return 4096
         return size_key
     if flags.get('sort-extension'): return lambda item: (os.path.splitext(item[0])[1], item[0].lower())
@@ -102,7 +102,7 @@ def _list_directory_contents(path, flags, user_context, recursive_output, all_er
 
     node = fs_manager.get_node(path, resolve_symlink=True)
 
-    if not node or node.get('type') != 'directory':
+    if not node or node.get('type') not in ('directory', 'host_mount'):
         all_errors.append(f"ls: cannot open directory '{path}': Not a directory")
         return
 
@@ -124,20 +124,20 @@ def _list_directory_contents(path, flags, user_context, recursive_output, all_er
         for name, child_node in sorted_children:
             indicator = _get_indicator(child_node) if flags.get('classify') else ""
             dir_content.append(_format_long(path, name, child_node, indicator))
-            if flags.get('recursive') and child_node.get('type') == 'directory':
+            if flags.get('recursive') and child_node.get('type') in ('directory', 'host_mount'):
                 sub_dirs_to_recurse.append(os.path.join(path, name))
     elif flags.get('one-per-line'):
         for name, child_node in sorted_children:
             indicator = _get_indicator(child_node) if flags.get('classify') else ""
             dir_content.append(name + indicator)
-            if flags.get('recursive') and child_node.get('type') == 'directory':
+            if flags.get('recursive') and child_node.get('type') in ('directory', 'host_mount'):
                 sub_dirs_to_recurse.append(os.path.join(path, name))
     else:
         names = []
         for name, child_node in sorted_children:
             indicator = _get_indicator(child_node) if flags.get('classify') else ""
             names.append(name + indicator)
-            if flags.get('recursive') and child_node.get('type') == 'directory':
+            if flags.get('recursive') and child_node.get('type') in ('directory', 'host_mount'):
                 sub_dirs_to_recurse.append(os.path.join(path, name))
         formatted_columns = _format_columns(names)
         if formatted_columns:
@@ -160,11 +160,11 @@ def run(args, flags, user_context, **kwargs):
             continue
 
         should_list_contents = False
-        if node.get('type') == 'directory' and not flags.get('directory'):
+        if node.get('type') in ('directory', 'host_mount') and not flags.get('directory'):
             should_list_contents = True
         elif node.get('type') == 'symlink' and not flags.get('directory'):
             resolved_node = fs_manager.get_node(path, resolve_symlink=True)
-            if resolved_node and resolved_node.get('type') == 'directory':
+            if resolved_node and resolved_node.get('type') in ('directory', 'host_mount'):
                 should_list_contents = True
 
         if should_list_contents:

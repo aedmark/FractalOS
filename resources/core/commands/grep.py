@@ -52,7 +52,7 @@ def _process_content(content, pattern, flags, file_path_for_display, display_fil
 
     return file_output
 
-def _search_directory(directory_path, pattern, flags, user_context, output_lines):
+async def _search_directory(directory_path, pattern, flags, user_context, output_lines):
     """Recursively searches a directory for files to process."""
     dir_node = fs_manager.get_node(directory_path)
     if not dir_node or dir_node.get('type') != 'directory':
@@ -64,13 +64,13 @@ def _search_directory(directory_path, pattern, flags, user_context, output_lines
         child_node = dir_node['children'][child_name]
 
         if child_node.get('type') == 'directory':
-            _search_directory(child_path, pattern, flags, user_context, output_lines)
-        elif child_node.get('type') == 'file':
-            content = child_node.get('content', '')
+            await _search_directory(child_path, pattern, flags, user_context, output_lines)
+        elif child_node.get("type") in ("file", "host_file"):
+            content = await fs_manager.get_node_content(child_node)
             output_lines.extend(_process_content(content, pattern, flags, child_path, True))
 
 
-def run(args, flags, user_context, stdin_data=None):
+async def run(args, flags, user_context, stdin_data=None, **kwargs):
     if not args and stdin_data is None:
         return {
             "success": False,
@@ -121,12 +121,12 @@ def run(args, flags, user_context, stdin_data=None):
 
             if node.get('type') == 'directory':
                 if is_recursive:
-                    _search_directory(path, pattern, flags, user_context, output_lines)
+                    await _search_directory(path, pattern, flags, user_context, output_lines)
                 else:
                     output_lines.append(f"grep: {path}: is a directory")
                     has_errors = True
             else:
-                content = node.get('content', '')
+                content = await fs_manager.get_node_content(node)
                 output_lines.extend(_process_content(content, pattern, flags, path, display_file_names))
 
     if has_errors and not any(line for line in output_lines if not line.startswith("grep:")):

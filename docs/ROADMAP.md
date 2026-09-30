@@ -213,9 +213,9 @@ Not committed. The BroadcastChannel layer works between tabs; the WebSocket sign
 `ws://localhost:8080` that is not in this repo.
 
 - [x] P5-01 Decide whether the signaling server is in scope; if so add it, if not remove the WebSocket path
-- [ ] P5-02 Portable mode verified on Linux, macOS and Windows with a recorded Neutralino version (the config
+- [x] P5-02 Portable mode verified on Linux, macOS and Windows with a recorded Neutralino version (the config
   pins 6.2.0; `neutralinojs.log` in the repo is from 2025-08-22)
-- [ ] P5-03 Real-disk access from the VFS in portable mode beyond `data/` (mount a host folder)
+- [x] P5-03 Real-disk access from the VFS in portable mode beyond `data/` (mount a host folder)
 
 ## Known limitations (deliberate, revisit)
 

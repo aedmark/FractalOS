@@ -10,7 +10,7 @@ def define_flags():
         'metadata': {}
     }
 
-def run(args, flags, user_context, stdin_data=None):
+async def run(args, flags, user_context, stdin_data=None, **kwargs):
     """
     Concatenates files and prints them to the standard output, with permission checks.
     """
@@ -34,11 +34,11 @@ def run(args, flags, user_context, stdin_data=None):
             if not fs_manager.has_permission(file_path, user_context, 'read'):
                 error_messages.append(f"cat: {file_path}: Permission denied")
                 continue
-            if node.get('type') != 'file':
+            if node.get('type') not in ('file', 'host_file'):
                 error_messages.append(f"cat: {file_path}: Is a directory")
                 continue
 
-            content_to_add = node.get('content', '')
+            content_to_add = await fs_manager.get_node_content(node)
 
         if content_to_add is not None:
             output_content.append(content_to_add)

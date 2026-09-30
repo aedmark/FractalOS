@@ -99,7 +99,11 @@ const FractalOS_Kernel = {
             }
 
             this.kernel = this.pyodide.pyimport("kernel");
-            this.kernel.initialize_kernel(this.saveFileSystemToDB.bind(this));
+            this.kernel.initialize_kernel(
+                this.saveFileSystemToDB.bind(this),
+                this.readHostFile.bind(this),
+                this.writeHostFile.bind(this)
+            );
 
             const pythonCommandsJson = await this.kernel.syscall_handler(JSON.stringify({ module: "executor", "function": "get_all_commands", args: [], kwargs: {} }));
             const parsedCommands = JSON.parse(pythonCommandsJson);
@@ -139,6 +143,31 @@ const FractalOS_Kernel = {
         return await this.kernel.execute_command(commandString, jsContextJson, stdinContent, signal);
     },
 
+
+    async readHostFile(hostPath) {
+        if (typeof Neutralino !== 'undefined') {
+            try {
+                return await Neutralino.filesystem.readFile(hostPath);
+            } catch (e) {
+                console.error("Neutralino read error:", e);
+                return null;
+            }
+        }
+        return null;
+    },
+
+    async writeHostFile(hostPath, content) {
+        if (typeof Neutralino !== 'undefined') {
+            try {
+                await Neutralino.filesystem.writeFile(hostPath, content);
+                return true;
+            } catch (e) {
+                console.error("Neutralino write error:", e);
+                return false;
+            }
+        }
+        return false;
+    },
     async saveFileSystemToDB(fsJsonString) {
         const { StorageHAL } = FractalOS_Kernel.dependencies;
         try {

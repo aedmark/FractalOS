@@ -1,7 +1,7 @@
 from filesystem import fs_manager
 import os
 
-def run(args, flags, user_context, stdin_data=None, **kwargs):
+async def run(args, flags, user_context, stdin_data=None, **kwargs):
     """
     Gathers file information and returns an effect to launch the Editor UI.
     """
@@ -39,7 +39,7 @@ def run(args, flags, user_context, stdin_data=None, **kwargs):
                         "suggestion": "Check the file's permissions with 'ls -l'."
                     }
                 }
-            file_content = node.get('content', '')
+            file_content = await fs_manager.get_node_content(node)
 
     return {
         "effect": "launch_app",

@@ -72,6 +72,32 @@ class FileSystemManager:
         self._initialize_default_filesystem()
         self._save_state()
 
+
+    def set_host_callbacks(self, read_func, write_func):
+        self.read_host_func = read_func
+        self.write_host_func = write_func
+
+    async def get_node_content(self, node):
+        if not node:
+            return None
+        if node.get("type") == "host_file":
+            if getattr(self, "read_host_func", None):
+                import inspect
+                content = self.read_host_func(node.get("host_path"))
+                if inspect.isawaitable(content):
+                    content = await content
+                return content
+            return None
+        return node.get("content", "")
+
+    async def write_host_file_async(self, host_path, content):
+        if getattr(self, "write_host_func", None):
+            import inspect
+            res = self.write_host_func(host_path, content)
+            if inspect.isawaitable(res):
+                res = await res
+            return res
+        return False
     def get_node(self, path, resolve_symlink=True, visited_links=None):
         if visited_links is None:
             visited_links = set()
@@ -180,6 +206,21 @@ class FileSystemManager:
     def save_state_to_json(self):
         return json.dumps(self.fs_data)
 
+
+    async def write_file_async(self, path, content, user_context):
+        abs_path = self.get_absolute_path(path)
+        node = self.get_node(abs_path)
+        if node and node.get("type") == "host_file":
+            self._check_permission(abs_path, node, user_context, 'write')
+            success = await self.write_host_file_async(node.get("host_path"), content)
+            if not success:
+                raise IOError(f"Failed to write to host file {node.get('host_path')}")
+            node["size"] = len(content)
+            self._update_timestamps(node)
+            self._save_state()
+            return
+            
+        self.write_file(path, content, user_context)
     def write_file(self, path, content, user_context):
         abs_path = self.get_absolute_path(path)
         parent_path = os.path.dirname(abs_path)
@@ -224,6 +265,19 @@ class FileSystemManager:
         parent_node['mtime'] = now_iso
         self._save_state()
 
+
+    def mount_host_tree(self, vfs_path, mount_node):
+        abs_path = self.get_absolute_path(vfs_path)
+        parent_path = __import__('os').path.dirname(abs_path)
+        base_name = __import__('os').path.basename(abs_path)
+        
+        parent_node = self.get_node(parent_path)
+        if not parent_node or parent_node.get('type') != 'directory':
+            return {"success": False, "error": f"Parent directory '{parent_path}' does not exist or is not a directory."}
+            
+        parent_node['children'][base_name] = mount_node
+        self._save_state()
+        return {"success": True}
     def create_directory(self, path, user_context, parents=False):
         abs_path = self.get_absolute_path(path)
         if self.get_node(abs_path):
