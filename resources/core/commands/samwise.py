@@ -116,16 +116,16 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
     if is_dry_run:
         return await _dry_run(ai_manager, user_prompt, provider, model, api_key, is_autopilot, force_override)
 
+    signal = kwargs.get('signal')
+    options = {"apiKey": api_key, "force_override": force_override, "signal": signal}
+
     if is_autopilot:
         result = await ai_manager.perform_autopilot(
             user_prompt, 
             [], 
             provider, 
             model, 
-            {
-                "apiKey": api_key, 
-                "force_override": force_override
-            }
+            options
         )
         
         if result["success"]:
@@ -143,7 +143,7 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
                 }
             }
 
-    result = await ai_manager.perform_agentic_search(user_prompt, [], provider, model, {"apiKey": api_key})
+    result = await ai_manager.perform_agentic_search(user_prompt, [], provider, model, {"apiKey": api_key, "signal": signal})
 
     if result.get("effect"):
         return result

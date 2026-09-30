@@ -338,7 +338,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
 
     MAX_PLAN_ATTEMPTS = 3
 
-    async def _request_valid_plan(self, provider, model, conversation, api_key, system_prompt=None):
+    async def _request_valid_plan(self, provider, model, conversation, api_key, system_prompt=None, signal=None):
         """Ask for a plan; when validation rejects it, say why and ask again (P2-17).
 
         Up to MAX_PLAN_ATTEMPTS model calls. Only validate_plan() rejections are retried:
@@ -351,7 +351,9 @@ Always use absolute paths for all file and directory arguments to prevent contex
         conversation = list(conversation)
         rejections = []
         for attempt in range(1, self.MAX_PLAN_ATTEMPTS + 1):
-            result = await self._call_llm_api(provider, model, conversation, api_key, system_prompt)
+            if signal and getattr(signal, "aborted", False):
+                return {"success": False, "error": "Killed by user."}
+            result = await self._call_llm_api(provider, model, conversation, api_key, system_prompt, signal)
             if not result["success"]:
                 return {"success": False, "error": result.get("error"), "rejections": rejections}
             plan_text = result.get("answer", "").strip()
@@ -398,7 +400,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
         full_prompt = f"{driver_prompt}\n\nCURRENT ROAD CONDITIONS:\n{road_conditions}\n\nUSER REQUEST: {prompt}"
 
         conversation = [{"role": "user", "parts": [{"text": full_prompt}]}]
-        planned = await self._request_valid_plan(final_provider, final_model, conversation, options.get("apiKey"))
+        planned = await self._request_valid_plan(final_provider, final_model, conversation, options.get("apiKey"), None, options.get("signal"))
         if not planned["success"]:
             return planned
 
@@ -448,6 +450,8 @@ Always use absolute paths for all file and directory arguments to prevent contex
         simulated_current_path = self.fs_manager.current_path
 
         for command_str in commands_to_execute:
+            if options.get("signal") and getattr(options["signal"], "aborted", False):
+                return {"success": False, "error": "Killed by user."}
             exec_result, simulated_current_path = await self._execute_plan_step(command_str, simulated_current_path)
             if not exec_result.get("success"):
                 error_msg = f"Execution HALTED at {command_str}: {exec_result.get('error')}"
@@ -477,7 +481,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
         planner_conversation = history + [{"role": "user", "parts": [{"text": planner_prompt}]}]
 
         planned = await self._request_valid_plan(final_provider, final_model, planner_conversation,
-                                                 options.get("apiKey"), self.PLANNER_SYSTEM_PROMPT)
+                                                 options.get("apiKey"), self.PLANNER_SYSTEM_PROMPT, options.get("signal"))
 
         if not planned["success"]:
             error_msg = f"Planner stage failed: {planned.get('error')}"
@@ -520,6 +524,8 @@ Always use absolute paths for all file and directory arguments to prevent contex
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
 
         for i, command_str in enumerate(commands_to_execute):
+            if options.get("signal") and getattr(options["signal"], "aborted", False):
+                return {"success": False, "error": "Killed by user."}
             command_name = shlex.split(command_str)[0]
             if command_name in self.DANGEROUS_COMMANDS:
                 return {
@@ -581,7 +587,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             result["warning"] = warning
         return result
 
-    async def _call_llm_api(self, provider, model, conversation, api_key, system_prompt=None):
+    async def _call_llm_api(self, provider, model, conversation, api_key, system_prompt=None, signal=None):
         provider_config = self.provider_config.get(provider)
 
         if not provider_config:
@@ -642,9 +648,22 @@ Always use absolute paths for all file and directory arguments to prevent contex
             timeout_signal = AbortSignal.timeout(int(timeout * 1000))
         except Exception:
             pass
+        
+        final_signal = None
+        try:
+            from js import AbortSignal
+            if timeout_signal and signal:
+                final_signal = AbortSignal.any([timeout_signal, signal])
+            elif timeout_signal:
+                final_signal = timeout_signal
+            elif signal:
+                final_signal = signal
+        except Exception:
+            final_signal = timeout_signal or signal
+
         fetch_kwargs = {"method": 'POST', "headers": headers, "body": json.dumps(request_body_dict)}
-        if timeout_signal is not None:
-            fetch_kwargs["signal"] = timeout_signal
+        if final_signal is not None:
+            fetch_kwargs["signal"] = final_signal
 
         try:
             response = await pyodide_http.pyfetch(url, **fetch_kwargs)
@@ -675,6 +694,8 @@ Always use absolute paths for all file and directory arguments to prevent contex
                 return {"success": False, "error": "AI failed to generate a valid response structure."}
 
         except Exception as e:
+            if signal is not None and getattr(signal, "aborted", False):
+                return {"success": False, "error": "Killed by user."}
             if timeout_signal is not None and timeout_signal.aborted:
                 shown = int(timeout) if float(timeout).is_integer() else timeout
                 return {"success": False, "error": (

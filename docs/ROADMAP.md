@@ -193,11 +193,11 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
 Goal: give the agent long-term memory and the ability to carry out multi-step tasks on its own. Not designed
 yet; these are placeholders for the owner to shape.
 
-- [ ] P3-01 Design: where memory lives (VFS files? `story` snapshots? a kernel module?) and what the agent may
+- [x] P3-01 Design: where memory lives (VFS files? `story` snapshots? a kernel module?) and what the agent may
   read back. Write it up as a decision before code.
-- [ ] P3-02 Multi-step task execution with a visible plan, per-step confirmation or a voltage budget, and a
+- [x] P3-02 Multi-step task execution with a visible plan, per-step confirmation or a voltage budget, and a
   transcript in the audit log
-- [ ] P3-03 A way for the user to interrupt a running plan (`kill` on the agent's job)
+- [x] P3-03 A way for the user to interrupt a running plan (`kill` on the agent's job)
 - [ ] P3-04 Flesh out the `adventure` engine and creator tools (from manual pass feedback)
 
 ## Phase 4: Packages and extensibility

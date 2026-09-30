@@ -90,9 +90,9 @@ def _from_js(value):
     return value
 
 
-async def execute_command(command_string: str, js_context_json: str, stdin_data: str = None) -> str:
+async def execute_command(command_string: str, js_context_json: str, stdin_data: str = None, signal=None) -> str:
     try:
-        return await command_executor.execute(command_string, js_context_json, _from_js(stdin_data))
+        return await command_executor.execute(command_string, js_context_json, _from_js(stdin_data), signal)
     except Exception as e:
         return json.dumps({
             "success": False, "error": f"Kernel Error before execution: {repr(e)}",

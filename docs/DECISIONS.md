@@ -341,3 +341,13 @@ model re-plans (it counts as a rejection, so the voltage brake still judges the 
 delete by pattern (`rm dir/*.txt` is allowed). This is a rule about `rm` only, not a general "wrong plan" check:
 a valid plan that does something else wrong still runs. Users hit the `rm` refusals too, as on Linux.
 
+
+## D-025 Agent Long-Term Memory stored in VFS (2026-09-29, status: accepted)
+**Context:** P3-01. The agent needs a place to store long-term facts, preferences, and plans that survive across sessions. We needed to choose between VFS files, story snapshots, or a dedicated kernel module.
+**Decision:** The agent will store its memories as plain files (e.g., Markdown or JSON) inside a dedicated, hidden directory in the user's home (e.g., `~/.samwise/memory/`). The agent will use its standard capabilities (`cat`, `grep`, `forge`, `>>`) to read, write, and append to these files. The system prompt will instruct the agent on where its memory lives and how to use it.
+**Consequences:** This adheres strictly to the Unix philosophy ('everything is a file') and keeps the memory mechanism completely transparent to the user. The user can inspect, edit, or delete memories using standard shell commands, and the existing VFS persistence layer automatically handles saving state without requiring new APIs or database stores.
+
+## D-026 Interrupting Python background tasks with AbortSignal (2026-09-29, status: accepted)
+**Context:** P3-03. Background jobs started with `&` (like `samwise --autopilot "task" &`) could be killed in the JS frontend via `kill %1`, but the underlying Python execution (which blocks via async loops and `pyfetch`) was not aware of the JS `AbortSignal` and continued executing unseen.
+**Decision:** We passed the JS `AbortSignal` down through `bridge.js`, `kernel.py`, and `executor.py` into the core commands like `samwise`. The AI manager now checks `signal.aborted` between every step in its execution loops and combines the JS `AbortSignal` with its internal timeout signal using `AbortSignal.any()` during `pyfetch` requests. 
+**Consequences:** Using `kill %1` on an agentic background job now instantly halts both the JS wrapper and the active Python loop/network requests, preventing runaway phantom tasks from modifying the VFS.

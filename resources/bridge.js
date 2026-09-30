@@ -108,7 +108,7 @@ const FractalOS_Kernel = {
         }
     },
 
-    async execute_command(commandString, jsContextJson, stdinContent = null) {
+    async execute_command(commandString, jsContextJson, stdinContent = null, signal = null) {
         if (!this.isReady || !this.kernel) {
             if (this._initPromise) {
                 try { await this._initPromise; } catch (_) {
@@ -118,7 +118,7 @@ const FractalOS_Kernel = {
         if (!this.isReady || !this.kernel) {
             return JSON.stringify({ "success": false, "error": "Kernel not ready." });
         }
-        return await this.kernel.execute_command(commandString, jsContextJson, stdinContent);
+        return await this.kernel.execute_command(commandString, jsContextJson, stdinContent, signal);
     },
 
     async saveFileSystemToDB(fsJsonString) {

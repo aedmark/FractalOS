@@ -340,7 +340,7 @@ class CommandExecutor:
         return command_sequence
 
 
-    async def execute(self, command_string, js_context_json, stdin_data=None):
+    async def execute(self, command_string, js_context_json, stdin_data=None, signal=None):
         try:
             context = json.loads(js_context_json)
             if 'users' in context: user_manager.load_users(context['users'])
@@ -393,8 +393,10 @@ class CommandExecutor:
                     continue
 
                 pipeline_input = stdin_data
+                if signal and getattr(signal, "aborted", False):
+                    return json.dumps({"success": False, "error": "Killed by user."})
                 for i, segment in enumerate(pipeline['segments']):
-                    result_or_promise = await self._execute_segment(segment, pipeline_input)
+                    result_or_promise = await self._execute_segment(segment, pipeline_input, signal)
                     result_json = result_or_promise
                     last_result_obj = json.loads(result_json)
 
@@ -454,7 +456,7 @@ class CommandExecutor:
                 }
             })
 
-    async def _execute_segment(self, segment, stdin_data):
+    async def _execute_segment(self, segment, stdin_data, signal=None):
         command_name = segment['command']
 
         definitions = self._get_command_flag_definitions(command_name)
@@ -477,7 +479,8 @@ class CommandExecutor:
             "api_key": self.api_key,
             "session_start_time": self.session_start_time,
             "session_stack": self.session_stack,
-            "commands": self.commands
+            "commands": self.commands,
+            "signal": signal
         }
         result = await self.run_command_by_name(
             command_name=command_name,

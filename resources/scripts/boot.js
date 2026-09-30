@@ -50,7 +50,7 @@ async function executePythonCommand(rawCommandText, options = {}) {
     let result;
     try {
         const kernelContextJson = await createKernelContext({ asUser });
-        const jsonResult = await FractalOS_Kernel.execute_command(rawCommandText, kernelContextJson, stdinContent);
+        const jsonResult = await FractalOS_Kernel.execute_command(rawCommandText, kernelContextJson, stdinContent, options.signal);
         const pyResult = JSON.parse(jsonResult);
 
         if (pyResult.success) {
