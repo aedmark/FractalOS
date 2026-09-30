@@ -246,6 +246,69 @@ class AdventureManager:
         item_names = [self.state['adventure']['items'][item_id]['name'] for item_id in inventory_ids]
         return [{"type": "output", "text": "You are carrying:\n" + "\n".join(item_names), "styleClass": "system"}]
 
+
+    def _handle_use(self, noun_str, verb_str):
+        parts = noun_str.split(" on ")
+        item, e_type = self._find_entity_in_scope(parts[0].strip())
+        if not item or e_type != "item":
+            return [{"type": "output", "text": "You don't see that here or in your inventory."}]
+            
+        target = None
+        if len(parts) > 1:
+            target, t_type = self._find_entity_in_scope(parts[1].strip())
+            if not target or t_type != "item":
+                return [{"type": "output", "text": f"You don't see a {parts[1]} here."}]
+
+        if item.get("location") != "inventory":
+            return [{"type": "output", "text": "You need to be holding it to use it."}]
+
+        item_id = item["id"]
+
+        if target:
+            target_id = target["id"]
+            if item.get("unlocks") == target_id:
+                if target.get("isLocked"):
+                    target["isLocked"] = False
+                    return [{"type": "output", "text": f"You unlocked the {target['name']} with the {item['name']}."}]
+                else:
+                    return [{"type": "output", "text": f"The {target['name']} is already unlocked."}]
+            
+            if "onUse" in target and item_id in target["onUse"]:
+                use_data = target["onUse"][item_id]
+                if "conditions" in use_data:
+                    for cond in use_data["conditions"]:
+                        if cond.get("itemId") == target_id and target.get("state") != cond.get("requiredState"):
+                            return [{"type": "output", "text": use_data.get("failureMessage", "Nothing happens.")}]
+                
+                updates = [{"type": "output", "text": use_data.get("message", "You use it.")}]
+                if use_data.get("destroyItem"):
+                    item["location"] = None
+                    self.state['player']['inventory'].remove(item_id)
+                    
+                win_cond = self.state['adventure'].get("winCondition", {})
+                if win_cond.get("type") == "itemUsedOn" and win_cond.get("itemId") == item_id and win_cond.get("targetId") == target_id:
+                    updates.append({"type": "output", "text": self.state['adventure'].get("winMessage", "You won!"), "styleClass": "success"})
+                    return {"updates": updates, "gameOver": True}
+                    
+                return updates
+
+        return [{"type": "output", "text": "Nothing happens."}]
+
+    def _handle_drop(self, noun_str, verb_str):
+        item, e_type = self._find_entity_in_scope(noun_str)
+        if not item or e_type != "item" or item["id"] not in self.state['player']['inventory']:
+            return [{"type": "output", "text": "You don't have that."}]
+        
+        item['location'] = self.state['player']['currentLocation']
+        self.state['player']['inventory'].remove(item["id"])
+        return [{"type": "output", "text": f"Dropped the {item['name']}."}]
+
+    def _handle_score(self, noun_str, verb_str):
+        return [{"type": "output", "text": f"Your score is {self.state['player']['score']} out of {self.state['adventure'].get('maxScore', 0)}."}]
+
+    def _handle_wait(self, noun_str, verb_str):
+        return [{"type": "output", "text": "Time passes..."}]
+
     def _handle_quit(self, noun_str, verb_str):
         return {
             "updates": [{"type": "output", "text": "Goodbye!", "styleClass": "system"}],
@@ -254,5 +317,108 @@ class AdventureManager:
 
     def _handle_unknown(self, noun_str, verb_str):
         return [{"type": "output", "text": "That's not a verb I recognize.", "styleClass": "error"}]
+
+    # --- CREATOR MODE ---
+    def creator_initialize(self, filename, initial_data_json, context_json):
+        from filesystem import fs_manager
+        import json
+        self.creator_state = {
+            "filename": filename,
+            "data": json.loads(initial_data_json) if initial_data_json and initial_data_json != "{}" else {"rooms": {}, "items": {}, "npcs": {}},
+            "user_context": json.loads(context_json) if context_json else {}
+        }
+        
+        # Ensure minimal structure
+        for key in ["rooms", "items", "npcs"]:
+            if key not in self.creator_state["data"]:
+                self.creator_state["data"][key] = {}
+                
+        return {"success": True, "message": f"Interactive Adventure Creator started.\nEditing: {filename}\nType 'help' for commands, or 'save' / 'quit'."}
+
+    def creator_get_prompt(self):
+        filename = getattr(self, 'creator_state', {}).get("filename", "unknown")
+        return {"success": True, "prompt": f"(creator: {filename})> "}
+
+    def creator_process_command(self, user_input):
+        from filesystem import fs_manager
+        import json
+        
+        if not user_input.strip():
+            return {"success": True, "output": "", "shouldExit": False}
+            
+        parts = user_input.strip().split()
+        cmd = parts[0].lower()
+        args = parts[1:]
+        
+        if cmd in ["quit", "exit"]:
+            return {"success": True, "output": "Exiting creator.", "shouldExit": True}
+            
+        if cmd == "help":
+            help_text = "Creator Commands:\n" + \
+                        "  room add <id> <name> - Add a room\n" + \
+                        "  room desc <id> <text> - Set room description\n" + \
+                        "  room link <id> <dir> <target_id> - Add an exit (e.g. room link start north hallway)\n" + \
+                        "  item add <id> <name> <room_id> - Add an item to a room\n" + \
+                        "  item desc <id> <text> - Set item description\n" + \
+                        "  item set <id> <prop> <value> - Set item property (e.g. item set key canTake true)\n" + \
+                        "  start <room_id> - Set starting room\n" + \
+                        "  save - Save to disk\n" + \
+                        "  quit / exit - Exit creator\n" + \
+                        "  dump - Show current JSON"
+            return {"success": True, "output": help_text, "shouldExit": False}
+            
+        if cmd == "dump":
+            return {"success": True, "output": json.dumps(self.creator_state["data"], indent=2), "shouldExit": False}
+            
+        if cmd == "save":
+            path = self.creator_state["filename"]
+            fs_manager.write_file(path, json.dumps(self.creator_state["data"], indent=2), self.creator_state["user_context"].get("user_context", {}))
+            return {"success": True, "output": f"Saved to {path}", "shouldExit": False}
+            
+        if cmd == "start" and args:
+            self.creator_state["data"]["startingRoomId"] = args[0]
+            return {"success": True, "output": f"Starting room set to {args[0]}", "shouldExit": False}
+            
+        if cmd == "room" and len(args) >= 2:
+            sub = args[0]
+            rid = args[1]
+            if sub == "add" and len(args) >= 3:
+                name = " ".join(args[2:])
+                self.creator_state["data"]["rooms"][rid] = {"id": rid, "name": name, "description": "A new room.", "exits": {}}
+                return {"success": True, "output": f"Added room: {rid}", "shouldExit": False}
+            elif sub == "desc" and len(args) >= 3:
+                if rid in self.creator_state["data"]["rooms"]:
+                    self.creator_state["data"]["rooms"][rid]["description"] = " ".join(args[2:])
+                    return {"success": True, "output": f"Updated {rid} description.", "shouldExit": False}
+            elif sub == "link" and len(args) >= 4:
+                direction = args[2]
+                target = args[3]
+                if rid in self.creator_state["data"]["rooms"]:
+                    self.creator_state["data"]["rooms"][rid].setdefault("exits", {})[direction] = target
+                    return {"success": True, "output": f"Linked {rid} {direction} -> {target}", "shouldExit": False}
+                    
+        if cmd == "item" and len(args) >= 2:
+            sub = args[0]
+            iid = args[1]
+            if sub == "add" and len(args) >= 4:
+                room_id = args[-1]
+                name = " ".join(args[2:-1])
+                self.creator_state["data"]["items"][iid] = {"id": iid, "name": name, "description": "A new item.", "location": room_id, "canTake": False}
+                return {"success": True, "output": f"Added item: {iid} in {room_id}", "shouldExit": False}
+            elif sub == "desc" and len(args) >= 3:
+                if iid in self.creator_state["data"]["items"]:
+                    self.creator_state["data"]["items"][iid]["description"] = " ".join(args[2:])
+                    return {"success": True, "output": f"Updated {iid} description.", "shouldExit": False}
+            elif sub == "set" and len(args) >= 4:
+                if iid in self.creator_state["data"]["items"]:
+                    prop = args[2]
+                    val = args[3]
+                    if val.lower() == "true": val = True
+                    elif val.lower() == "false": val = False
+                    self.creator_state["data"]["items"][iid][prop] = val
+                    return {"success": True, "output": f"Set {iid}.{prop} = {val}", "shouldExit": False}
+                    
+        return {"success": True, "output": f"Unknown or invalid command: {user_input}", "shouldExit": False}
+        
 
 adventure_manager = AdventureManager()

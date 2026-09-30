@@ -198,7 +198,7 @@ yet; these are placeholders for the owner to shape.
 - [x] P3-02 Multi-step task execution with a visible plan, per-step confirmation or a voltage budget, and a
   transcript in the audit log
 - [x] P3-03 A way for the user to interrupt a running plan (`kill` on the agent's job)
-- [ ] P3-04 Flesh out the `adventure` engine and creator tools (from manual pass feedback)
+- [x] P3-04 Flesh out the `adventure` engine and creator tools (from manual pass feedback)
 
 ## Phase 4: Packages and extensibility
 

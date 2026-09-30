@@ -5,7 +5,7 @@ window.Adventure_create = {
     },
     dependencies: {},
 
-    enter(filename, initialData, commandContext) {
+    async enter(filename, initialData, commandContext) {
         if (this.state.isActive) return;
 
         this.dependencies = commandContext.dependencies;
@@ -14,40 +14,44 @@ window.Adventure_create = {
             commandContext: commandContext,
         };
 
-        const resultJson = FractalOS_Kernel.adventureCreatorInitialize(filename, JSON.stringify(initialData));
+        const resultJson = await FractalOS_Kernel.syscall('adventure', 'creator_initialize', [filename, JSON.stringify(initialData), JSON.stringify(commandContext.context)]);
         const result = JSON.parse(resultJson);
 
-        this.dependencies.OutputManager.appendToOutput(result.message, {
+        this.dependencies.OutputManager.appendToOutput(result.data.message || result.error || "Initialization failed.", {
             typeClass: result.success ? "text-success" : "text-error"
         });
 
         if (result.success) {
             this._requestNextCommand();
+        } else {
+            this.state.isActive = false;
         }
     },
 
-    _requestNextCommand() {
+    async _requestNextCommand() {
         if (!this.state.isActive) return;
 
-        const promptResultJson = FractalOS_Kernel.adventureCreatorGetPrompt();
+        const promptResultJson = await FractalOS_Kernel.syscall('adventure', 'creator_get_prompt', []);
         const promptResult = JSON.parse(promptResultJson);
-        const prompt = promptResult.prompt || "(creator)> ";
+        const prompt = promptResult.data?.prompt || "(creator)> ";
 
         this.dependencies.ModalManager.request({
             context: "terminal",
             type: "input",
             messageLines: [prompt],
             onConfirm: async (input) => {
-                const resultJson = FractalOS_Kernel.adventureCreatorProcessCommand(input);
+                const resultJson = await FractalOS_Kernel.syscall('adventure', 'creator_process_command', [input]);
                 const result = JSON.parse(resultJson);
+                
+                const data = result.data || {};
 
-                if (result.output) {
-                    await this.dependencies.OutputManager.appendToOutput(result.output, {
+                if (data.output || result.error) {
+                    await this.dependencies.OutputManager.appendToOutput(data.output || result.error, {
                         typeClass: result.success ? 'text-info' : 'text-error'
                     });
                 }
 
-                if (result.shouldExit) {
+                if (data.shouldExit || !result.success && result.error && result.error.includes("Exception")) {
                     this.state.isActive = false;
                 }
 
