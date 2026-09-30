@@ -397,7 +397,13 @@ Always use absolute paths for all file and directory arguments to prevent contex
         driver_prompt = BoneDriver.get_system_prompt(self.command_executor.user_context)
 
         road_conditions = await self._get_terminal_context()
-        full_prompt = f"{driver_prompt}\n\nCURRENT ROAD CONDITIONS:\n{road_conditions}\n\nUSER REQUEST: {prompt}"
+        
+        relevant_memories = await self.dredge_memory(prompt, top_k=3, provider=final_provider, model=final_model, api_key=options.get("apiKey"), signal=options.get("signal"))
+        memory_context = ""
+        if relevant_memories:
+            memory_context = "\n\nRELEVANT PAST MEMORIES:\n- " + "\n- ".join(relevant_memories)
+
+        full_prompt = f"{driver_prompt}\n\nCURRENT ROAD CONDITIONS:\n{road_conditions}{memory_context}\n\nUSER REQUEST: {prompt}"
 
         conversation = [{"role": "user", "parts": [{"text": full_prompt}]}]
         planned = await self._request_valid_plan(final_provider, final_model, conversation, options.get("apiKey"), None, options.get("signal"))
@@ -476,7 +482,13 @@ Always use absolute paths for all file and directory arguments to prevent contex
         """
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
         planner_context = await self._get_terminal_context()
-        planner_prompt = f'User Prompt: "{prompt}"\n\n{planner_context}'
+        
+        relevant_memories = await self.dredge_memory(prompt, top_k=3, provider=final_provider, model=final_model, api_key=options.get("apiKey"), signal=options.get("signal"))
+        memory_context = ""
+        if relevant_memories:
+            memory_context = "\n\nRELEVANT PAST MEMORIES:\n- " + "\n- ".join(relevant_memories)
+            
+        planner_prompt = f'User Prompt: "{prompt}"{memory_context}\n\n{planner_context}'
 
         planner_conversation = history + [{"role": "user", "parts": [{"text": planner_prompt}]}]
 
@@ -810,3 +822,176 @@ Always use absolute paths for all file and directory arguments to prevent contex
         else:
             if warning: result["error"] = f"{warning}\n{result['error']}"
             return result
+    async def _get_embedding(self, text, provider, model, api_key, signal=None):
+        provider_config = self.provider_config.get(provider)
+        if not provider_config:
+            return {"success": False, "error": f"Provider '{provider}' not configured."}
+
+        headers = {"Content-Type": "application/json"}
+        request_body_dict = {}
+
+        if provider == "gemini":
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={api_key}"
+            request_body_dict = {
+                "model": "models/text-embedding-004",
+                "content": {"parts": [{"text": text}]}
+            }
+        elif provider == "ollama":
+            url = provider_config["url"].replace("/api/generate", "/api/embeddings").replace("/api/chat", "/api/embeddings")
+            if not url.endswith("/api/embeddings"):
+                url = "http://localhost:11434/api/embeddings"
+            
+            ollama_model = "nomic-embed-text" # Default for embeddings
+            if model and model != "default":
+                ollama_model = model
+                
+            request_body_dict = {
+                "model": ollama_model,
+                "prompt": text
+            }
+        else:
+            return {"success": False, "error": f"Embeddings not implemented for '{provider}'."}
+
+        timeout = self._request_timeout()
+        timeout_signal = None
+        try:
+            from js import AbortSignal
+            timeout_signal = AbortSignal.timeout(int(timeout * 1000))
+        except Exception:
+            pass
+        
+        final_signal = None
+        try:
+            from js import AbortSignal
+            if timeout_signal and signal:
+                final_signal = AbortSignal.any([timeout_signal, signal])
+            elif timeout_signal:
+                final_signal = timeout_signal
+            elif signal:
+                final_signal = signal
+        except Exception:
+            final_signal = timeout_signal or signal
+
+        fetch_kwargs = {"method": 'POST', "headers": headers, "body": json.dumps(request_body_dict)}
+        if final_signal is not None:
+            fetch_kwargs["signal"] = final_signal
+
+        try:
+            import pyodide.http as pyodide_http
+            response = await pyodide_http.pyfetch(url, **fetch_kwargs)
+
+            if response.status >= 400:
+                return {"success": False, "error": f"HTTP {response.status}"}
+
+            response_data = await response.json()
+            embedding = None
+
+            if provider == "gemini":
+                embedding = response_data.get("embedding", {}).get("values")
+            elif provider == "ollama":
+                embedding = response_data.get("embedding")
+
+            if embedding and isinstance(embedding, list):
+                return {"success": True, "embedding": embedding}
+            return {"success": False, "error": "Invalid embedding format returned."}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _cosine_similarity(self, vec1, vec2):
+        if not vec1 or not vec2 or len(vec1) != len(vec2):
+            return 0.0
+        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        norm_a = sum(a * a for a in vec1) ** 0.5
+        norm_b = sum(b * b for b in vec2) ** 0.5
+        if norm_a == 0.0 or norm_b == 0.0:
+            return 0.0
+        return dot_product / (norm_a * norm_b)
+
+    def _jaccard_similarity(self, text1, text2):
+        import re
+        words1 = set(re.findall(r'\w+', text1.lower()))
+        words2 = set(re.findall(r'\w+', text2.lower()))
+        if not words1 or not words2:
+            return 0.0
+        intersection = words1.intersection(words2)
+        union = words1.union(words2)
+        return len(intersection) / len(union)
+
+    async def dredge_memory(self, query_text, top_k=3, provider="gemini", model=None, api_key=None, signal=None):
+        memory_file = "/home/" + self.command_executor.user_context.get('name', 'Guest') + "/.samwise/memory/subconscious.json"
+        
+        node = self.fs_manager.get_node(memory_file)
+        if not node:
+            return []
+
+        try:
+            memories = json.loads(node.get("content", "[]"))
+            if not isinstance(memories, list):
+                return []
+        except Exception:
+            return []
+
+        if not memories:
+            return []
+
+        query_embedding = None
+        if provider and api_key:
+            res = await self._get_embedding(query_text, provider, model, api_key, signal)
+            if res.get("success"):
+                query_embedding = res.get("embedding")
+
+        scored_memories = []
+        for mem in memories:
+            text = mem.get("text", "")
+            if not text:
+                continue
+            
+            score = 0.0
+            if query_embedding and "embedding" in mem and isinstance(mem["embedding"], list):
+                score = self._cosine_similarity(query_embedding, mem["embedding"])
+            else:
+                score = self._jaccard_similarity(query_text, text)
+            
+            scored_memories.append((score, text))
+
+        scored_memories.sort(key=lambda x: x[0], reverse=True)
+        return [text for score, text in scored_memories[:top_k] if score > 0.1]
+
+    async def consolidate_memory(self, provider, model, api_key, signal=None):
+        memory_dir = "/home/" + self.command_executor.user_context.get('name', 'Guest') + "/.samwise/memory/"
+        memory_file = memory_dir + "subconscious.json"
+        hippocampus_file = memory_dir + "hippocampus.json"
+        
+        node = self.fs_manager.get_node(memory_file)
+        memories = []
+        if node:
+            try:
+                memories = json.loads(node.get("content", "[]"))
+            except Exception:
+                pass
+                
+        # Also process raw text memories written by samwise via 'cat >>'
+        raw_file = memory_dir + "user.txt"
+        raw_node = self.fs_manager.get_node(raw_file)
+        if raw_node:
+            content = raw_node.get("content", "").strip()
+            if content:
+                for line in content.split('\n'):
+                    if line.strip():
+                        memories.append({"text": line.strip()})
+            # Clear raw file after pulling
+            self.fs_manager.write_file(raw_file, "", self.command_executor.user_context)
+
+        embedded_count = 0
+        for mem in memories:
+            if signal and getattr(signal, "aborted", False):
+                break
+                
+            if "embedding" not in mem and "text" in mem:
+                res = await self._get_embedding(mem["text"], provider, model, api_key, signal)
+                if res.get("success"):
+                    mem["embedding"] = res.get("embedding")
+                    embedded_count += 1
+
+        self.fs_manager.write_file(memory_file, json.dumps(memories, indent=2), self.command_executor.user_context)
+        return {"success": True, "output": f"Sleep cycle complete. Embedded {embedded_count} memories."}

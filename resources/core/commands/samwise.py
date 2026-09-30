@@ -13,6 +13,7 @@ def define_flags():
             {'name': 'chat-internal', 'long': 'chat-internal', 'takes_value': False, 'hidden': True},
             {'name': 'resume-agent', 'long': 'resume-agent', 'takes_value': True, 'hidden': True},
             {'name': 'dry-run', 'long': 'dry-run', 'takes_value': False},
+            {'name': 'sleep', 'long': 'sleep', 'takes_value': False, 'description': 'Enter sleep cycle to consolidate memories into the subconscious.'},
         ],
         'metadata': {}
     }
@@ -50,6 +51,10 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
                 "model": final_model
             }
         }
+
+    if flags.get('sleep'):
+        signal = kwargs.get('signal')
+        return await ai_manager.consolidate_memory(provider, model, api_key, signal)
 
     if flags.get('chat-internal'):
         # Samwise Chat sends {"prompt", "history", "provider", "model"} as JSON on stdin, never on the
