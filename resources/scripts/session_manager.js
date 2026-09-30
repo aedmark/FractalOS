@@ -149,6 +149,7 @@ class SessionManager {
 
         const fullStateToSave = { ...pythonState, ...uiState };
         StorageManager.saveItem(this._getAutomaticSessionStateKey(username), fullStateToSave, `Auto session for ${username}`);
+        StorageManager.saveItem("FractalOS_LastUser", { username: username, timestamp: Date.now() }, "Last Logged In");
     }
 
     async loadAutomaticState(username) {

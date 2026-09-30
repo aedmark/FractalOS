@@ -19,6 +19,10 @@ class ConfigManager {
                 VERSION: "0.0.5",
                 DEFAULT_HOST_NAME: "FractalOS",
             },
+            
+            SESSION: {
+                TIMEOUT_MS: 30 * 60 * 1000, // 30 minutes
+            },
 
             NETWORKING: {
                 NETWORKING_ENABLED: false,

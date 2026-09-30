@@ -77,7 +77,7 @@ class UserManager {
                 await OutputManager.appendToOutput(`${Config.MESSAGES.WELCOME_PREFIX} ${username}${Config.MESSAGES.WELCOME_SUFFIX}`);
             }
             await TerminalUI.updatePrompt();
-            this.dependencies.StorageManager.saveItem("FractalOS_LastUser", username, "Last Logged In");
+            this.dependencies.StorageManager.saveItem("FractalOS_LastUser", { username: username, timestamp: Date.now() }, "Last Logged In");
             return ErrorHandler.createSuccess();
         } else {
             if (wasInteractive || password !== null) {

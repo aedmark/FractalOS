@@ -122,9 +122,21 @@ window.onload = async () => {
         
         if (initialUser) {
             storageManager.removeItem(configManager.STORAGE_KEYS.LAST_CREATED_USER);
-            storageManager.saveItem("FractalOS_LastUser", initialUser, "Last Logged In");
+            storageManager.saveItem("FractalOS_LastUser", { username: initialUser, timestamp: Date.now() }, "Last Logged In");
         } else {
-            initialUser = storageManager.loadItem("FractalOS_LastUser", "Last Logged In", configManager.USER.DEFAULT_NAME);
+            const lastUserData = storageManager.loadItem("FractalOS_LastUser", "Last Logged In", null);
+            initialUser = configManager.USER.DEFAULT_NAME;
+            if (lastUserData) {
+                if (typeof lastUserData === 'string') {
+                    initialUser = lastUserData; // Backwards compatibility for previous save
+                } else if (lastUserData.username && lastUserData.timestamp) {
+                    if (Date.now() - lastUserData.timestamp < configManager.SESSION.TIMEOUT_MS) {
+                        initialUser = lastUserData.username;
+                    } else {
+                        console.log("Session timed out, dropping to Guest.");
+                    }
+                }
+            }
         }
 
         if (initialUser !== configManager.USER.DEFAULT_NAME) {
