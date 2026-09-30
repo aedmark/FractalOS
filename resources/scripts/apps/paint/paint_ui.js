@@ -42,10 +42,6 @@ window.PaintUI = class PaintUI {
         this.elements.brushSizeInput = Utils.createElement("input", { type: "number", className: "paint-brush-size", value: initialState.brushSize, min: 1, max: 5 });
         const brushGroup = Utils.createElement("div", { className: "paint-brush-controls" }, [this.elements.brushSizeInput]);
         this.elements.charInput = Utils.createElement("input", { type: "text", className: "paint-char-selector", value: initialState.currentCharacter, maxLength: 1 });
-        this.elements.cutBtn = UIComponents.createButton({ text: "Cut", onClick: () => this.managerCallbacks.onCut() });
-        this.elements.copyBtn = UIComponents.createButton({ text: "Copy", onClick: () => this.managerCallbacks.onCopy() });
-        this.elements.pasteBtn = UIComponents.createButton({ text: "Paste", onClick: () => this.managerCallbacks.onPaste() });
-        const editGroup = Utils.createElement("div", { className: "paint-tool-group" }, [this.elements.cutBtn, this.elements.copyBtn, this.elements.pasteBtn]);
         this.elements.undoBtn = UIComponents.createButton({ text: "↩" });
         this.elements.redoBtn = UIComponents.createButton({ text: "↪" });
         this.elements.gridBtn = UIComponents.createButton({ text: "▦" });
@@ -58,9 +54,9 @@ window.PaintUI = class PaintUI {
         if (!isWindowed) {
             const exitBtn = this.elements.header.querySelector('.app-header__exit-btn');
             this.elements.header.innerHTML = '';
-            this.elements.header.append(toolGroup, colorGroup, brushGroup, this.elements.charInput, editGroup, historyGroup, zoomGroup, exitBtn);
+            this.elements.header.append(toolGroup, colorGroup, brushGroup, this.elements.charInput, historyGroup, zoomGroup, exitBtn);
         } else {
-            this.elements.header.append(toolGroup, colorGroup, brushGroup, this.elements.charInput, editGroup, historyGroup, zoomGroup);
+            this.elements.header.append(toolGroup, colorGroup, brushGroup, this.elements.charInput, historyGroup, zoomGroup);
         }
 
         this.elements.canvas = Utils.createElement("div", { className: "paint-canvas", id: "paint-canvas" });

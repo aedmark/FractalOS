@@ -283,6 +283,7 @@ async function handleEffect(result, options) {
                 const newCurrentUser = await SessionManager.getCurrentUserFromStack();
                 await OutputManager.appendToOutput(`Logged out of ${poppedUser}. Current user is now ${newCurrentUser}.`);
                 await SessionManager.loadAutomaticState(newCurrentUser);
+                StorageManager.saveItem("FractalOS_LastUser", newCurrentUser, "Last Logged In");
             } else {
                 await OutputManager.appendToOutput("Not logged in to any additional user sessions.", { typeClass: Config.CSS_CLASSES.WARNING_MSG });
             }

@@ -15,11 +15,22 @@ def define_flags():
             {'name': 'reverse', 'short': 'r', 'long': 'reverse', 'takes_value': False},
             {'name': 'directory', 'short': 'd', 'long': 'directory', 'takes_value': False},
             {'name': 'one-per-line', 'short': '1', 'takes_value': False},
+            {'name': 'classify', 'short': 'F', 'long': 'classify', 'takes_value': False},
         ],
         'metadata': {}
     }
 
-def _format_long(path, name, node):
+def _get_indicator(node):
+    type_ = node.get('type')
+    if type_ == 'directory':
+        return '/'
+    if type_ == 'symlink':
+        return '@'
+    if type_ == 'file' and (node.get('mode', 0) & 0o111):
+        return '*'
+    return ''
+
+def _format_long(path, name, node, indicator=""):
     """Formats a single line for the long listing format."""
     mode = node.get('mode', 0)
     type_char_map = {"directory": "d", "file": "-", "symlink": "l"}
@@ -52,7 +63,7 @@ def _format_long(path, name, node):
     except (ValueError, TypeError):
         mtime_formatted = "Jan 01 00:00"
 
-    display_name = f"{name} -> {node.get('target', '')}" if node.get('type') == 'symlink' else name
+    display_name = f"{name}{indicator} -> {node.get('target', '')}" if node.get('type') == 'symlink' else f"{name}{indicator}"
     return f"{full_perms} 1 {owner} {group} {size} {mtime_formatted} {display_name}"
 
 def _format_columns(items, terminal_width=80):
@@ -111,22 +122,26 @@ def _list_directory_contents(path, flags, user_context, recursive_output, all_er
 
     if flags.get('long'):
         for name, child_node in sorted_children:
-            dir_content.append(_format_long(path, name, child_node))
+            indicator = _get_indicator(child_node) if flags.get('classify') else ""
+            dir_content.append(_format_long(path, name, child_node, indicator))
             if flags.get('recursive') and child_node.get('type') == 'directory':
                 sub_dirs_to_recurse.append(os.path.join(path, name))
     elif flags.get('one-per-line'):
         for name, child_node in sorted_children:
-            dir_content.append(name)
+            indicator = _get_indicator(child_node) if flags.get('classify') else ""
+            dir_content.append(name + indicator)
             if flags.get('recursive') and child_node.get('type') == 'directory':
                 sub_dirs_to_recurse.append(os.path.join(path, name))
     else:
-        names = [name for name, child_node in sorted_children]
+        names = []
+        for name, child_node in sorted_children:
+            indicator = _get_indicator(child_node) if flags.get('classify') else ""
+            names.append(name + indicator)
+            if flags.get('recursive') and child_node.get('type') == 'directory':
+                sub_dirs_to_recurse.append(os.path.join(path, name))
         formatted_columns = _format_columns(names)
         if formatted_columns:
             dir_content.append(formatted_columns)
-        for name, child_node in sorted_children:
-            if flags.get('recursive') and child_node.get('type') == 'directory':
-                sub_dirs_to_recurse.append(os.path.join(path, name))
 
     recursive_output.extend(dir_content)
 
@@ -164,11 +179,18 @@ def run(args, flags, user_context, **kwargs):
         file_output = []
         if flags.get('long'):
             for path, node in sorted_files:
-                file_output.append(_format_long(os.path.dirname(path), os.path.basename(path), node))
+                indicator = _get_indicator(node) if flags.get('classify') else ""
+                file_output.append(_format_long(os.path.dirname(path), os.path.basename(path), node, indicator))
         elif flags.get('one-per-line'):
-            file_output.extend([p[0] for p in sorted_files])
+            for path, node in sorted_files:
+                indicator = _get_indicator(node) if flags.get('classify') else ""
+                file_output.append(path + indicator)
         else:
-            file_output.append(_format_columns([p[0] for p in sorted_files]))
+            names = []
+            for path, node in sorted_files:
+                indicator = _get_indicator(node) if flags.get('classify') else ""
+                names.append(path + indicator)
+            file_output.append(_format_columns(names))
         output.extend(file_output)
 
     if dir_args:
@@ -210,7 +232,8 @@ DESCRIPTION
     -r, --reverse   reverse order while sorting
     -d, --directory list directories themselves, not their contents
     -1              list one file per line
+    -F, --classify  append indicator (one of */=@) to entries
 """
 
 def help(args, flags, user_context, **kwargs):
-    return "Usage: ls [-a] [-l] [-R] [-t] [-S] [-X] [-r] [-d] [-1] [FILE...]"
+    return "Usage: ls [-a] [-l] [-R] [-t] [-S] [-X] [-r] [-d] [-1] [-F] [FILE...]"

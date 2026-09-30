@@ -501,8 +501,9 @@ window.PaintManager = class PaintManager extends App {
             cells: this.state.canvasData,
         };
         const jsonContent = JSON.stringify(dataToSave, null, 2);
-        const currentUser = UserManager.getCurrentUser().name;
-        const primaryGroup = UserManager.getPrimaryGroupForUser(currentUser);
+        const userObj = await UserManager.getCurrentUser();
+        const currentUser = userObj.name;
+        const primaryGroup = await UserManager.getPrimaryGroupForUser(currentUser);
         const saveResult = await FileSystemManager.createOrUpdateFile(
             this.state.currentFilePath,
             jsonContent,

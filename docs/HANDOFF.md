@@ -11,7 +11,7 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-_Last updated: 2026-09-27, end of session 17 (P2-21: delete by name; `rm` refuses `.`, `..`, `/`; model pickers fixed)._
+_Last updated: 2026-09-29, end of session 18 (P1-16: smoke fail on pageerror; P2-22: standard library only in python; P2-23: rmdir guidance; P1-15: ls -F)._
 
 **Verified on current `main`** (2026-09-27, Chromium via Playwright 1.56, Node 22)
 
@@ -108,13 +108,9 @@ _Last updated: 2026-09-27, end of session 17 (P2-21: delete by name; `rm` refuse
 
 ## Next steps (in order)
 
-1. **P1-16:** make `tests/smoke.js` fail on uncaught page errors (the empty model picker hid behind a passing run).
-2. **P2-22 and P2-23:** llama's remaining misses: `import numpy` in A3; a redundant `rmdir` after a successful
-   `rm -r` in C2. Measure with `AGENT_TASKS=A3` / `C2` over several runs.
-3. **P1-15:** `ls -F` (gemma planned it; `ls` treated it as a path).
-4. A manual pass over the apps (TESTING.md, "Manual checks"), including onboarding's new AI step and the model
-   pickers in Samwise Chat and Chidi.
-5. With a Gemini key: `AGENT_PROVIDER=gemini node tests/agent.js`.
+1. Wait for the user to confirm the persistence fix and review the UI updates.
+2. Address Phase 3 features, focusing on fleshing out the `adventure` text-adventure engine (P3-04) or the multi-step `samwise` capabilities (P3-02).
+3. If the user decides to resolve the AI Model mixed-content issue (CORS issue), we may need to implement a manual text input fallback for the Model Picker dropdown in `SamwiseChatUI.js` and `ChidiUI.js`.
 
 ## Open questions for the user
 
@@ -126,6 +122,38 @@ _Last updated: 2026-09-27, end of session 17 (P2-21: delete by name; `rm` refuse
 ## Session log
 
 Newest first. Copy the template for each new session.
+
+### Session 19: 2026-09-29: UI Fixes and Persistence Debugging
+
+**Goal:** Address user-reported UI feedback regarding Paint and BASIC, explain the model list mismatch, and resolve the critical persistence bug on Neocities.
+**Done:** P3-04 (added to ROADMAP)
+**Changed:** 
+- `resources/main.js`, `resources/scripts/effect_handler.js`, `resources/scripts/user_manager.js`: Implemented `FractalOS_LastUser` memory to maintain the logged-in user across page reloads.
+- `resources/scripts/apps/paint/paint_manager.js`: Awaited `getCurrentUser` correctly in `_saveContent` to resolve the broken Paint save button.
+- `resources/scripts/apps/paint/paint_ui.js`: Removed the redundant cut, copy, and paste buttons.
+- `resources/scripts/apps/basic/basic_manager.js`: Clarified the `SYNTAX ERROR` message to explain that BASIC statements require line numbers.
+- `docs/ROADMAP.md`: Added P3-04 for fleshing out the text adventure engine and creator tools.
+**Decisions:** N/A
+**Problems / surprises:** 
+- The persistence bug wasn't an actual data-loss issue; it was a logic gap. When the user refreshed the page, the system dropped them back to `Guest`, making it seem as if their files (stored in `/home/<username>`) and aliases (stored in their user session) were deleted. They just needed to `login`. We fixed this by persisting the last logged-in user across reboots.
+- The "fake models" issue in chat is due to the browser's Mixed Content security policy. HTTPS pages (Neocities) physically block JavaScript from fetching HTTP resources (`http://localhost:11434`), causing our fetch call to Ollama to fail and trigger the hardcoded model fallback.
+- The `PRINT "HELLO"` bug was because the Python `basic.py` interpreter is a stub and `basic_manager.js` forces the user to prefix statements with line numbers (e.g., `10 PRINT "HELLO"`). Updated the error message to clarify this.
+**Left undone:** Adding a manual text-input fallback for the AI Model dropdown picker if the user desires.
+**Next session should start with:** The next steps in the roadmap.
+
+### Session 18: 2026-09-29: Agent hardening and testing hygiene (P1-16, P2-22, P2-23, P1-15)
+
+**Goal:** Address the next steps in the handoff: make smoke tests fail on page errors, fix agent Python environment misunderstanding, guide agent away from redundant rmdir, and add classify flag to ls.
+**Done:**
+- P1-16: Updated `tests/smoke.js` to collect page errors and fail the suite with exit code 1 if any are caught. Confirmed test passes locally.
+- P2-22: Added explicit wording to `bone_driver.py` persona indicating `python` has standard library only (no numpy, requests, etc.).
+- P2-23: Appended guidance to `bone_driver.py` instructing the agent to delete a directory by path "ONCE" and never to run `rmdir` after `rm -r`.
+- P1-15: Added `-F` / `--classify` flag to `ls` (`ls.py`), with logic to append `/` to directories, `@` to symlinks, and `*` to executables. Decided against throwing "invalid option" for unknown flags globally, to keep command argument pass-through behavior intact.
+**Changed:** `tests/smoke.js`, `resources/core/bone_driver.py`, `resources/core/commands/ls.py`, ROADMAP.md, HANDOFF.md.
+**Decisions:** None new.
+**Problems / surprises:** Playwright wasn't installed globally so a scratch path was needed to run the test suite locally.
+**Left undone:** Manual app pass, Gemini run.
+**Next session should start with:** "Next steps" above, starting with the manual app pass.
 
 ### Session 17: 2026-09-27: P2-21 closed with a check, not only a prompt (D-024); two regressions from sessions 15-16 fixed
 

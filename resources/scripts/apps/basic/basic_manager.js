@@ -150,7 +150,7 @@ window.BasicManager = class BasicManager extends App {
                 this.exit();
                 break;
             default:
-                this.ui.writeln("?SYNTAX ERROR");
+                this.ui.writeln("?SYNTAX ERROR. STATEMENTS REQUIRE LINE NUMBERS (e.g. 10 PRINT \"HELLO\")");
                 break;
         }
     }

@@ -66,7 +66,15 @@ function errorMessage(r) {
     const browser = await chromium.launch(launchOptions);
     const page = await browser.newPage();
     const logs = [];
-    page.on('pageerror', e => logs.push(`[pageerror] ${e.message}`));
+    const pageErrors = [];
+    page.on('pageerror', e => {
+        // Allow-list for expected page errors if any
+        const allowed = [];
+        if (!allowed.some(a => e.message.includes(a))) {
+            pageErrors.push(e.message);
+            logs.push(`[pageerror] ${e.message}`);
+        }
+    });
     page.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(`[${m.type()}] ${m.text()}`); });
     page.on('requestfailed', r => logs.push(`[reqfail] ${r.url()} ${r.failure() && r.failure().errorText}`));
     page.on('response', r => { if (r.status() >= 400) logs.push(`[http ${r.status()}] ${r.url()}`); });
@@ -393,6 +401,11 @@ kernel.ai_manager.continue_chat_conversation = _fake_chat
     }
 
     const total = passed + failed;
+    if (pageErrors.length > 0) {
+        console.error(`FAIL: ${pageErrors.length} uncaught page error(s):`);
+        for (const e of pageErrors) console.error(`  ${e}`);
+        failed += pageErrors.length;
+    }
     console.log(failed ? `FAIL ${failed} of ${total}` : `PASS ${passed}/${total}`);
     process.exit(failed ? 1 : 0);
 })();

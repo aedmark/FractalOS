@@ -118,17 +118,20 @@ window.onload = async () => {
         await aliasManager.initialize();
         await sessionManager.initializeStack();
 
-        let initialUser = storageManager.loadItem(configManager.STORAGE_KEYS.LAST_CREATED_USER, "Last Created User", configManager.USER.DEFAULT_NAME);
+        let initialUser = storageManager.loadItem(configManager.STORAGE_KEYS.LAST_CREATED_USER, "Last Created User", null);
+        
+        if (initialUser) {
+            storageManager.removeItem(configManager.STORAGE_KEYS.LAST_CREATED_USER);
+            storageManager.saveItem("FractalOS_LastUser", initialUser, "Last Logged In");
+        } else {
+            initialUser = storageManager.loadItem("FractalOS_LastUser", "Last Logged In", configManager.USER.DEFAULT_NAME);
+        }
 
         if (initialUser !== configManager.USER.DEFAULT_NAME) {
             await sessionManager.pushUserToStack(initialUser);
         }
 
         const sessionStatus = await sessionManager.loadAutomaticState(initialUser);
-
-        if (initialUser !== configManager.USER.DEFAULT_NAME) {
-            storageManager.removeItem(configManager.STORAGE_KEYS.LAST_CREATED_USER);
-        }
 
         if (sessionStatus.newStateCreated) {
         }
