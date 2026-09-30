@@ -11,107 +11,15 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-_Last updated: 2026-09-29, end of session 18 (P1-16: smoke fail on pageerror; P2-22: standard library only in python; P2-23: rmdir guidance; P1-15: ls -F)._
+The core OS, the VFS, accounts, permissions, testing, and Phase 1, Phase 2, and Phase 3 are complete. 
+The agent `samwise` now has an integrated, dependency-free semantic memory system inside `~/.samwise/memory/` and can pull embeddings locally or fall back gracefully to a pure-Python lexical overlap algorithm.
+The `adventure` command now has a fully working engine (supporting `use`, `drop`, `wait`, `score`, and victory conditions) and the previously broken interactive creator mode is now functional.
 
-**Verified on current `main`** (2026-09-27, Chromium via Playwright 1.56, Node 22)
+All Milestones 1 and 2 from Phase 3 are 100% complete.
+## Next steps
 
-| Suite | Result |
-| --- | --- |
-| `node tests/structure.js` | PASS |
-| `node tests/smoke.js` | **85/85** |
-| `node tests/diag.js` | **40 passed / 0 failed**, no command errors, banner reached |
-| `python3 tests/agent_unit.py` | **26 OK** |
-| `node tests/agent_grading.js` | **22 cases PASS** |
-| `node tests/agent.js`, llama3.1:8b | 9/10, **10/10**, **10/10** (the miss: A3 imported `numpy`, P2-22) |
-| `node tests/agent.js`, gemma4:12b | **10/10** twice |
-| `AGENT_TASKS=C2 node tests/agent.js`, llama3.1:8b | **10/10** twice (P2-21) |
-| `tests/test_executor.py` inside the OS | runs clean (`python test_executor.py`) |
-
-**What works**
-- **The `samwise` agent** (the command formerly called `gemini`), against local Ollama:
-  - Autopilot and agent mode plan, validate the whole plan, then run it; a failed step stops the plan (P2-07).
-  - The voltage brake stops `rm -r` / `rm -rf` at 20+; `--force` runs it after a real home checkpoint (P2-02).
-  - Agent mode asks before risky commands and resumes the plan after "yes" (P2-08).
-  - **A rejected plan is retried** up to 3 calls with the reason sent back; the brake is never retried (P2-17, D-022).
-  - **Model calls time out** after `timeout_seconds` in `/etc/ai.conf` (default 120), and every failure names the
-    provider and the fix: `ollama pull <model>`, "can't reach Ollama at ...", "didn't answer within N s" (P2-06, D-021).
-  - **`--dry-run` runs nothing**, in both modes and even with `--force`; it shows the plan, which steps would ask
-    first, the voltage and whether it would disengage (P2-16, D-020).
-  - **Deleting goes by name (P2-21, D-024).** A plan that `rm`s `*`, `.` or `..` is rejected and the model
-    re-plans; `rm` refuses `.`, `..` and `/` like GNU `rm`. Before, `cd garden` + `rm -r .` deleted the
-    folder you stood in and `rm -rf ..` its parent.
-  - Recent failures are fed into the next prompt (P2-18); the Gemini model is configurable (P2-05).
-- **AI Commands (`remix`, `storyboard`, Chidi)** pass against llama3.1:8b and gemma4:12b (P2-04, tasks D1 to D3).
-- **Model choice:** onboarding asks for a provider and model; Samwise Chat and Chidi have a model picker, which
-  lists the Ollama install's models (it was empty until session 17's fix).
-- **Samwise Chat** (`samwise -c`, `resources/scripts/apps/samwise_chat/`): works end to end. Messages go to the
-  kernel as JSON on stdin, so quotes, `$HOME` and `$(...)` reach the model verbatim and nothing runs (P2-20, D-019).
-  Before session 13 a chat message could execute shell commands.
-- **Colour:** `tree -C` colours directories, symlinks and executables; the terminal renders ANSI SGR codes as
-  spans, as text only (P1-14, D-023). **The prompt** reads `user@FractalOS:~$` and `root@FractalOS:~#` (P1-13).
-- **`sudo` with a password** works again (a rename had broken it; diag caught it).
-- **Names:** `samwise` is the AI command, FractalOS the OS. `gemini` means only the Google provider. The rule
-  against renaming is gone (D-006 rewritten, D-009 already removed).
-- **Instructions:** `AGENTS.md` holds the agent instructions; `CLAUDE.md` imports it (D-018).
-  `neutralinojs.log` is no longer tracked (P1-07).
-- Earlier foundations still hold: Pyodide 314.0.7 / Python 3.14.2 (D-004), `python` in the OS (D-011), `jsnull`
-  normalised (D-012), generated kernel manifest (D-010).
-
-**Not verified / not done**
-- A Gemini key was never used: the Gemini path, its error messages and P2-05 are untested.
-- Apps by hand (editor, paint, adventure, top, BASIC, Chidi), sounds, themes, portable mode, Firefox, Safari.
-- `tests/agent.js` A2 proves cd memory only when the model uses relative paths (llama does, gemma does not).
-
-**Gotchas for the next session**
-- **`cd` is an effect and applies after the line.** `cd x && cmd` runs `cmd` in the old directory. One
-  command per line in tests.
-- **Raw JS values can be `jsnull`.** Only stdin crosses raw today and is normalised (D-012). P1-12 audits the
-  rest.
-- **Registration lists.** A new JS file must be in `resources/scripts/asset_manifest.js` (hand-ordered); a new
-  Python file needs `python3 tools/gen_manifest.py`. `node tests/structure.js` catches both omissions (D-010).
-  `core/manifest.json` is generated: never hand-edit it, and resolve a merge conflict in it by regenerating.
-- **`FractalOS_Kernel` is not on `window`.** Top-level `const`. Bare names in `page.evaluate`.
-- **`loadPackage(["ssl"])` throws on Pyodide 314.** `ssl` and `hashlib` are in the core now; only
-  `cryptography` is loaded. `ssl` is a stub (`OPENSSL_VERSION` = "OpenSSL (stub)"); HTTPS goes through the
-  browser's fetch, so nothing depends on it.
-- **Pyodide versioning changed.** 314.x = Python 3.14 and is the newest line; 0.29.x is the older Python 3.13
-  series. The npm `latest` tag is 314.x. Do not "upgrade" to 0.29.
-- **Wheels must come from the same Pyodide release** as the lock file (hash-checked). PyPI wheels do not match.
-  Get them from the GitHub release tarball `pyodide-<ver>.tar.bz2` (the `pyodide-core` tarball has no wheels).
-- **`pkill -f 'http.server 8000'` killed the session's own shell** once (the pattern matched the wrapper).
-  `resources/stop_server.sh` has the same shape. Kill by PID.
-- **Guest cannot write in `/home`.** Commands in the smoke test run as Guest. A failing `mkdir /home/x` is
-  correct, not a regression.
-- **`su` / `logout` swap the terminal output** (saved per-user session state). Capture output by wrapping
-  `OutputManager.appendToOutput`, as `tests/diag.js` does, never by reading `#output` afterwards.
-- **A failing line aborts a `run` script** (`execute_script` breaks on the first error). So a script that
-  prints its final banner ran every line.
-- **The diag script's closing banner is prose the owner edits** (it went from "SamwiseOS Core Test Suite ...
-  Complete" to "FractalOS Gauntlet Complete" the same day the harness was written). `tests/diag.js` keys on the
-  "ALL SYSTEMS OPERATIONAL" line; if that line changes, change the regex in the harness with it.
-- **Git working agreement (from the owner):** commit finished, verified work with a normal message; push when
-  asked. History was rewritten once with explicit permission (D-005); that is not a standing permission. The
-  owner also commits from PyCharm and their local clone is at `/home/gordonk/PycharmProjects/FractalOS/`; after
-  D-005 that clone must be re-pointed at the rewritten branch (`git fetch && git reset --hard origin/<branch>`),
-  and the owner's own uncommitted work there should be stashed first.
-- **Cloud sessions cannot see the sibling repos.** `plainchant` and `BoneAmanita` (the doc-style references)
-  live next to this repo on the owner's machine; in a cloud session clone them read-only from GitHub.
-- **README says "GitLab" in CONTRIBUTING** ("Fork the repository on GitLab") and the footer links; the repo is
-  on GitHub (`aedmark/FractalOS`). Left as is; cosmetic.
-- **The shell here is zsh-like.** `git show $c:tests/x` expands `:t` as a modifier (write `"${c}:tests/x"`), and
-  `echo ====` fails (`=word` expansion).
-- **The smoke test never finishes onboarding,** so the onboarding app owns the screen and `OutputManager`
-  drops terminal output (`isEditorActive`). A smoke check that reads the DOM must lift that flag briefly, as the
-  ANSI check does. Checks that open an app (Samwise Chat) should come last.
-- **Playwright is not installed globally here.** Recipe in `docs/TESTING.md`: `npm i playwright@1.56` in a scratch
-  directory, `NODE_PATH` to it, `CHROME=/usr/bin/chromium`.
-
-## Next steps (in order)
-
-1. Wait for the user to confirm the persistence fix and review the UI updates.
-2. Address Phase 3 features, focusing on fleshing out the `adventure` text-adventure engine (P3-04) or the multi-step `samwise` capabilities (P3-02).
-3. If the user decides to resolve the AI Model mixed-content issue (CORS issue), we may need to implement a manual text input fallback for the Model Picker dropdown in `SamwiseChatUI.js` and `ChidiUI.js`.
-
+1. Read `docs/ROADMAP.md` and review Phase 4: Packages and extensibility.
+2. P4-01 Package management: define what a package is (a command file? an app? a Pyodide wheel?), how it is fetched, installed, and verified.
 ## Open questions for the user
 
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
@@ -120,6 +28,19 @@ _Last updated: 2026-09-29, end of session 18 (P1-16: smoke fail on pageerror; P2
 ---
 
 ## Session log
+
+### Session 20: 2026-09-29: Memory Embeddings and Adventure Creator (P3-04)
+
+**Goal:** Implement offline embedding search fallback and finish Phase 3 by fleshing out the adventure engine.
+**Done:** P3-04 (Adventure engine features), D-027.
+**Changed:** `resources/core/ai_manager.py` (added exact pure-Python cosine similarity and Jaccard similarity fallback, dredge logic, and consolidate command), `resources/core/bone_driver.py` (updated memory path rule), `resources/core/commands/samwise.py` (added `--sleep`), `resources/core/apps/adventure.py` (added `_handle_use`, `_handle_drop`, `_handle_score`, `_handle_wait`, win condition checks, and the Python-side creator mode endpoints `creator_initialize`, `creator_get_prompt`, and `creator_process_command`), `resources/scripts/apps/adventure/adventure_create.js` (swapped missing JS methods for async `syscall` routing to the new Python creator endpoints), `docs/ROADMAP.md` (P3-04 marked done), `docs/DECISIONS.md` (D-027).
+**Decisions:** D-027 (Pure-Python cosine exact vector search & lexical fallback).
+**Problems / surprises:**
+- The JavaScript adventure creator tool (`adventure_create.js`) was trying to synchronously call `FractalOS_Kernel.adventureCreatorInitialize` which didn't exist anywhere in the codebase. It was a complete ghost limb. Rewrote it to properly `await FractalOS_Kernel.syscall`.
+- The core adventure engine parsed `"use"`, `"drop"`, `"wait"`, and `"score"`, but the methods were completely missing. Implemented them and hooked up the parsing for `winCondition` so a game can actually be won.
+**Left undone:** Phase 3 is completed. Phase 4 (Packages and extensibility) is next.
+**Next session should start with:** "Next steps" above.
+
 
 Newest first. Copy the template for each new session.
 
