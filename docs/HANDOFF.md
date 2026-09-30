@@ -11,15 +11,12 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-The core OS, the VFS, accounts, permissions, testing, and Phase 1, Phase 2, and Phase 3 are complete. 
-The agent `samwise` now has an integrated, dependency-free semantic memory system inside `~/.samwise/memory/` and can pull embeddings locally or fall back gracefully to a pure-Python lexical overlap algorithm.
-The `adventure` command now has a fully working engine (supporting `use`, `drop`, `wait`, `score`, and victory conditions) and the previously broken interactive creator mode is now functional.
-
-All Milestones 1 and 2 from Phase 3 are 100% complete.
+The core OS, the VFS, accounts, permissions, testing, and Phases 1, 2, 3, and 4 are complete. 
+A package manager (`pkg`) now exists allowing runtime installation of pure-Python command extensions. Commands are placed directly into the VFS and dynamically compiled and executed by `executor.py`. Required Pyodide wheels are resolved and loaded on OS boot.
 ## Next steps
 
-1. Read `docs/ROADMAP.md` and review Phase 4: Packages and extensibility.
-2. P4-01 Package management: define what a package is (a command file? an app? a Pyodide wheel?), how it is fetched, installed, and verified.
+1. Read `docs/ROADMAP.md` and review Phase 5: Networking and portable mode.
+2. Decide whether the signaling server for WebSockets is in scope (P5-01).
 ## Open questions for the user
 
 - What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
@@ -28,6 +25,18 @@ All Milestones 1 and 2 from Phase 3 are 100% complete.
 ---
 
 ## Session log
+
+### Session 21: 2026-09-30: Package Management (P4-01, P4-02)
+
+**Goal:** Implement the package management system for FractalOS.
+**Done:** P4-01, P4-02, D-028.
+**Changed:** `resources/core/commands/pkg.py` (new command), `resources/core/executor.py` (added dynamic module loading via `_load_command_module` and exposed `get_all_commands`), `resources/core/commands/help.py` & `man.py` (switched to `executor._load_command_module`), `resources/scripts/effect_handler.js` (added `update_commands_manifest`), `resources/bridge.js` (boot-time package wheel loading and manifest aggregation), `docs/DECISIONS.md`, `docs/ROADMAP.md`.
+**Decisions:** D-028 (Packages are single `.py` command files stored in the VFS at `/etc/packages/commands/`, registered in `/etc/pkg_manifest.json`, and dynamically loaded by the executor).
+**Problems / surprises:** 
+- The VFS is initialized before Pyodide boots in JS, which allowed us to cleanly read `/etc/pkg_manifest.json` right before Pyodide initialization to load necessary extra wheels upfront using `pyodide.loadPackage()`.
+**Left undone:** Phase 4 is complete. 
+**Next session should start with:** "Next steps" above.
+
 
 ### Session 20: 2026-09-29: Memory Embeddings and Adventure Creator (P3-04)
 
