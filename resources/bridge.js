@@ -65,7 +65,7 @@ const FractalOS_Kernel = {
 
             let packagesToLoad = ["cryptography"];
             try {
-                const manifestNode = await FileSystemManager.getNode("/etc/pkg_manifest.json");
+                const manifestNode = await this.dependencies.FileSystemManager.getNodeByPath("/etc/pkg_manifest.json");
                 if (manifestNode && manifestNode.content) {
                     const manifest = JSON.parse(manifestNode.content);
                     for (const pkgName of Object.keys(manifest)) {

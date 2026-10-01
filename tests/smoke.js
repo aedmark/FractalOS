@@ -232,7 +232,7 @@ results["refuse_steps"] = am.agent_refusal('python --steps 0 -c "while True: pas
 results["refuse_steps_eq"] = am.agent_refusal('python --steps=0 -c "pass"')
 results["allow_plain"] = am.agent_refusal('python -c "print(1)"')
 
-async def fake_llm(provider, model, conversation, api_key, system_prompt=None):
+async def fake_llm(provider, model, conversation, api_key, system_prompt=None, signal=None):
     text = conversation[-1]["parts"][0]["text"]
     if "USER REQUEST:" in text:            # autopilot plan
         return {"success": True, "answer": fake_llm.plan}
@@ -298,7 +298,7 @@ r3 = await samwise_cmd.run(["x"], {"provider": "ollama", "dry-run": True}, user,
 results["dry_reports_refusal"] = "Would halt" in r3.get("content", "")
 # P2-17: a rejected plan goes back to the model with the reason, and the corrected plan runs.
 replies = ["1. ls | wc", "1. echo retried-ok", "1. ls | wc", "1. echo retried-ok"]
-async def seq_llm(provider, model, conversation, api_key, system_prompt=None):
+async def seq_llm(provider, model, conversation, api_key, system_prompt=None, signal=None):
     return {"success": True, "answer": replies.pop(0)}
 am._call_llm_api = seq_llm
 r = await am.perform_autopilot("x", [], "ollama", None, {"apiKey": None})
