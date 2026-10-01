@@ -18,9 +18,12 @@ def _get_manifest(user_context):
         return {}
 
 def _save_manifest(manifest, user_context):
-    if not fs_manager.get_node("/etc"):
-        fs_manager.create_directory("/etc", user_context)
-    fs_manager.write_file("/etc/pkg_manifest.json", json.dumps(manifest, indent=2), user_context)
+    try:
+        if not fs_manager.get_node("/etc"):
+            fs_manager.create_directory("/etc", user_context)
+        fs_manager.write_file("/etc/pkg_manifest.json", json.dumps(manifest, indent=2), user_context)
+    except PermissionError:
+        raise PermissionError(13, "Permission denied to modify /etc. Are you root? Try 'sudo pkg ...'", "/etc")
 
 async def _fetch_url(url):
     import pyodide.http
@@ -130,13 +133,16 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
                 pass
                 
         # Save to VFS
-        if not fs_manager.get_node("/etc/packages"):
-            fs_manager.create_directory("/etc/packages", user_context)
-        if not fs_manager.get_node("/etc/packages/commands"):
-            fs_manager.create_directory("/etc/packages/commands", user_context)
-            
-        pkg_path = f"/etc/packages/commands/{name}.py"
-        fs_manager.write_file(pkg_path, content, user_context)
+        try:
+            if not fs_manager.get_node("/etc/packages"):
+                fs_manager.create_directory("/etc/packages", user_context)
+            if not fs_manager.get_node("/etc/packages/commands"):
+                fs_manager.create_directory("/etc/packages/commands", user_context)
+                
+            pkg_path = f"/etc/packages/commands/{name}.py"
+            fs_manager.write_file(pkg_path, content, user_context)
+        except PermissionError:
+            return {"success": False, "error": {"message": "pkg: Permission denied", "suggestion": "You need root privileges to install system packages. Try 'sudo pkg install'."}}
         
         # Update manifest
         manifest = _get_manifest(user_context)
