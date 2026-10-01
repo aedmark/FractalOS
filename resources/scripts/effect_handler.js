@@ -622,8 +622,7 @@ async function handleEffect(result, options) {
 
         case "update_commands_manifest":
             try {
-                const request = { module: "executor", "function": "get_all_commands" };
-                const res = await FractalOS_Kernel.syscall_handler(JSON.stringify(request));
+                const res = await FractalOS_Kernel.syscall("executor", "get_all_commands");
                 const parsed = JSON.parse(res);
                 if (parsed.success && parsed.data) {
                     Config.COMMANDS_MANIFEST = parsed.data;
