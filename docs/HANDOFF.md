@@ -11,20 +11,31 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-The core OS, the VFS, accounts, permissions, testing, and Phases 1 through 5 are complete. 
-The system supports Portable Mode (Desktop) with deep host filesystem integration via `mount host <path>`, and features a fully functional WebRTC networking stack backed by a custom signaling server.
+Phase 6 ("Fractal Pi") architecture and base networking is complete! The OS now ships with a fully universal `provision_appliance.sh` script that automatically downloads the right Neutralino binaries (x86_64, aarch64, armhf) and configures a lightweight Wayland/X11 kiosk environment. We also built an async `execHostCommand` bridge (Neutralino.os.execCommand) into the Python kernel and exposed a `gpio` utility for native hardware integration. Finally, the Onboarding screen now offers an option to turn a fresh FractalOS node into a local signaling server on boot. All automated tests (85/85 smoke and 40/40 diag) pass cleanly on the new async core.
+
 ## Next steps
 
-1. Officially declare 1.0.
-2. Define Phase 6 or enter maintenance mode.
-## Open questions for the user
+1. Create a public community package repository to host our very first Python packages (like `tetris.py`), testing the `pkg` manager end-to-end. (Wait, the user already did this, and we already wrote `tetris.py`!). 
+2. Test the new `gpio` module on a real Raspberry Pi.
+3. Write a developer log update declaring the Phase 6 OS Appliance features.
 
-- What does "long-term memory" mean for Milestone 1? (Q-003, P3-01)
-- Should the agent whitelist converge on "anything a user can do" with voltage as the brake? (Q-001)
-
----
 
 ## Session log
+
+### Session 7: 2026-09-30: Phase 6 Appliance, GPIO Bridge, and Auto-Signaling Server
+
+**Goal:** Execute the vision for P6: a bare-metal Fractal Pi appliance, hardware integration, and mesh peer discovery on boot.
+**Done:** P6-01, P6-02, P6-03, P6-04. Wrote `extras/provision_appliance.sh` for universal kiosk provisioning. Extended the Phase 5 async kernel bridge to pass `Neutralino.os.execCommand` down to the Python OS, and wrapped it in `commands/gpio.py` to allow native control of physical hardware. Added a "Mesh Network Setup" step to the Onboarding UI that saves a config to `/etc/network.conf`, which `network_manager.js` reads on boot to optionally spawn the Python signaling server directly from the appliance. Fixed `tests/smoke.js` args and ran the full 85-assertion suite and 40-assertion diag suite successfully. Also wrote and published the first community package (`tetris.py` turn-based game) to the user's public registry!
+**Changed:** `docs/ROADMAP.md`, `extras/provision_appliance.sh`, `resources/bridge.js`, `resources/core/host_api.py`, `resources/core/kernel.py`, `resources/core/commands/gpio.py`, `resources/scripts/apps/onboarding/onboarding_ui.js`, `resources/scripts/apps/onboarding/onboarding_manager.js`, `resources/scripts/network_manager.js`, `resources/main.js`, `resources/core/users.py`, `tests/smoke.js`.
+**Decisions:** Extended Neutralino async bridge pattern for arbitrary native execution on the host (`execHostCommand`) when running in appliance mode. Onboarding now determines the root node for peer discovery.
+**Problems / surprises:**
+- A simple Pyodide exception (Permission denied) in `pkg` was too noisy for standard users; patched `pkg.py` to gracefully suggest `sudo`.
+- Discovered that `first_time_setup` never actually created an `/etc/sudoers` file, leaving the first user without sudo access! Patched `users.py` to add `username ALL` on creation.
+- A typo in Phase 5 (`FileSystemManager.getNode` instead of `getNodeByPath` in `bridge.js`) caused the package manager to silently fail parsing manifests on boot. Fixed it before running smoke tests.
+- Had to debug a JavaScript optional chaining error when inserting the `startNetworking` method dynamically because I didn't slice the source text right. Replaced the whole method instead.
+**Left undone:** Have not tested the GPIO script on physical hardware yet.
+**Next session should start with:** "Next steps" above.
+
 
 ### Session 22: 2026-09-30: Phase 5 (Networking and Portable Mode)
 

@@ -1,6 +1,41 @@
 <!--
   FractalOS dev diary. Newest entry first. Each entry is one
-  <article class="dev-diary">; copy the newest one's shape for the next.
+  <article class="dev-diary">
+  <header>
+    <h1>FractalOS 1.0: Breaking Out of the Browser</h1>
+    <p class="date">September 30, 2026</p>
+    <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
+  </header>
+
+  <p>
+    Today we reached version 1.0! The project started as a weird experiment—a full UNIX-like terminal and Python
+    environment entirely isolated in the browser via WebAssembly. But today, we broke out of that sandbox and brought
+    it into the physical world. 
+  </p>
+
+  <p>
+    We implemented the <strong>Fractal Pi Appliance</strong> architecture. By using Neutralinojs in portable mode
+    on top of a bare-metal Linux environment (like a Raspberry Pi running an Openbox kiosk), FractalOS can now act
+    as the primary interface for physical hardware. We wrote a universal build script that auto-detects architecture
+    (x86_64 or ARM), sets up the display server, and drops you straight into the FractalOS full-screen terminal on boot.
+  </p>
+  
+  <p>
+    Because the kernel runs in a browser sandbox, it couldn't naturally talk to physical hardware. So, we built an
+    asynchronous bridge that allows the Pyodide environment to synchronously call out to the host system. This means
+    you can now natively toggle Raspberry Pi GPIO pins directly from the FractalOS terminal by simply typing 
+    <code>gpio write 18 1</code>!
+  </p>
+  
+  <p>
+    Finally, we made peer discovery entirely automatic. During the first-boot onboarding screen, you can check a box to 
+    tell the OS to spawn its own WebSockets signaling server silently in the background, instantly turning that node 
+    into the mesh network hub for all other devices on the LAN. And to cap it off, we launched a community package 
+    registry, proving our dynamic VFS package manager by writing an interactive, turn-based ASCII Tetris game.
+  </p>
+</article>
+
+<article class="dev-diary">; copy the newest one's shape for the next.
   Entries before 2026-09-27 were written retroactively from the git history
   and the session log in docs/HANDOFF.md.
 -->
