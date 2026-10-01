@@ -1,5 +1,6 @@
 from executor import command_executor
 from filesystem import fs_manager
+from host_api import host_api
 from session import env_manager, history_manager, alias_manager, session_manager
 from groups import group_manager
 from users import user_manager
@@ -23,7 +24,7 @@ ai_manager = AIManager(fs_manager, command_executor)
 command_executor.set_ai_manager(ai_manager)
 
 MODULE_DISPATCHER = {
-    "executor": command_executor, "filesystem": fs_manager, "session": session_manager,
+    "executor": command_executor, "filesystem": fs_manager, "host": host_api, "session": session_manager,
     "env": env_manager, "history": history_manager, "alias": alias_manager,
     "groups": group_manager, "users": user_manager, "sudo": sudo_manager, "ai": ai_manager,
     "story": story_manager,
@@ -31,9 +32,10 @@ MODULE_DISPATCHER = {
     "adventure": adventure_manager, "top": top_app, "log": log_app, "basic": basic_app, "audit": audit_manager
 }
 
-def initialize_kernel(save_function, read_host_function=None, write_host_function=None):
+def initialize_kernel(save_function, read_host_function=None, write_host_function=None, exec_host_function=None):
     fs_manager.set_save_function(save_function)
     fs_manager.set_host_callbacks(read_host_function, write_host_function)
+    host_api.set_exec_callback(exec_host_function)
 
 async def syscall_handler(request_json):
     """

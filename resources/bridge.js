@@ -102,7 +102,8 @@ const FractalOS_Kernel = {
             this.kernel.initialize_kernel(
                 this.saveFileSystemToDB.bind(this),
                 this.readHostFile.bind(this),
-                this.writeHostFile.bind(this)
+                this.writeHostFile.bind(this),
+                this.execHostCommand.bind(this)
             );
 
             const pythonCommandsJson = await this.kernel.syscall_handler(JSON.stringify({ module: "executor", "function": "get_all_commands", args: [], kwargs: {} }));
@@ -156,6 +157,19 @@ const FractalOS_Kernel = {
         return null;
     },
 
+
+    async execHostCommand(command) {
+        if (typeof Neutralino !== 'undefined') {
+            try {
+                const response = await Neutralino.os.execCommand(command);
+                return JSON.stringify({ success: true, stdout: response.stdOut, stderr: response.stdErr, exitCode: response.exitCode });
+            } catch (e) {
+                console.error("Neutralino exec error:", e);
+                return JSON.stringify({ success: false, error: e.message });
+            }
+        }
+        return JSON.stringify({ success: false, error: "Host execution is only available in portable mode." });
+    },
     async writeHostFile(hostPath, content) {
         if (typeof Neutralino !== 'undefined') {
             try {
