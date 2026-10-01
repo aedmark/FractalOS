@@ -15,7 +15,7 @@ window.OnboardingManager = class OnboardingManager extends App {
 
         this.state = {
             step: 1,
-            maxSteps: 4,
+            maxSteps: 5,
             userData: {
                 username: '',
                 password: '',
@@ -40,7 +40,8 @@ window.OnboardingManager = class OnboardingManager extends App {
     _createCallbacks() {
         const { UserManager, Utils, ErrorHandler, StorageManager, Config, GroupManager } = this.dependencies;
         return {
-            onNextStep: async (data) => {
+            onNextStep: async (stepId, dataObj) => {
+                const data = dataObj || stepId;
                 this.state.error = null;
                 if (this.state.step === 1) {
                     const { username, password, confirmPassword } = data;
@@ -71,6 +72,11 @@ window.OnboardingManager = class OnboardingManager extends App {
                         return;
                     }
                     this.state.userData.rootPassword = rootPassword;
+                } else if (this.state.step === 3) {
+                    this.state.userData.aiProvider = data.aiProvider;
+                    this.state.userData.aiModel = data.aiModel;
+                } else if (this.state.step === 4) {
+                    this.state.userData.runSignalingServer = data.runSignalingServer;
                 }
 
                 if (this.state.step < this.state.maxSteps) {
@@ -95,6 +101,11 @@ window.OnboardingManager = class OnboardingManager extends App {
                         model: this.state.userData.aiModel || null
                     };
                     await FractalOS_Kernel.syscall("filesystem", "write_file", ["/etc/ai.conf", JSON.stringify(aiConf, null, 2), "root"]);
+
+                    const netConf = {
+                        runSignalingServer: !!this.state.userData.runSignalingServer
+                    };
+                    await FractalOS_Kernel.syscall("filesystem", "write_file", ["/etc/network.conf", JSON.stringify(netConf, null, 2), "root"]);
 
                     await this.dependencies.StorageHAL.saveLocalStorage(
                         this.dependencies.StorageManager.exportLocalStorage()

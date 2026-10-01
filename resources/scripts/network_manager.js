@@ -20,10 +20,31 @@ class NetworkManager {
 
     setDependencies(dependencies) {
         this.dependencies = dependencies;
-        // Check the config to see if we should even start the networking stack
+    }
+
+    async startNetworking() {
         if (this.dependencies.Config?.NETWORKING?.NETWORKING_ENABLED) {
             this.isNetworkingEnabled = true;
             this.signalingServerUrl = this.dependencies.Config.NETWORKING.SIGNALING_SERVER_URL;
+            
+            try {
+                const netConfNode = await this.dependencies.FileSystemManager.getNodeByPath('/etc/network.conf');
+                if (netConfNode && netConfNode.content) {
+                    const netConf = JSON.parse(netConfNode.content);
+                    if (netConf.runSignalingServer) {
+                        if (typeof Neutralino !== 'undefined' && Neutralino.os) {
+                            console.log('Starting local signaling server via Neutralino...');
+                            Neutralino.os.spawnProcess('python3 extras/signaling_server.py');
+                            this.signalingServerUrl = 'ws://localhost:8765';
+                        } else {
+                            console.warn('Cannot run signaling server: not in Portable mode.');
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not read /etc/network.conf', e);
+            }
+            
             this._initializeSignaling();
         } else {
             console.log("Networking is disabled by default. Set NETWORKING.NETWORKING_ENABLED to true in config.js to enable it.");

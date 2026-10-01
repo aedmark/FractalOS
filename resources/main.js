@@ -159,6 +159,7 @@ window.onload = async () => {
         await terminalUI.updatePrompt();
         terminalUI.focusInput();
         await themeManager.loadAndApplyInitialTheme();
+        await dependencies.NetworkManager.startNetworking();
         console.log(`${configManager.OS.NAME} v.${configManager.OS.VERSION} loaded successfully!`);
 
     } catch (error) {

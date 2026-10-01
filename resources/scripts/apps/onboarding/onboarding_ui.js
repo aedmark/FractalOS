@@ -30,6 +30,7 @@ window.OnboardingUI = class OnboardingUI {
             case 2: this._renderStep2(state); break;
             case 3: this._renderStep3(state); break;
             case 4: this._renderStep4(state); break;
+            case 5: this._renderStep5(state); break;
             case 'complete': this._renderComplete(state); break;
         }
     }
@@ -156,6 +157,29 @@ window.OnboardingUI = class OnboardingUI {
     }
 
     _renderStep4(state) {
+        const { Utils } = this.dependencies;
+        const form = Utils.createElement('form');
+        const checkbox = Utils.createElement('input', { type: 'checkbox', name: 'runSignalingServer' });
+        checkbox.checked = state.userData.runSignalingServer || false;
+        const nextButton = Utils.createElement('button', { type: 'submit', textContent: 'Next →' });
+        form.append(
+            Utils.createElement('h1', { textContent: 'Mesh Network Setup' }),
+            Utils.createElement('p', { textContent: 'Would you like this device to host the local mesh network signaling server? (Only one device on your network needs this enabled).' }),
+            Utils.createElement('label', { className: 'checkbox-label' }, [
+                checkbox,
+                document.createTextNode(' Enable Local Signaling Server')
+            ]),
+            nextButton
+        );
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            this.callbacks.onNextStep(state.step, { runSignalingServer: checkbox.checked });
+        };
+        this.elements.card.append(this._createHeader(state), form);
+        checkbox.focus();
+    }
+
+    _renderStep5(state) {
 
         const { Utils } = this.dependencies;
         const finishButton = Utils.createElement('button', { textContent: 'Finish & Reboot' });
