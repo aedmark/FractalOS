@@ -201,6 +201,13 @@ class UserManager:
                 fs_manager.chown(home_path, username)
                 fs_manager.chgrp(home_path, username)
 
+
+            if not fs_manager.get_node("/etc"):
+                fs_manager.create_directory("/etc", {"name": "root", "group": "root"})
+            
+            sudoers_content = f"{username} ALL\n"
+            if not fs_manager.get_node("/etc/sudoers"):
+                fs_manager.write_file("/etc/sudoers", sudoers_content, {"name": "root", "primary_group": "root"})
             if not self.change_password('root', root_password):
                 raise ValueError("Failed to set root password during setup.")
 
