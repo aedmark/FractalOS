@@ -3,7 +3,7 @@ async function handleEffect(result, options) {
         FileSystemManager, TerminalUI, SoundManager, SessionManager, AppLayerManager,
         UserManager, ErrorHandler, Config, OutputManager, PagerManager, Utils, domElements,
         GroupManager, NetworkManager, MessageBusManager, ModalManager, StorageManager,
-        AuditManager, StorageHAL, SudoManager, ThemeManager, UIStateManager
+        AuditManager, StorageHAL, SudoManager, ThemeManager, UIStateManager, WindowManager
     } = dependencies;
 
     switch (result.effect) {
@@ -1005,6 +1005,97 @@ async function handleEffect(result, options) {
         case 'toggle_cinematic_mode':
             UIStateManager.toggleCinematicMode(result.mode);
             break;
+
+        case 'window_action': {
+            const wm = dependencies.WindowManager;
+            if (!wm) {
+                await OutputManager.appendToOutput("WindowManager not available.", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+            switch (result.action) {
+                case 'list': {
+                    const list = wm.getWindowsList();
+                    if (list.length === 0) {
+                        await OutputManager.appendToOutput("No windows currently open.\n\nUsage: Launch an app (e.g. 'top --dock', 'edit <file>', 'peers --gui') or use 'wm' to manage windows.");
+                    } else {
+                        let out = "\x1b[1;36mID       APP / TITLE                   MODE           STATUS\x1b[0m\n";
+                        out += "-------------------------------------------------------------\n";
+                        for (const w of list) {
+                            const statusStr = w.isMinimized ? "\x1b[33mminimized\x1b[0m" : (w.isFocused ? "\x1b[32mactive\x1b[0m" : "\x1b[90minactive\x1b[0m");
+                            out += `${w.id.padEnd(8)} ${(w.title || 'App').slice(0, 28).padEnd(29)} ${w.mode.padEnd(14)} ${statusStr}\n`;
+                        }
+                        out += `\nTotal: ${list.length} window(s). Shortcuts: Alt+D (dock), Alt+F (float/max), Alt+M (minimize), Alt+Tab (switch).`;
+                        await OutputManager.appendToOutput(out);
+                    }
+                    break;
+                }
+                case 'focus': {
+                    const res = wm.focusWindow(result.window_id);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`wm error: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'set_mode': {
+                    const res = wm.setWindowMode(result.window_id, result.mode);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`wm error: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    } else {
+                        await OutputManager.appendToOutput(`Window ${result.window_id} mode set to: ${result.mode}`);
+                    }
+                    break;
+                }
+                case 'dock': {
+                    const mode = `docked-${result.direction || 'right'}`;
+                    const res = wm.setWindowMode(result.window_id, mode);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`wm error: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    } else {
+                        await OutputManager.appendToOutput(`Window ${result.window_id} docked to ${result.direction || 'right'}.`);
+                    }
+                    break;
+                }
+                case 'float': {
+                    const res = wm.setWindowMode(result.window_id, 'floating');
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`wm error: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    } else {
+                        await OutputManager.appendToOutput(`Window ${result.window_id} switched to floating.`);
+                    }
+                    break;
+                }
+                case 'minimize': {
+                    const res = wm.minimizeWindow(result.window_id);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`wm error: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'restore': {
+                    const res = wm.restoreWindow(result.window_id);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`wm error: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'close': {
+                    const res = wm.closeWindow(result.window_id);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`wm error: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'tile': {
+                    wm.tileWindows();
+                    await OutputManager.appendToOutput("Arranged open windows in tiled layout.");
+                    break;
+                }
+                default:
+                    await OutputManager.appendToOutput(`Unknown wm action: ${result.action}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    break;
+            }
+            break;
+        }
 
         default:
             await OutputManager.appendToOutput(`Unknown effect from Python: ${result.effect}`, { typeClass: 'text-warning' });

@@ -4,6 +4,12 @@ from filesystem import fs_manager
 import time
 import os
 
+def define_flags():
+    return {
+        "flags": ["dock", "float", "full"],
+        "aliases": {"d": "dock", "f": "float"}
+    }
+
 def run(args, flags, user_context, **kwargs):
     if len(args) > 1:
         return {"success": False, "error": {"message": "paint: too many arguments", "suggestion": "Usage: paint [filename.oopic]"}}
@@ -27,12 +33,21 @@ def run(args, flags, user_context, **kwargs):
             return {"success": False, "error": {"message": f"paint: cannot open '{file_path_arg}': Permission denied", "suggestion": "Check the file's permissions with 'ls -l'."}}
         file_content = node.get('content', '')
 
+    window_mode = "floating"
+    if flags.get("dock"):
+        window_mode = "docked-right"
+    elif flags.get("full"):
+        window_mode = "fullscreen"
+    elif flags.get("float"):
+        window_mode = "floating"
+
     return {
         "effect": "launch_app",
         "app_name": "Paint",
         "options": {
             "filePath": resolved_path,
-            "fileContent": file_content
+            "fileContent": file_content,
+            "windowMode": window_mode
         }
     }
 

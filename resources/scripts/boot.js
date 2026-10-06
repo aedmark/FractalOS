@@ -210,9 +210,19 @@ async function finalizeInteractiveModeUI(originalCommandText) {
     TerminalUI.setIsNavigatingHistory(false);
 }
 function initializeTerminalEventListeners(domElements, dependencies) {
-    const { AppLayerManager, ModalManager, TerminalUI, TabCompletionManager, HistoryManager, SoundManager } = dependencies;
+    const { AppLayerManager, ModalManager, TerminalUI, TabCompletionManager, HistoryManager, SoundManager, WindowManager, MultiplexerManager } = dependencies;
 
     domElements.terminalDiv.addEventListener("click", (e) => {
+        if (WindowManager && WindowManager.hasModalApp()) return;
+
+        // If clicked on an app container or window dock, do not redirect to terminal
+        if (e.target.closest('.app-container, #window-dock, .window-dock')) return;
+
+        // If an app window was focused, yield focus to terminal
+        if (WindowManager && WindowManager.isAppFocused()) {
+            WindowManager.focusTerminal();
+        }
+
         if (AppLayerManager.isActive()) return;
 
         const selection = window.getSelection();
@@ -246,6 +256,27 @@ function initializeTerminalEventListeners(domElements, dependencies) {
             return;
         }
 
+        // Window Manager global Alt hotkeys
+        if (WindowManager && e.altKey && !e.ctrlKey && !e.shiftKey) {
+            const k = e.key.toLowerCase();
+            if (k === 'd') {
+                e.preventDefault();
+                WindowManager.cycleDockModeForActive();
+                return;
+            } else if (k === 'f') {
+                e.preventDefault();
+                WindowManager.toggleMaximizeForActive();
+                return;
+            } else if (k === 'm') {
+                e.preventDefault();
+                WindowManager.minimizeActive();
+                return;
+            } else if (k === 'tab') {
+                e.preventDefault();
+                WindowManager.cycleFocus();
+                return;
+            }
+        }
 
         if (AppLayerManager.isActive()) {
             const activeApp = AppLayerManager.activeApp;

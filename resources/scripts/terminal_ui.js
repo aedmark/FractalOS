@@ -660,18 +660,34 @@ class AppLayerManager {
     }
 
     _handleGlobalKeyDown(event) {
+        const { WindowManager } = this.dependencies;
+        if (WindowManager && WindowManager.isAppFocused()) {
+            const active = WindowManager.getActiveApp();
+            if (active && typeof active.handleKeyDown === "function") {
+                active.handleKeyDown(event);
+                return;
+            }
+        }
         if (this.activeApp && typeof this.activeApp.handleKeyDown === "function") {
             this.activeApp.handleKeyDown(event);
         }
     }
 
     show(appInstance, options = {}) {
-        const { TerminalUI, OutputManager } = this.dependencies;
+        const { WindowManager, TerminalUI, OutputManager } = this.dependencies;
         if (!(appInstance instanceof App)) {
             console.error(
                 "AppLayerManager: Attempted to show an object that is not an instance of App."
             );
             return;
+        }
+
+        if (WindowManager) {
+            const win = WindowManager.openWindow(appInstance, options);
+            this.activeApp = appInstance;
+            document.removeEventListener("keydown", this._boundHandleGlobalKeyDown, true);
+            document.addEventListener("keydown", this._boundHandleGlobalKeyDown, true);
+            return win;
         }
 
         if (this.activeApp) {
@@ -697,7 +713,17 @@ class AppLayerManager {
     }
 
     hide(appInstance) {
-        const { TerminalUI, OutputManager } = this.dependencies;
+        const { WindowManager, TerminalUI, OutputManager } = this.dependencies;
+
+        if (WindowManager) {
+            WindowManager.closeApp(appInstance);
+            if (!WindowManager.hasModalApp() && !WindowManager.isAppFocused()) {
+                document.removeEventListener("keydown", this._boundHandleGlobalKeyDown, true);
+                this.activeApp = WindowManager.getActiveApp();
+            }
+            return;
+        }
+
         if (this.activeApp !== appInstance) {
             return;
         }
@@ -720,6 +746,10 @@ class AppLayerManager {
     }
 
     isActive() {
+        const { WindowManager } = this.dependencies;
+        if (WindowManager) {
+            return WindowManager.isAppFocused() || WindowManager.hasModalApp();
+        }
         return !!this.activeApp;
     }
 }

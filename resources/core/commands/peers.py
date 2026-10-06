@@ -4,7 +4,7 @@ peers.py - Discovers, lists, and inspects nodes on the FractalOS mesh network.
 
 def define_flags():
     return {
-        "flags": ["--ping", "-p", "--json", "-j", "--gui", "-g", "--watch", "-w", "--help", "-h"],
+        "flags": ["--ping", "-p", "--json", "-j", "--gui", "-g", "--watch", "-w", "--help", "-h", "--dock", "-d", "--float", "-f", "--full"],
         "metadata": {}
     }
 
@@ -14,11 +14,20 @@ def run(args, flags, user_context, **kwargs):
     wants_gui = "--gui" in flags or "-g" in flags or (args and args[0].lower() in ("gui", "app", "ui"))
 
     if wants_gui:
+        window_mode = "floating"
+        if "--dock" in flags or "-d" in flags:
+            window_mode = "docked-right"
+        elif "--full" in flags:
+            window_mode = "fullscreen"
+        elif "--float" in flags or "-f" in flags:
+            window_mode = "floating"
+
         return {
             "effect": "launch_app",
             "app_name": "Peers",
             "options": {
-                "doPing": do_ping
+                "doPing": do_ping,
+                "windowMode": window_mode
             }
         }
 

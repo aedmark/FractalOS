@@ -434,3 +434,21 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 **Consequences:** Provides lightweight, tmux-like terminal multiplexing purely inside the browser without external dependencies.
 
 
+## D-038 TUI Window Management & Viewport Tiling Architecture (2026-10-06, status: accepted)
+**Context:** P7-10. Previously, graphical TUI applications (`editor`, `paint`, `top`, `adventure`, `netgame`, `peers`, `basic`, `log`) launched as opaque, full-screen overlay modals that blocked the shell terminal. Users could not run shell commands alongside running applications or view process/mesh telemetry side by side with the terminal.
+**Decision:**
+1. We introduced `WindowManager` (`resources/scripts/window_manager.js`), supporting five distinct layout modes:
+   - `floating`: Free movable and resizable window with drop shadow and drag header, permitting click-through to the terminal below.
+   - `docked-right`: Splits the viewport 50/50 with terminal on the left and the application docked on the right.
+   - `docked-left`: Splits viewport with application on the left and terminal on the right.
+   - `docked-bottom`: Splits viewport with terminal on the top and application docked on the bottom.
+   - `fullscreen`: Full-screen modal overlay (used by initial onboarding or maximized windows).
+2. We added standard window control buttons (`–` minimize, `◧` dock, `🗖`/`🗗` maximize/float, `×` close) and bottom-right drag resize handles to window title bars.
+3. We introduced `#window-dock` (taskbar dock strip) at the bottom of the screen displaying active and minimized window pills. Clicking pills focuses, restores, or minimizes windows.
+4. We integrated `AppLayerManager` to delegate to `WindowManager` while maintaining complete backwards compatibility for existing app lifecycles and smoke tests.
+5. We added the `wm` CLI command and `window` alias (`wm list`, `wm focus <id>`, `wm mode <id> <mode>`, `wm dock <id>`, `wm float <id>`, `wm min <id>`, `wm restore <id>`, `wm close <id>`, `wm tile`) and added `--dock` (`-d`), `--float` (`-f`), and `--full` flags to `top`, `edit`, `paint`, and `peers`.
+6. Global hotkeys: `Alt+D` (cycle dock modes), `Alt+F` (toggle float/max), `Alt+M` (minimize), `Alt+Tab` (cycle window/terminal focus). Clicking into the terminal yields keyboard focus to the shell while keeping applications visible and updating in the background.
+**Consequences:** FractalOS supports concurrent, side-by-side graphical applications and terminal multitasking without external window manager libraries or npm dependencies.
+
+
+

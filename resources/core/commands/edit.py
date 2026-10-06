@@ -1,6 +1,12 @@
 from filesystem import fs_manager
 import os
 
+def define_flags():
+    return {
+        "flags": ["dock", "float", "full"],
+        "aliases": {"d": "dock", "f": "float"}
+    }
+
 async def run(args, flags, user_context, stdin_data=None, **kwargs):
     """
     Gathers file information and returns an effect to launch the Editor UI.
@@ -41,12 +47,21 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
                 }
             file_content = await fs_manager.get_node_content(node)
 
+    window_mode = "floating"
+    if flags.get("dock"):
+        window_mode = "docked-right"
+    elif flags.get("full"):
+        window_mode = "fullscreen"
+    elif flags.get("float"):
+        window_mode = "floating"
+
     return {
         "effect": "launch_app",
         "app_name": "Editor",
         "options": {
             "filePath": resolved_path,
-            "fileContent": file_content
+            "fileContent": file_content,
+            "windowMode": window_mode
         }
     }
 
@@ -56,7 +71,7 @@ NAME
     edit - A powerful, context-aware text and code editor.
 
 SYNOPSIS
-    edit [filepath]
+    edit [filepath] [--dock|-d] [--float|-f] [--full]
 
 DESCRIPTION
     Launches the FractalOS graphical text editor.
