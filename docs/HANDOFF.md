@@ -11,16 +11,27 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-Milestone 7.4 ("Package Ecosystem & Community Registry Tooling") advances with `P7-13` ("Package Publishing Tool") and `P7-14` ("Package Dependency Resolution") both 100% COMPLETE! FractalOS features automated recursive package dependency resolution, cycle detection, removal guardrails protecting dependent packages, dependency tree inspection (`pkg deps <name>` in text tree or JSON), and dynamic runtime Pyodide wheel loading (`load_pyodide_wheels` and `update_commands_manifest` effects in `effect_handler.js`) directly in the browser without rebooting. All test suites pass: 85/85 smoke checks, 6/6 package dependency unit tests, 7/7 package publish unit tests, 4/4 clipboard JS unit tests, 9/9 clipboard command Python tests, 7/7 status bar JS unit tests, 4/4 status command tests, 7/7 window manager JS unit tests, 6/6 window command tests, 7/7 multiplexer JS unit tests, 4/4 multiplexer command tests, and all structure tests (14 core, 6 apps, 152 commands, 74 asset entries).
+Milestone 7.4 ("Package Ecosystem & Community Registry Tooling") advances with `P7-13`, `P7-14`, and `P7-15` ("Standard Library Expansion") 100% COMPLETE! FractalOS features a rich standard library of community packages authored and published in `extras/packages/` and cataloged in `resources/core/standard_packages.py`: `fortune` (pearls of wisdom and computing adages, `-s` short, `-C` ANSI color), `cowsay` (configurable ASCII creature speaker supporting stdin, wrap width `-W`, thoughts `-T`, custom creatures like tux/duck/ghost, expressions `-b`/`-d`/`-g`/`-p`/`-s`/`-t`/`-w`/`-y`, with ANSI-aware bubble wrapping), `cal` (monthly and yearly calendar with `-3` three-month and `-m` Monday starts), and `banner` (5-line high ASCII banner glyphs with custom fill character `-c`). All 4 packages install instantly via `pkg install <name>`, support pipes (`fortune | cowsay`, `date | banner`), and pass full dependency and uninstallation workflows. All test suites pass: 85/85 smoke checks, 8/8 standard library package unit tests, 6/6 package dependency unit tests, 7/7 package publish unit tests, 4/4 clipboard JS unit tests, 9/9 clipboard command Python tests, 7/7 status bar JS unit tests, 4/4 status command tests, 7/7 window manager JS unit tests, 6/6 window command tests, 7/7 multiplexer JS unit tests, 4/4 multiplexer command tests, and all structure tests (15 core, 6 apps, 152 commands, 74 asset entries).
 
 ## Next steps
 
-1. Implement P7-15: Standard Library Expansion (add classic utilities and games e.g., `fortune`, `cowsay`, `cal`, `banner` as installable community packages).
-2. Implement P7-16: Package Security & Sandboxing (verification hashes and permission scopes for installed third-party packages before execution).
-3. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
+1. Implement P7-16: Package Security & Sandboxing (verification hashes and permission scopes for installed third-party packages before execution).
+2. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
 
 
 ## Session log
+
+### Session 23: 2026-10-06: P7-15 Standard Library Expansion (`fortune`, `cowsay`, `cal`, `banner`)
+
+**Goal:** Implement P7-15: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages with documentation and examples.
+**Done:** P7-15, D-043. Authored four standard library community packages in `extras/packages/`: `fortune.py`, `cowsay.py`, `cal.py`, and `banner.py`. Each package includes full metadata, flags definition, async `run`, `man`, and `help`. Handled ANSI rendering conventions (D-023) with plain text by default and `-C` / `--color` flags, plus ANSI escape code stripping in `cowsay.py`'s speech bubble width calculations to prevent border distortion when receiving colored piped input. Packaged the community standard library into `resources/core/standard_packages.py`, integrated resolution fallbacks into `resources/core/commands/pkg.py` (`_find_package_source_content` and `pkg search`), and added default VFS paths `/var/pkg/repo` and `/etc/packages/commands` in `resources/core/filesystem.py`. Created test suite `tests/stdlib_packages_test.py` covering searching, installing, executing, flag options, ANSI handling, piped composition (`fortune | cowsay`), and dependency listing/removal (8/8 passing in 0.013s). Regenerated `core/manifest.json` (15 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
+**Changed:** `extras/packages/fortune.py`, `extras/packages/cowsay.py`, `extras/packages/cal.py`, `extras/packages/banner.py`, `resources/core/standard_packages.py`, `resources/core/commands/pkg.py`, `resources/core/filesystem.py`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/stdlib_packages_test.py`.
+**Decisions:** D-043 (Standard Library Community Packages).
+**Problems / surprises:**
+- In `cowsay.py`, piped ANSI color codes from upstream commands (like `fortune -C`) previously caused speech bubble borders to misalign due to raw byte lengths in `textwrap.wrap` and padding. Resolved by adding `_strip_ansi` and `_visible_len` so padding and column calculations consider only printable characters.
+- In `filesystem.py`, provisioned default directories `/var/pkg/repo` and `/etc/packages/commands` to ensure clean package repository operations even before initial package publication.
+**Left undone:** P7-16 (Package Security & Sandboxing).
+**Next session should start with:** P7-16: Package Security & Sandboxing.
 
 ### Session 22: 2026-10-06: P7-14 Package Dependency Resolution & Dynamic Wheels (`pkg deps`, cycle protection, `--force`, `--no-deps`)
 

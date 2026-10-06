@@ -10,6 +10,7 @@
     "host_api",
     "kernel",
     "session",
+    "standard_packages",
     "story_manager",
     "sudo",
     "swarm_manager",

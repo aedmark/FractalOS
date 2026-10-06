@@ -499,3 +499,16 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
    - Returns effect `update_commands_manifest` (or `load_pyodide_wheels`) with `wheels: [...]`.
    - `resources/scripts/effect_handler.js` invokes `FractalOS_Kernel.pyodide.loadPackage(wheels)` directly at runtime, loading requested wheels into the WebAssembly environment without requiring a page refresh or OS reboot.
 **Consequences:** True package management semantics with dependency integrity, cycle protection, uninstall safety, and live Pyodide runtime expansion.
+
+## D-043 Standard Library Community Packages (`fortune`, `cowsay`, `cal`, `banner`) (2026-10-06, status: accepted)
+**Context:** P7-15. To showcase FractalOS's package management capabilities and provide classic Unix joy and utility, standard community packages were needed that demonstrate piping, ANSI rendering conventions (D-023), flag parsing, and documentation standards.
+**Decision:**
+1. We authored four standard community packages in `extras/packages/`:
+   - `fortune.py`: Displays pearls of wisdom and computing adages. Supports `-s` (short fortunes) and `-C` / `--color` (ANSI cyan highlighting, plain text by default per D-023).
+   - `cowsay.py`: Configurable ASCII creature speaker. Supports custom message or piped `stdin_data`, custom bubble widths (`-W`), thought bubbles (`-T`), alternative creatures (`-f tux`, `duck`, `ghost`), and classic facial expressions (`-b`, `-d`, `-g`, `-p`, `-s`, `-t`, `-w`, `-y`). Automatically ignores ANSI escape codes when computing speech bubble widths to prevent border distortion when receiving colored piped input.
+   - `cal.py`: Calendar utility utilizing Python's built-in `calendar` module. Supports single month view, `-3` (three-month previous/current/next view), `-y` (full year 12-month grid), and `-m` (Monday-first week start).
+   - `banner.py`: Generates 5-line high ASCII glyph text banners with custom fill characters (`-c`), case-insensitive translation, and piped stdin support.
+2. We packaged the catalog into `resources/core/standard_packages.py` and connected it to `resources/core/commands/pkg.py`, ensuring `pkg search` and `pkg install` resolve standard packages instantly out of the box in offline, browser, or desktop environments, as well as checking candidate paths in `/extras/packages/` and `/var/pkg/repo/`.
+3. Default directories `/var/pkg/repo` and `/etc/packages/commands` are provisioned during VFS initialization (`filesystem.py`).
+**Consequences:** Complete, delightful standard utilities available for instant installation and shell pipeline composition (`fortune | cowsay`, `date | banner`).
+

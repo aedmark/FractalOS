@@ -4,6 +4,11 @@ import re
 import datetime
 import hashlib
 from filesystem import fs_manager
+try:
+    from standard_packages import PACKAGES as STANDARD_PACKAGES, DESCRIPTIONS as STANDARD_DESCRIPTIONS
+except ImportError:
+    STANDARD_PACKAGES = {}
+    STANDARD_DESCRIPTIONS = {}
 
 RESERVED_COMMANDS = {
     "ls", "cat", "cd", "rm", "cp", "mv", "mkdir", "echo", "pwd", "grep",
@@ -196,14 +201,20 @@ async def _find_package_source_content(source, user_context):
         f"/var/pkg/repo/{source}.py",
         f"/var/pkg/repo/{source}.fpkg",
         f"/home/{username}/.pkg/repo/{source}.py",
-        f"/home/{username}/.pkg/repo/{source}.fpkg"
+        f"/home/{username}/.pkg/repo/{source}.fpkg",
+        f"/extras/packages/{source}.py",
+        f"/extras/packages/{source}.fpkg"
     ]
     for cpath in candidate_paths:
         c_content, c_err = _read_file_from_vfs(cpath, user_context)
         if not c_err:
             return c_content, os.path.basename(cpath), None
 
-    # 3. Remote default registry URL
+    # 3. Built-in community standard library
+    if source in STANDARD_PACKAGES:
+        return STANDARD_PACKAGES[source], f"{source}.py", None
+
+    # 4. Remote default registry URL
     registry_url = f"{DEFAULT_REGISTRY_URL}/{source}.py"
     content, err = await _fetch_url(registry_url)
     if not err and content and not content.strip().startswith("404:") and content.strip() != "404: Not Found":
@@ -857,6 +868,18 @@ def help(args, flags, user_context, **kwargs):
                             found[pname] = {**pmeta, "repo": sdir}
                 except Exception:
                     pass
+
+        for sname, sdesc in STANDARD_DESCRIPTIONS.items():
+            if not query or query in sname or query in sdesc.lower():
+                if sname not in found:
+                    found[sname] = {
+                        "name": sname,
+                        "version": "1.0.0",
+                        "description": sdesc,
+                        "author": "FractalOS Community",
+                        "repo": "community (stdlib)",
+                        "file": f"{sname}.py"
+                    }
 
         if not found:
             return f"No packages found matching '{query}' in local repositories."

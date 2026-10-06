@@ -58,10 +58,24 @@ class FileSystemManager:
                     "etc": {"type": "directory", "children": {
                         'ai.conf': {"type": "file", "content": "{\n  \"provider\": \"ollama\",\n  \"model\": null\n}", "owner": "root", "group": "root", "mode": 0o644, "mtime": now_iso},
                         'sudoers': {"type": "file", "content": "# /etc/sudoers...", "owner": "root", "group": "root", "mode": 0o440, "mtime": now_iso},
-                        'themes': {"type": "directory", "children": {}, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso}
+                        'themes': {"type": "directory", "children": {}, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso},
+                        'packages': {
+                            "type": "directory",
+                            "children": {
+                                "commands": {"type": "directory", "children": {}, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso}
+                            },
+                            "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso
+                        }
                     }, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso},
                     "var": {"type": "directory", "children": {
-                        "log": {"type": "directory", "children": {}, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso}
+                        "log": {"type": "directory", "children": {}, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso},
+                        "pkg": {
+                            "type": "directory",
+                            "children": {
+                                "repo": {"type": "directory", "children": {}, "owner": "root", "group": "root", "mode": 0o777, "mtime": now_iso}
+                            },
+                            "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso
+                        }
                     }, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso},
                 }, "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso,
             }
