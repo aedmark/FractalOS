@@ -11,17 +11,32 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-Milestone 7.1 ("Collaborative P2P & Multi-Node Mesh") is 100% complete (`P7-01`, `P7-02`, `P7-03`, `P7-04`)! FractalOS now supports complete peer-to-peer distributed mesh capabilities: remote shell session attachment (`attach`, `detach`, `wall`, `talk`), secure direct file transfer (`mesh-cp` / `scp`), multiplayer terminal arcade games (`netgame`, `c4`, `ttt`), and live mesh node presence and discovery (`peers`, `netstat --mesh`, and the `Peers` graphical monitor app). Discovered nodes exchange metadata (username, hostname, transport layer, capabilities, uptime), support live ping/latency measurements, and can be inspected via CLI or monitored with live auto-refreshing TUI cards. All automated test batteries pass with 100% success: 85/85 smoke checks, 40/40 in-OS diag assertions, 10/10 peers command tests, 6/6 peers network unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh network tests, 26/26 agent unit tests, 22/22 grading tests, and all structure tests.
+Milestone 7.1 is complete and Milestone 7.2 ("Multi-Agent Swarms & Physical IoT Autopilot") is underway with `P7-05` completed! FractalOS now supports an asynchronous hardware sensor monitoring daemon and virtual GPIO bus (`gpio monitor`, `stop`, `monitors`, `simulate`, `stream`). In browser/web environments, an in-memory virtual pin table simulates voltage transitions and sensor signals; under Neutralino on host Linux or Raspberry Pi, direct sysfs/libgpiod bindings are addressed. When pins transition according to triggers (`change`, `rising`, `falling`), `HardwareManager` fires shell action callbacks, logs event histories, plays auditory feedback tones, and optionally broadcasts mesh notifications to peer nodes. All test suites pass: 85/85 smoke checks, 8/8 gpio command tests, 6/6 hardware daemon JS tests, 10/10 peers command tests, 6/6 peers unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh unit tests, 26/26 agent unit tests, 22/22 grading tests, and all structure tests.
 
 ## Next steps
 
-1. Begin Milestone 7.2: Multi-Agent Swarms & Physical IoT Autopilot.
-2. Implement P7-05: Hardware Sensor Monitoring Daemon (`gpio` kernel background monitoring and event callbacks).
-3. Implement P7-06: IoT Autopilot Actions for `samwise`.
-4. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
+1. Continue Milestone 7.2: Multi-Agent Swarms & Physical IoT Autopilot.
+2. Implement P7-06: IoT Autopilot Actions for `samwise` (teach agent how to inspect pins, register monitor action callbacks, and actuate outputs).
+3. Implement P7-07: Distributed Agent Task Delegation (remote task delegation across peer nodes).
+4. Implement P7-08: Swarm Safety & Voltage Policies for Mesh (remote command budgeting and confirmation safeguards).
+5. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
 
 
 ## Session log
+
+### Session 13: 2026-10-06: P7-05 Hardware Sensor Monitoring Daemon (`gpio`, `HardwareManager`)
+
+**Goal:** Implement P7-05: Hardware Sensor Monitoring Daemon supporting background interval polling, trigger conditions, action callbacks, and virtual GPIO simulation.
+**Done:** P7-05, D-033. Extended `resources/core/commands/gpio.py` with `mode`, `read`, `write`, `monitor <pin>`, `stop <pin>`, `monitors`, `simulate <pin> <val>`, and `stream <pin> [count]`. Implemented `HardwareManager` in `resources/scripts/hardware_manager.js` to manage background polling intervals, edge trigger detection, automatic shell action execution via `CommandExecutor`, mesh broadcast forwarding, and event logging. Added `gpio_monitor_start`, `gpio_monitor_stop`, `gpio_monitor_list`, and `gpio_simulate` effect handlers in `effect_handler.js`. Wired `HardwareManager` into `main.js` and registered in `asset_manifest.js`. Created unit tests in `tests/gpio_command_test.py` and `tests/hardware_unit.js`. Verified 85/85 smoke checks, structure tests, and all test suites.
+**Changed:** `resources/core/commands/gpio.py`, `resources/scripts/hardware_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/gpio_command_test.py`, `tests/hardware_unit.js`.
+**Decisions:** D-033 (Hardware sensor monitoring daemon, edge detection, and virtual GPIO simulation).
+**Problems / surprises:**
+- Node test runner needed explicit `process.exit(0)` after asynchronous timer resolution to avoid lingering event loop polling keeping tests hanging.
+- Dual-mode architecture seamlessly provides virtual GPIO emulation on browser/headless environments while transparently utilizing sysfs/libgpiod when running under Neutralino on physical Linux/Raspberry Pi hardware.
+**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
+**Next session should start with:** P7-06: IoT Autopilot Actions for `samwise`.
+
+
 
 ### Session 12: 2026-10-06: P7-04 Mesh Node Presence & Discovery UI (`peers`, `netstat --mesh`)
 

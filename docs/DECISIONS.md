@@ -382,6 +382,12 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 **Decision:** We introduced the `peers` command (and extended `netstat` with `--mesh` and `--gui`). `NetworkManager` now exchanges peer metadata (username, hostname, capabilities, transport type, uptime) during `discover` handshakes and caches it in `peerMetadata`. `getPeersDetailed({ doPing })` and `getPeerInfo(peerId)` expose structured peer lists with live round-trip latency measured via ping/pong messages. The command formats ANSI presence tables (`peers`), runs active pings (`peers -p`), outputs structured JSON (`peers --json`), and inspects specific nodes (`peers info <id>`). A dedicated fullscreen TUI app (`PeersManager` / `PeersUI` via `peers --gui`) provides live auto-polling, summary status cards, and direct action shortcuts (Attach, Ping).
 **Consequences:** Complete visibility into distributed mesh topology without requiring root privileges or external networking tools.
 
+## D-033 Hardware Sensor Monitoring Daemon & Virtual Bus (`gpio monitor`, `HardwareManager`) (2026-10-06, status: accepted)
+**Context:** P7-05. FractalOS needs the ability to run background monitoring daemons on GPIO pins and sensors, triggering event callbacks, shell commands, and mesh alerts on button presses or state transitions, with fallback for environments lacking physical hardware.
+**Decision:** We updated `gpio.py` to support background monitoring (`gpio monitor <pin> [--trigger <change|rising|falling>] [--action <cmd>] [--interval <ms>] [--mesh]`), telemetry streaming (`gpio stream`), and simulation (`gpio simulate`). We created `HardwareManager` in JS to manage active interval polling and virtual pin states. In Portable Mode on a Raspberry Pi, `HardwareManager` reads pins via Neutralino's OS bridge; in browser or test environments, it reads/writes a simulated virtual bus. When triggers match (e.g., button press rising 0->1), `HardwareManager` automatically fires bound action commands through `CommandExecutor.processSingleCommand`, plays audio alerts via `SoundManager`, and can broadcast events across the mesh.
+**Consequences:** Enables background IoT daemons that seamlessly run on real Raspberry Pi hardware or in virtual simulation, providing the sensor-event primitives required for `samwise` IoT autopilot actions.
+
+
 
 
 

@@ -38,6 +38,7 @@ window.onload = async () => {
     const environmentManager = new EnvironmentManager();
     const themeManager = new ThemeManager();
     const uiStateManager = new UIStateManager();
+    const hardwareManager = new HardwareManager();
 
     Object.assign(dependencies, {
         Config: configManager, StorageManager: storageManager, FileSystemManager: fsManager,
@@ -46,6 +47,7 @@ window.onload = async () => {
         ModalManager: modalManager, AppLayerManager: appLayerManager, AliasManager: aliasManager,
         HistoryManager: historyManager, TabCompletionManager: tabCompletionManager, Utils: Utils,
         ErrorHandler: ErrorHandler, AIManager: aiManager, NetworkManager: networkManager,
+        HardwareManager: hardwareManager,
         UIComponents: uiComponents, domElements: domElements, SoundManager: soundManager,
         AuditManager: auditManager,
         EnvironmentManager: environmentManager,

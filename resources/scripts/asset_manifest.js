@@ -69,6 +69,7 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/theme_manager.js",
         "./scripts/command_registry.js",
         "./scripts/network_manager.js",
+        "./scripts/hardware_manager.js",
         "./scripts/audit_manager.js",
         "./scripts/job_handler.js",
         "./scripts/effect_handler.js",

@@ -661,6 +661,63 @@ async function handleEffect(result, options) {
             break;
         }
 
+        case 'gpio_monitor_start': {
+            if (dependencies.HardwareManager) {
+                dependencies.HardwareManager.startMonitor(result.pin, result);
+            }
+            const actStr = result.action ? `, action: "${result.action}"` : '';
+            const meshStr = result.mesh ? ', mesh: active' : '';
+            await OutputManager.appendToOutput(
+                `\x1b[1;32m[GPIO Daemon]\x1b[0m Started background monitor on pin ${result.pin} (trigger: ${result.trigger}, interval: ${result.interval}ms${actStr}${meshStr}).`
+            );
+            break;
+        }
+
+        case 'gpio_monitor_stop': {
+            let stopped = false;
+            if (dependencies.HardwareManager) {
+                stopped = dependencies.HardwareManager.stopMonitor(result.pin);
+            }
+            if (stopped) {
+                await OutputManager.appendToOutput(`\x1b[1;33m[GPIO Daemon]\x1b[0m Stopped monitor on pin ${result.pin}.`);
+            } else {
+                await OutputManager.appendToOutput(`gpio stop: no active monitor running on pin ${result.pin}.`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+            }
+            break;
+        }
+
+        case 'gpio_monitor_list': {
+            const list = dependencies.HardwareManager ? dependencies.HardwareManager.listMonitors() : [];
+            const lines = [
+                `\x1b[1;36m=== Active Hardware Monitors ===\x1b[0m`
+            ];
+            if (list.length === 0) {
+                lines.push("  (No active background GPIO monitors running)");
+                lines.push("  Usage: gpio monitor <pin> [--trigger <change|rising|falling>] [--action <cmd>]");
+            } else {
+                lines.push("PIN   TRIGGER   INTERVAL   VAL   EVENTS   ACTION");
+                lines.push("──────────────────────────────────────────────────────────────────");
+                list.forEach(m => {
+                    const pinPad = String(m.pin).padEnd(5);
+                    const trigPad = String(m.trigger).padEnd(9);
+                    const intPad = `${m.interval}ms`.padEnd(10);
+                    const valPad = String(m.lastVal).padEnd(5);
+                    const evtPad = String(m.eventCount).padEnd(8);
+                    const actStr = m.action ? `"${m.action}"` : "(none)";
+                    lines.push(`${pinPad} ${trigPad} ${intPad} ${valPad} ${evtPad} ${actStr}`);
+                });
+            }
+            await OutputManager.appendToOutput(lines.join('\n'));
+            break;
+        }
+
+        case 'gpio_simulate': {
+            if (dependencies.HardwareManager) {
+                await dependencies.HardwareManager.simulatePin(result.pin, result.value);
+            }
+            break;
+        }
+
         case 'read_messages':
             const messages = MessageBusManager.getMessages(result.job_id);
             await OutputManager.appendToOutput(messages.join(" "));
