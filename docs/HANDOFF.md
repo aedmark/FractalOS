@@ -11,18 +11,29 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-Milestone 7.1 is complete and Milestone 7.2 ("Multi-Agent Swarms & Physical IoT Autopilot") is underway with `P7-05` completed! FractalOS now supports an asynchronous hardware sensor monitoring daemon and virtual GPIO bus (`gpio monitor`, `stop`, `monitors`, `simulate`, `stream`). In browser/web environments, an in-memory virtual pin table simulates voltage transitions and sensor signals; under Neutralino on host Linux or Raspberry Pi, direct sysfs/libgpiod bindings are addressed. When pins transition according to triggers (`change`, `rising`, `falling`), `HardwareManager` fires shell action callbacks, logs event histories, plays auditory feedback tones, and optionally broadcasts mesh notifications to peer nodes. All test suites pass: 85/85 smoke checks, 8/8 gpio command tests, 6/6 hardware daemon JS tests, 10/10 peers command tests, 6/6 peers unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh unit tests, 26/26 agent unit tests, 22/22 grading tests, and all structure tests.
+Milestone 7.2 ("Multi-Agent Swarms & Physical IoT Autopilot") progresses with `P7-05` and `P7-06` completed! FractalOS now supports complete IoT autopilot actions and physical/virtual hardware interaction for the `samwise` AI agent (`BoneDriver` & `AIManager`). The agent can inspect hardware sensors (`gpio read`), actuate outputs/LEDs (`gpio write`), configure directions (`gpio mode`), and register background event monitoring daemons (`gpio monitor`, `stop`, `monitors`). Safety voltage budgeting prices operations precisely: reads/status are safe (0.1 V), mode configuration is 2.0 V, kinetic actuation is 5.0 V, and embedded action commands in `--action` add recursive voltage risks (blocking hazardous actions like `gpio monitor ... --action "rm -rf /"` with 25.0 V Critical Danger). Non-interactive plan effects (`gpio_monitor_start`, `gpio_monitor_stop`, `gpio_simulate`, `play_sound`, `mesh_broadcast`) pass cleanly through the autopilot loop and execution pipeline to JS. All test suites pass: 85/85 smoke checks, 32/32 agent unit tests, 22/22 grading tests, 8/8 gpio command tests, 6/6 hardware daemon JS tests, 10/10 peers command tests, 6/6 peers unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh unit tests, and all structure tests.
 
 ## Next steps
 
-1. Continue Milestone 7.2: Multi-Agent Swarms & Physical IoT Autopilot.
-2. Implement P7-06: IoT Autopilot Actions for `samwise` (teach agent how to inspect pins, register monitor action callbacks, and actuate outputs).
-3. Implement P7-07: Distributed Agent Task Delegation (remote task delegation across peer nodes).
-4. Implement P7-08: Swarm Safety & Voltage Policies for Mesh (remote command budgeting and confirmation safeguards).
-5. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
+1. Implement P7-07: Distributed Agent Task Delegation (allow `samwise` on one node to dispatch sub-tasks or queries to a peer node's agent over the mesh network and await synthesized results).
+2. Implement P7-08: Swarm Safety & Voltage Policies for Mesh (remote command budgeting and confirmation safeguards across distributed nodes).
+3. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
 
 
 ## Session log
+
+### Session 14: 2026-10-06: P7-06 IoT Autopilot Actions (`samwise`, `BoneDriver`, `AIManager`, `gpio`)
+
+**Goal:** Implement P7-06: Teach `samwise` to interact with hardware sensors and actuators, configure monitoring daemons, and enforce hardware voltage safety policies.
+**Done:** P7-06, D-034. Extended `BoneDriver` in `resources/core/bone_driver.py` with IoT biology laws and tool manifest examples (`gpio mode`, `read`, `write`, `monitor`, `stop`, `monitors`), operation-based voltage pricing for GPIO subcommands (0.1 V for reads, 2.0 V for modes, 5.0 V for writes/monitors, plus recursive voltage scoring of `--action` commands), and checkpoint bypass for non-filesystem GPIO actions. Updated `AIManager` in `resources/core/ai_manager.py` with `gpio` whitelisting, prompt guidance, `is_dangerous` checks requiring confirmation for kinetic writes in agent mode, and `ALLOWED_PLAN_EFFECTS` support in `_execute_plan_step` and `perform_autopilot` for non-interactive background/hardware effects (`gpio_monitor_start`, `gpio_monitor_stop`, `gpio_simulate`, `play_sound`, `mesh_broadcast`). Updated `samwise.py` to deliver collected effects alongside prose reports. Added 6 new unit tests to `tests/agent_unit.py` (32/32 passing). Verified 85/85 smoke checks, structure tests, and all test batteries.
+**Changed:** `resources/core/bone_driver.py`, `resources/core/ai_manager.py`, `resources/core/commands/gpio.py`, `resources/core/commands/samwise.py`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/agent_unit.py`.
+**Decisions:** D-034 (IoT Autopilot Actions, Hardware Voltage Policies, and Non-Interactive Effects).
+**Problems / surprises:**
+- In `ai_manager.py`, `_execute_plan_step` was previously halting any step that returned any effect other than `change_directory`. Added `ALLOWED_PLAN_EFFECTS` whitelist (`gpio_simulate`, `gpio_monitor_start`, `gpio_monitor_stop`, `play_sound`, etc.) so background hardware actions execute cleanly without requiring interactive user terminal prompts.
+**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
+**Next session should start with:** P7-07: Distributed Agent Task Delegation over the mesh network.
+
+
 
 ### Session 13: 2026-10-06: P7-05 Hardware Sensor Monitoring Daemon (`gpio`, `HardwareManager`)
 

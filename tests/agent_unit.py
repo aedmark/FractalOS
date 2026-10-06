@@ -226,6 +226,60 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(result['data'], 'Paris is the capital of France.')
         self.assertEqual(len(calls), 1)
 
+    # P7-06: IoT Autopilot Actions & Voltage
+    def test_gpio_voltage_scoring(self):
+        self.assertEqual(BoneDriver.command_voltage('gpio read 17'), 0.1)
+        self.assertEqual(BoneDriver.command_voltage('gpio monitors'), 0.1)
+        self.assertEqual(BoneDriver.command_voltage('gpio mode 17 out'), 2.0)
+        self.assertEqual(BoneDriver.command_voltage('gpio write 17 1'), 5.0)
+        self.assertEqual(BoneDriver.command_voltage('gpio simulate 18 0'), 5.0)
+        self.assertEqual(BoneDriver.command_voltage('gpio stop 18'), 5.0)
+        self.assertEqual(BoneDriver.command_voltage('gpio monitor 18 --trigger falling --action "echo Pressed"'), 5.1)
+        self.assertEqual(BoneDriver.command_voltage('gpio monitor 18 --action "rm -rf /"'), 25.0)
+
+    def test_gpio_needs_checkpoint(self):
+        self.assertFalse(BoneDriver.needs_checkpoint(['gpio mode 17 out', 'gpio write 17 1']))
+        self.assertTrue(BoneDriver.needs_checkpoint(['forge led.py "code"', 'gpio write 17 1']))
+
+    def test_gpio_plan_validation(self):
+        self.assertIsNone(self.am.validate_plan(['gpio mode 17 out']))
+        self.assertIsNone(self.am.validate_plan(['gpio write 17 1']))
+        self.assertIsNone(self.am.validate_plan(['gpio monitor 18 --trigger falling --action "echo Button Pressed"']))
+
+    def test_gpio_autopilot_execution_and_effects(self):
+        self.executor.results['gpio mode 17 out'] = {'success': True, 'output': 'Pin 17 mode set to out.'}
+        self.executor.results['gpio write 17 1'] = {
+            'success': True,
+            'output': 'Pin 17 -> 1',
+            'effects': [{'effect': 'gpio_simulate', 'pin': '17', 'value': 1}]
+        }
+        result = self.run_plan('1. gpio mode 17 out\n2. gpio write 17 1')
+        self.assertTrue(result['success'], result)
+        self.assertEqual([c[0] for c in self.executor.calls], ['gpio mode 17 out', 'gpio write 17 1'])
+        self.assertIn('Pin 17 -> 1', result['data'])
+        self.assertEqual(len(result.get('effects', [])), 1)
+        self.assertEqual(result['effects'][0]['effect'], 'gpio_simulate')
+
+    def test_gpio_dangerous_confirmation_in_agent_mode(self):
+        # gpio write is dangerous kinetic actuation; prompts for confirm
+        result = self.run_plan('1. gpio write 17 1', agent=True)
+        self.assertEqual(result.get('effect'), 'confirm_ai_command')
+        self.assertEqual(result.get('command'), 'gpio write 17 1')
+
+        # gpio read is safe reading; executes directly
+        self.executor.calls.clear()
+        self.executor.results['gpio read 17'] = {'success': True, 'output': '1'}
+        result2 = self.run_plan('1. gpio read 17', agent=True)
+        self.assertTrue(result2['success'])
+        self.assertEqual(self.executor.calls[0][0], 'gpio read 17')
+
+    def test_gpio_monitor_with_dangerous_action_brakes(self):
+        # Action with rm has voltage 25.0 -> critical danger, stops autopilot
+        result = self.run_plan('1. gpio monitor 18 --action "rm -rf /"')
+        self.assertFalse(result['success'])
+        self.assertIn('DISENGAGED', result['error'])
+        self.assertEqual(self.executor.calls, [])
+
 
 if __name__ == '__main__':
     unittest.main()

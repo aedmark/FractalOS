@@ -387,7 +387,12 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 **Decision:** We updated `gpio.py` to support background monitoring (`gpio monitor <pin> [--trigger <change|rising|falling>] [--action <cmd>] [--interval <ms>] [--mesh]`), telemetry streaming (`gpio stream`), and simulation (`gpio simulate`). We created `HardwareManager` in JS to manage active interval polling and virtual pin states. In Portable Mode on a Raspberry Pi, `HardwareManager` reads pins via Neutralino's OS bridge; in browser or test environments, it reads/writes a simulated virtual bus. When triggers match (e.g., button press rising 0->1), `HardwareManager` automatically fires bound action commands through `CommandExecutor.processSingleCommand`, plays audio alerts via `SoundManager`, and can broadcast events across the mesh.
 **Consequences:** Enables background IoT daemons that seamlessly run on real Raspberry Pi hardware or in virtual simulation, providing the sensor-event primitives required for `samwise` IoT autopilot actions.
 
-
-
-
-
+## D-034 IoT Autopilot Actions, Hardware Voltage Policies, and Non-Interactive Effects (2026-10-06, status: accepted)
+**Context:** P7-06. The `samwise` AI agent needs to inspect hardware pins, actuate physical or virtual outputs (e.g. toggling LEDs/relays), and configure sensor monitoring daemons in response to user requests, while strictly adhering to safety voltage budgets and confirmation policies.
+**Decision:** We updated `BoneDriver` and `AIManager`:
+1. `gpio` is added to the agent tool manifest and `COMMAND_WHITELIST`.
+2. In `BoneDriver.command_voltage`, read-only operations (`gpio read`, `gpio monitors`, `gpio stream`) score 0.1 V (Safe). Direction configuration (`gpio mode`) scores 2.0 V. Kinetic actuation (`gpio write`, `gpio simulate`, `gpio monitor`, `gpio stop`) scores 5.0 V (Caution). Furthermore, action commands embedded within `--action` (or `-a`) are parsed and have their voltage recursively added to the monitor command's voltage (e.g., `gpio monitor 18 --action "rm -rf /"` evaluates to 5.0 + 20.0 = 25.0 V, triggering the Critical Danger brake).
+3. `BoneDriver.needs_checkpoint` recognizes `gpio` commands as touching external hardware/virtual buses rather than user home directory files, avoiding redundant `.story` checkpoint creation for pure IoT actions.
+4. In agent mode (`samwise "prompt"`), `is_dangerous` prompts the user for explicit confirmation before executing kinetic actuation (`gpio write`, `gpio monitor`), while allowing sensor reading (`gpio read`) to run immediately and pass observations to the synthesizer.
+5. In autopilot mode (`samwise --autopilot "task"`), `_execute_plan_step` permits allowed non-interactive background/hardware effects (`gpio_monitor_start`, `gpio_monitor_stop`, `gpio_simulate`, `play_sound`, `mesh_broadcast`, `mesh_send`). These effects are collected during plan execution and delivered to the front end alongside the prose report so `HardwareManager` and audio triggers fire without user intervention.
+**Consequences:** `samwise` can fluently understand, automate, and monitor IoT hardware environments safely without prompt injections escaping into hazardous actions.

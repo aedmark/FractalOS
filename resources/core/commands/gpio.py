@@ -123,7 +123,8 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
             "trigger": trigger,
             "interval": interval,
             "action": action_cmd,
-            "mesh": wants_mesh
+            "mesh": wants_mesh,
+            "output": f"Started background monitor on pin {pin} (trigger: {trigger}, interval: {interval}ms)."
         }
 
     # --- Stop Monitoring ---
@@ -136,7 +137,8 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
 
         return {
             "effect": "gpio_monitor_stop",
-            "pin": pin
+            "pin": pin,
+            "output": f"Stopped background monitor on pin {pin}."
         }
 
     # --- List Monitors ---

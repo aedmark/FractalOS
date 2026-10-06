@@ -244,10 +244,9 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 - [x] P7-02 **Peer-to-Peer File Transfer (`mesh-cp` / `scp`)**: Securely send or pull files between connected FractalOS nodes across the mesh network without external cloud storage (D-030, 2026-10-06).
 - [x] P7-03 **Multiplayer Terminal Applications**: Shared turn-based or interactive terminal applications (e.g. 2-player text games or collaborative editor sessions) over BroadcastChannel / WebRTC mesh (D-031, 2026-10-06).
 - [x] P7-04 **Mesh Node Presence & Discovery UI**: Live network status app or shell command (`peers` / `netstat --mesh`) displaying discovered nodes, latency, and shared capabilities (D-032, 2026-10-06).
-
 ### Milestone 7.2: Multi-Agent Swarms & Physical IoT Autopilot
 - [x] P7-05 **Hardware Sensor Monitoring Daemon**: Add background monitoring capabilities in `gpio` / Python kernel for reading pin states, button presses, or sensor streams with callback events (D-033, 2026-10-06).
-- [ ] P7-06 **IoT Autopilot Actions**: Teach `samwise` to interact with hardware sensors and actuators (e.g. "turn on LED when disk is full", "monitor pin 17 and alert").
+- [x] P7-06 **IoT Autopilot Actions**: Teach `samwise` to interact with hardware sensors and actuators (e.g. "turn on LED when disk is full", "monitor pin 17 and alert") (D-034, 2026-10-06).
 - [ ] P7-07 **Distributed Agent Task Delegation**: Allow `samwise` on one node to dispatch sub-tasks or queries to a peer node's agent over the mesh network and await synthesized results.
 - [ ] P7-08 **Swarm Safety & Voltage Policies for Mesh**: Voltage budgeting and confirmation rules specifically tailored for remote commands and physical hardware actions across nodes.
 

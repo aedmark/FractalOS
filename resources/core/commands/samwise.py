@@ -93,11 +93,17 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         if result.get("effect"):
             return result
         if result.get("success"):
-            return {
+            resp = {
                 "effect": "display_prose",
                 "header": "Samwise",
                 "content": result.get("data")
             }
+            if result.get("effects"):
+                return {
+                    "success": True,
+                    "effects": [resp, *result["effects"]]
+                }
+            return resp
         else:
             return {
                 "success": False,
@@ -134,11 +140,17 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         )
         
         if result["success"]:
-            return {
+            resp = {
                 "effect": "display_prose",
                 "header": "🍄 BoneAmanita Autopilot Report",
                 "content": result.get("data")
             }
+            if result.get("effects"):
+                return {
+                    "success": True,
+                    "effects": [resp, *result["effects"]]
+                }
+            return resp
         else:
             return {
                 "success": False,
@@ -153,11 +165,17 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
     if result.get("effect"):
         return result
     if result.get("success"):
-        return {
+        resp = {
             "effect": "display_prose",
             "header": "Samwise",
             "content": result.get("data")
         }
+        if result.get("effects"):
+            return {
+                "success": True,
+                "effects": [resp, *result["effects"]]
+            }
+        return resp
     else:
         return {
             "success": False,

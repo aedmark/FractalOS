@@ -42,6 +42,7 @@ class AIManager:
 {tool_manifest}
 --- END MANIFEST ---
 
+Interact with hardware pins or sensors via `gpio`: `gpio mode <pin> <in|out>`, `gpio read <pin>`, `gpio write <pin> <0|1>`, `gpio monitor <pin> [--trigger <change|rising|falling>] [--action "<cmd>"]`.
 Rename a file with `mv old_path new_path`, never `rename`.
 Create plain text with `forge filename "content"`. Respect the requested path; do not invent a project folder.
 Verify deletions using `ls`, do not attempt to `cd` into directories you just deleted. If you anticipate a command might intentionally fail (like a verification step), append `|| true` to it.
@@ -60,7 +61,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             "ls", "cat", "grep", "find", "tree", "pwd", "head", "tail",
             "wc", "man", "help", "echo", "bc", "expr", "whoami", "date", "story",
             "cd", "mkdir", "touch", "mv", "cp", "rm", "rmdir", "forge", "run", "chmod",
-            "python", "true"
+            "python", "true", "gpio"
         ]
         self.PLANNER_SYSTEM_PROMPT = self.PLANNER_SYSTEM_PROMPT.replace(
             "{tool_manifest}", ", ".join(self.COMMAND_WHITELIST))
@@ -68,6 +69,19 @@ Always use absolute paths for all file and directory arguments to prevent contex
             "rm", "mv", "chown", "chgrp", "useradd", "usermod",
             "passwd", "forge", "patch", "reset", "clearfs", "python"
         ]
+
+    def is_dangerous(self, command_str):
+        try:
+            parts = shlex.split(command_str)
+        except ValueError:
+            return True
+        if not parts:
+            return False
+        cmd = parts[0]
+        if cmd == "gpio":
+            sub = parts[1].lower() if len(parts) > 1 else ""
+            return sub in {"write", "simulate", "monitor", "watch", "stop", "unmonitor"}
+        return cmd in self.DANGEROUS_COMMANDS
 
     @staticmethod
     def agent_refusal(command_str):
@@ -129,13 +143,30 @@ Always use absolute paths for all file and directory arguments to prevent contex
         effects = list(result.get("effects", []))
         if result.get("effect"):
             effects.append(result)
+
+        ALLOWED_PLAN_EFFECTS = {
+            "change_directory",
+            "gpio_monitor_start",
+            "gpio_monitor_stop",
+            "gpio_simulate",
+            "play_sound",
+            "mesh_broadcast",
+            "mesh_send",
+        }
+
+        collected_step_effects = []
         if result.get("success", bool(effects)):
             for effect in effects:
-                if effect.get("effect") == "change_directory":
+                eff_name = effect.get("effect")
+                if eff_name == "change_directory":
                     current_path = effect["path"]
+                elif eff_name in ALLOWED_PLAN_EFFECTS:
+                    collected_step_effects.append(effect)
                 else:
                     return {"success": False, "error": "This plan step needs an interactive effect; run it directly."}, current_path
         result.setdefault("success", bool(effects))
+        if collected_step_effects:
+            result["plan_effects"] = collected_step_effects
         return result, current_path
 
     def extract_plan(self, text):
@@ -447,6 +478,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             return {"success": True, "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"}
 
         execution_log = ""
+        collected_plan_effects = []
         if planned["needs_checkpoint"]:
             checkpoint = self._checkpoint_home()
             if not checkpoint.get("success"):
@@ -463,12 +495,19 @@ Always use absolute paths for all file and directory arguments to prevent contex
                 error_msg = f"Execution HALTED at {command_str}: {exec_result.get('error')}"
                 env_manager.set('_AI_LAST_ERROR', error_msg)
                 return {"success": False, "error": f"{error_msg}\nCompleted steps:\n{execution_log}"}
-            execution_log += f"► {command_str}\n{exec_result.get('output', '')}\n"
+            if exec_result.get("plan_effects"):
+                collected_plan_effects.extend(exec_result["plan_effects"])
+            out_str = exec_result.get('output', '')
+            if not out_str and exec_result.get('effect'):
+                out_str = f"[{exec_result.get('effect')}]"
+            execution_log += f"► {command_str}\n{out_str}\n"
 
         env_manager.unset('_AI_LAST_ERROR')
         final_report = f"### 🍄 BONEAMANITA AUTOPILOT REPORT\n**Status:** {safety_status} (Voltage: {voltage})\n\n**Execution Log:**\n```\n{execution_log}\n```"
         
         response = {"success": True, "data": final_report}
+        if collected_plan_effects:
+            response["effects"] = collected_plan_effects
         if warning: response["warning"] = warning
         return response
 
@@ -501,7 +540,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             return {"success": False, "error": error_msg}
 
         commands, refusal = planned["commands"], planned["refusal"]
-        confirm = [] if refusal else [c for c in commands if shlex.split(c)[0] in self.DANGEROUS_COMMANDS]
+        confirm = [] if refusal else [c for c in commands if self.is_dangerous(c)]
         return {"success": True, "plan_text": planned["plan_text"], "commands": commands, "refusal": refusal,
                 "confirm": confirm, "warning": warning,
                 "rejections": planned["rejections"], "attempts": planned["attempts"]}
@@ -525,6 +564,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             "commands_to_execute": commands_to_execute,
             "current_path": current_path,
             "executed_commands_output": "",
+            "collected_effects": [],
         }
         return await self.resume_agentic_search(state, provider, model, options)
 
@@ -533,13 +573,13 @@ Always use absolute paths for all file and directory arguments to prevent contex
         commands_to_execute = state.get("commands_to_execute", [])
         current_path = state.get("current_path")
         executed_commands_output = state.get("executed_commands_output", "")
+        collected_effects = list(state.get("collected_effects", []))
         final_provider, final_model, warning = self._resolve_provider_and_model(provider, model)
 
         for i, command_str in enumerate(commands_to_execute):
             if options.get("signal") and getattr(options["signal"], "aborted", False):
                 return {"success": False, "error": "Killed by user."}
-            command_name = shlex.split(command_str)[0]
-            if command_name in self.DANGEROUS_COMMANDS:
+            if self.is_dangerous(command_str):
                 return {
                     "effect": "confirm_ai_command", 
                     "command": command_str,
@@ -548,6 +588,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
                         "commands_to_execute": commands_to_execute[i+1:],
                         "current_path": current_path,
                         "executed_commands_output": executed_commands_output,
+                        "collected_effects": collected_effects,
                     },
                     "provider": provider,
                     "model": model
@@ -565,7 +606,11 @@ Always use absolute paths for all file and directory arguments to prevent contex
                 error_msg = f"Execution HALTED at {command_str}: {exec_result.get('error')}"
                 env_manager.set('_AI_LAST_ERROR', error_msg)
                 return {"success": False, "error": error_msg}
+            if exec_result.get("plan_effects"):
+                collected_effects.extend(exec_result["plan_effects"])
             output = exec_result.get("output", "")
+            if not output and exec_result.get("effect"):
+                output = f"[{exec_result.get('effect')}]"
             executed_commands_output += f"--- Output of '{command_str}' ---\n{output}\n\n"
 
         env_manager.unset('_AI_LAST_ERROR')
@@ -584,6 +629,8 @@ Always use absolute paths for all file and directory arguments to prevent contex
             return {"success": False, "error": error_msg}
 
         response = {"success": True, "data": final_answer}
+        if collected_effects:
+            response["effects"] = collected_effects
         if warning: response["warning"] = warning
         return response
 
