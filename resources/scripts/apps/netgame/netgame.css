@@ -1,0 +1,252 @@
+/* netgame.css - Styling for FractalOS multiplayer arcade terminal games */
+
+#netgame-app-container {
+    width: 90%;
+    max-width: 950px;
+    height: 90%;
+    max-height: 750px;
+}
+
+.netgame-main {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--color-background-dark, #0d1117);
+}
+
+.netgame-arena {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: var(--spacing-md, 16px);
+    position: relative;
+    user-select: none;
+}
+
+.netgame-status-banner {
+    font-size: 1.15rem;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+}
+
+.netgame-status-banner.turn-my {
+    background-color: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid #38bdf8;
+}
+
+.netgame-status-banner.turn-opp {
+    background-color: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.netgame-status-banner.game-win {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    border: 1px solid #22c55e;
+    animation: pulseWin 1s infinite alternate;
+}
+
+@keyframes pulseWin {
+    from { transform: scale(1); box-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
+    to { transform: scale(1.03); box-shadow: 0 0 20px rgba(34, 197, 94, 0.7); }
+}
+
+/* Connect 4 Board */
+.netgame-c4-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.netgame-c4-col-buttons {
+    display: grid;
+    grid-template-columns: repeat(7, 52px);
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.netgame-col-btn {
+    height: 30px;
+    background: #1e293b;
+    color: #38bdf8;
+    border: 1px solid #38bdf8;
+    border-radius: 4px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.netgame-col-btn:hover:not(:disabled) {
+    background: #38bdf8;
+    color: #0f172a;
+    transform: translateY(-2px);
+}
+
+.netgame-col-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.netgame-c4-board {
+    display: grid;
+    grid-template-columns: repeat(7, 52px);
+    grid-template-rows: repeat(6, 52px);
+    gap: 8px;
+    padding: 12px;
+    background: #1e3a8a;
+    border: 4px solid #172554;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.netgame-c4-slot {
+    width: 52px;
+    height: 52px;
+    background-color: #0f172a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* Tic-Tac-Toe Board */
+.netgame-ttt-board {
+    display: grid;
+    grid-template-columns: repeat(3, 85px);
+    grid-template-rows: repeat(3, 85px);
+    gap: 8px;
+    padding: 16px;
+    background: #1e293b;
+    border: 3px solid #334155;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.netgame-ttt-slot {
+    width: 85px;
+    height: 85px;
+    background-color: #0f172a;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    border: 1px solid #1e293b;
+    transition: all 0.15s ease;
+}
+
+.netgame-ttt-slot:hover:not(.taken) {
+    background-color: #1e293b;
+    border-color: #38bdf8;
+}
+
+/* Game Pieces */
+.netgame-piece {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.netgame-piece-x {
+    background: radial-gradient(circle at 35% 35%, #fde047, #ca8a04);
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+    color: #fde047;
+}
+
+.netgame-piece-o {
+    background: radial-gradient(circle at 35% 35%, #f87171, #dc2626);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+    color: #f87171;
+}
+
+/* Sidebar & Log */
+.netgame-sidebar {
+    width: 260px;
+    border-left: 1px solid var(--color-border-primary, #334155);
+    display: flex;
+    flex-direction: column;
+    background-color: #090d16;
+    padding: 12px;
+}
+
+.netgame-sidebar-title {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: var(--color-info, #38bdf8);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.netgame-move-log {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    padding: 6px;
+    background: #06090e;
+    border: 1px solid #1e293b;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    color: #94a3b8;
+}
+
+.netgame-log-entry {
+    margin-bottom: 4px;
+}
+
+.netgame-log-entry.player-x {
+    color: #fde047;
+}
+
+.netgame-log-entry.player-o {
+    color: #f87171;
+}
+
+.netgame-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.netgame-btn {
+    padding: 8px;
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+
+.netgame-btn:hover {
+    background: #334155;
+}
+
+.netgame-btn-danger {
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+}
+
+.netgame-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+}

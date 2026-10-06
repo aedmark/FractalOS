@@ -242,7 +242,7 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 ### Milestone 7.1: Collaborative P2P & Multi-Node Mesh
 - [x] P7-01 **Remote Shell & Session Attachment**: Attach to a shared terminal session across nodes via the signaling server / WebRTC data channels and local BroadcastChannel (`attach`, `detach`, `wall`, `talk`) (D-029, 2026-10-06).
 - [x] P7-02 **Peer-to-Peer File Transfer (`mesh-cp` / `scp`)**: Securely send or pull files between connected FractalOS nodes across the mesh network without external cloud storage (D-030, 2026-10-06).
-- [ ] P7-03 **Multiplayer Terminal Applications**: Shared turn-based or interactive terminal applications (e.g. 2-player text games or collaborative editor sessions) over BroadcastChannel / WebRTC mesh.
+- [x] P7-03 **Multiplayer Terminal Applications**: Shared turn-based or interactive terminal applications (e.g. 2-player text games or collaborative editor sessions) over BroadcastChannel / WebRTC mesh (D-031, 2026-10-06).
 - [ ] P7-04 **Mesh Node Presence & Discovery UI**: Live network status app or shell command (`peers` / `netstat --mesh`) displaying discovered nodes, latency, and shared capabilities.
 
 ### Milestone 7.2: Multi-Agent Swarms & Physical IoT Autopilot

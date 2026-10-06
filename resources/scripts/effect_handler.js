@@ -571,6 +571,13 @@ async function handleEffect(result, options) {
             break;
         }
 
+        case 'mesh_game_action': {
+            if (dependencies.NetworkManager) {
+                await dependencies.NetworkManager.sendGameAction(result.peerId, result);
+            }
+            break;
+        }
+
         case 'read_messages':
             const messages = MessageBusManager.getMessages(result.job_id);
             await OutputManager.appendToOutput(messages.join(" "));

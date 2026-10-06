@@ -60,6 +60,8 @@ window.onload = async () => {
         SamwiseChatUI: window.SamwiseChatUI,
         LogUI: window.LogUI,
         PaintUI: window.PaintUI, TopUI: window.TopUI,
+        NetgameManager: window.NetgameManager,
+        NetgameUI: window.NetgameUI,
     });
 
     const userManager = new UserManager(dependencies);

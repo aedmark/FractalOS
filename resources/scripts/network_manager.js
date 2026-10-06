@@ -19,6 +19,7 @@ class NetworkManager {
         this.pendingExecRequests = new Map();
         this.pendingFileSendRequests = new Map();
         this.pendingFilePullRequests = new Map();
+        this.activeGameApp = null;
 
         this.channel.onmessage = this._handleBroadcastMessage.bind(this);
 
@@ -388,6 +389,10 @@ class NetworkManager {
 
             case 'mesh_file_pull_reply':
                 await this._handleMeshFilePullReply(payload);
+                break;
+
+            case 'mesh_game':
+                await this._handleMeshGame(payload);
                 break;
 
             default:
@@ -839,5 +844,100 @@ class NetworkManager {
 
     getNextMessage() {
         return this.messageQueue.shift() || null;
+    }
+
+    setActiveGameApp(app) {
+        this.activeGameApp = app;
+    }
+
+    async sendGameAction(targetId, actionData) {
+        if (!this.isNetworkingEnabled) return;
+        const payloadData = {
+            ...actionData,
+            sender: this.instanceId
+        };
+        await this.sendMessage(targetId, 'mesh_game', payloadData);
+    }
+
+    async _handleMeshGame(payload) {
+        const { sourceId, data } = payload;
+        if (!data) return;
+
+        const { action, gameType, move, board, turn, winner, guestName } = data;
+        const gameName = gameType === 'c4' ? 'Connect 4' : (gameType === 'ttt' ? 'Tic-Tac-Toe' : 'Game');
+
+        switch (action) {
+            case 'invite': {
+                if (this.dependencies.OutputManager) {
+                    await this.dependencies.OutputManager.appendToOutput(
+                        `\n\x1b[1;36m[Netgame]\x1b[0m Peer \x1b[1;35m@${sourceId}\x1b[0m invited you to a game of \x1b[1;33m${gameName}\x1b[0m!\n` +
+                        `Type \x1b[1;32m'netgame accept ${sourceId}'\x1b[0m or \x1b[1;32m'${gameType || "c4"} accept ${sourceId}'\x1b[0m to play.\n`
+                    );
+                }
+                if (this.dependencies.SoundManager && this.dependencies.SoundManager.isInitialized) {
+                    try { this.dependencies.SoundManager.playNote(['E5', 'G5'], '16n'); } catch (_) {}
+                }
+                break;
+            }
+
+            case 'accept': {
+                if (this.activeGameApp) {
+                    this.activeGameApp.session.peer = sourceId;
+                    this.activeGameApp.session.p2 = guestName || sourceId;
+                    this.activeGameApp.session.p2_display = guestName || sourceId;
+                    this.activeGameApp.ui?.render(this.activeGameApp.session, this.activeGameApp.mySymbol);
+                    this.activeGameApp.ui?.appendLog(`Peer @${sourceId} joined the match!`, 'player-o');
+                } else if (this.dependencies.OutputManager) {
+                    await this.dependencies.OutputManager.appendToOutput(
+                        `\n\x1b[1;32m[Netgame]\x1b[0m Peer \x1b[1;35m@${sourceId}\x1b[0m accepted your invitation! Match is live.\n` +
+                        `Make your move with \x1b[1;32m'netgame move <col>'\x1b[0m or open graphical TUI with \x1b[1;32m'netgame play'\x1b[0m.\n`
+                    );
+                }
+                if (this.dependencies.SoundManager && this.dependencies.SoundManager.isInitialized) {
+                    try { this.dependencies.SoundManager.playNote(['C5', 'G5'], '16n'); } catch (_) {}
+                }
+                break;
+            }
+
+            case 'move': {
+                if (this.activeGameApp) {
+                    this.activeGameApp.handleRemoteMove(data);
+                } else {
+                    if (this.dependencies.OutputManager) {
+                        const movePrompt = gameType === 'c4' ? '1-7' : '1-9';
+                        await this.dependencies.OutputManager.appendToOutput(
+                            `\n\x1b[1;36m[Netgame]\x1b[0m Opponent \x1b[1;35m@${sourceId}\x1b[0m played: \x1b[1;33m${move}\x1b[0m. It is your turn!\n` +
+                            `Enter \x1b[1;32m'netgame move <${movePrompt}>'\x1b[0m or \x1b[1;32m'netgame board'\x1b[0m to view.\n`
+                        );
+                    }
+                    if (this.dependencies.SoundManager && this.dependencies.SoundManager.isInitialized) {
+                        try { this.dependencies.SoundManager.playTone('E5', '32n'); } catch (_) {}
+                    }
+                }
+
+                // Sync session in Python kernel if available
+                try {
+                    if (typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.isReady) {
+                        const user = this.dependencies.UserManager?.getCurrentUser()?.username || 'guest';
+                        const pyCmd = `import json; from commands import netgame; s = netgame._get_active_session('${user}');\n` +
+                            `if s:\n    s['board'] = ${JSON.stringify(board)}; s['turn'] = '${turn}'; s['winner'] = ${winner ? `'${winner}'` : 'None'};\n` +
+                            `    s['moves'].append({'player': 'O' if s['my_symbol'] == 'X' else 'X', 'move': ${move}})`;
+                        await FractalOS_Kernel.execute_command(`python -c "${pyCmd.replace(/"/g, '\\"')}"`);
+                    }
+                } catch (_) {}
+                break;
+            }
+
+            case 'resign': {
+                if (this.activeGameApp) {
+                    this.activeGameApp.handleRemoteResign();
+                } else if (this.dependencies.OutputManager) {
+                    await this.dependencies.OutputManager.appendToOutput(
+                        `\n\x1b[1;32m[Netgame]\x1b[0m Opponent \x1b[1;35m@${sourceId}\x1b[0m resigned! You win!\n`
+                    );
+                }
+                break;
+            }
+        }
     }
 }

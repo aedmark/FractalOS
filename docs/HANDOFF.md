@@ -11,28 +11,27 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-P7-01 ("Remote Shell & Session Attachment") and P7-02 ("Peer-to-Peer File Transfer") are complete! FractalOS now supports secure peer-to-peer file transfer across connected mesh nodes via `mesh-cp` (also aliased as `scp`). Files can be pushed or pulled using standard `node:path` syntax or `send` / `pull` subcommands with full VFS permission checks, integrity transfer, and live progress reporting. Remote interactive sessions (`attach`, `detach`), network broadcasts (`wall`), and direct peer chat (`talk`) are also fully operational. All automated test suites pass cleanly: 85/85 smoke assertions, 40/40 in-OS diag assertions, 8/8 mesh command tests, 8/8 network unit tests, 26/26 agent unit tests, 22/22 grading tests, and all structure tests.
+P7-01 ("Remote Shell & Session Attachment"), P7-02 ("Peer-to-Peer File Transfer"), and P7-03 ("Multiplayer Terminal Applications") are complete! FractalOS now includes a multiplayer terminal gaming platform (`netgame`, `c4`, `ttt`) featuring turn-based Connect 4 and Tic-Tac-Toe across mesh nodes. Games can be played directly from the shell with ANSI boards or in an interactive graphical TUI app (`NetgameUI` / `NetgameManager`) with column drop controls, keyboard hotkeys (1-7), sound synthesis via `SoundManager`, and live P2P WebRTC/BroadcastChannel sync. Solo play against a local heuristic/minimax bot is supported out of the box (`netgame bot <game>`). All automated test suites pass with 100% success: 85/85 smoke assertions, 40/40 in-OS diag assertions, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 network unit tests, 26/26 agent unit tests, 22/22 grading tests, and all structure checks.
 
 ## Next steps
 
-1. Implement P7-03: Multiplayer Terminal Applications over the mesh.
-2. Implement P7-04: Mesh Node Presence & Discovery UI (`peers` / `netstat --mesh`).
-3. When physical hardware is available, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
+1. Implement P7-04: Mesh Node Presence & Discovery UI (`peers` / `netstat --mesh`).
+2. When physical hardware is available, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
+3. Advance to Milestone 7.2 (Multi-Agent Swarms & Physical IoT Autopilot).
 
 
 ## Session log
 
-### Session 10: 2026-10-06: P7-02 Peer-to-Peer File Transfer (`mesh-cp` / `scp`)
+### Session 11: 2026-10-06: P7-03 Multiplayer Terminal Applications (`netgame`, `c4`, `ttt`)
 
-**Goal:** Implement P7-02: Peer-to-peer file transfers across mesh nodes without third-party cloud storage.
-**Done:** P7-02, D-030. Created `mesh_cp.py` and `scp.py` in `resources/core/commands/` supporting standard scp syntax (`node:path`) and `send` / `pull` subcommands. Updated `resources/core/executor.py` to allow hyphenated commands (mapping `mesh-cp` to `mesh_cp`). Added effects `mesh_file_send` and `mesh_file_pull` in `effect_handler.js`. Extended `NetworkManager` with `sendFile` / `pullFile`, payload routing (`mesh_file_push`, `mesh_file_push_ack`, `mesh_file_pull`, `mesh_file_pull_reply`), and target VFS persistence via `FileSystemManager.createOrUpdateFile()`. Created and verified Python tests in `tests/mesh_command_test.py` and JS unit tests in `tests/mesh_unit.js`. Verified 85/85 smoke checks and all test suites.
-**Changed:** `resources/core/commands/mesh_cp.py`, `resources/core/commands/scp.py`, `resources/core/executor.py`, `resources/core/manifest.json`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/mesh_command_test.py`, `tests/mesh_unit.js`.
-**Decisions:** D-030 (Peer-to-Peer file transfer protocol, scp syntax, and hyphenated command mapping).
+**Goal:** Implement P7-03: Shared turn-based multiplayer terminal applications over the mesh network.
+**Done:** P7-03, D-031. Created `netgame.py`, `c4.py`, and `ttt.py` supporting Connect 4 and Tic-Tac-Toe over the mesh. Implemented full game mechanics, board verification, win/draw detection, minimax/heuristic bot opponents, and ANSI board rendering. Created `NetgameManager` and `NetgameUI` with `netgame.css` for a rich fullscreen arcade TUI with drop animations, hotkeys, move log, and Tone.js audio cues. Added `mesh_game` messaging in `NetworkManager` for peer invite, accept, move, and resign events. Wrote comprehensive Python tests (`tests/netgame_test.py`) and JS unit tests (`tests/netgame_unit.js`). Verified all test suites (85/85 smoke, 40/40 in-OS diag, 26/26 agent unit, structure, and mesh).
+**Changed:** `resources/core/commands/netgame.py`, `resources/core/commands/c4.py`, `resources/core/commands/ttt.py`, `resources/scripts/apps/netgame/netgame_ui.js`, `resources/scripts/apps/netgame/netgame_manager.js`, `resources/scripts/apps/netgame/netgame.css`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/netgame_test.py`, `tests/netgame_unit.js`, `tests/mesh_unit.js`.
+**Decisions:** D-031 (Multiplayer terminal games & network coordination).
 **Problems / surprises:**
-- Hyphenated command names like `mesh-cp` could not be directly imported as Python modules (`import_module("commands.mesh-cp")`). Updated `executor._load_command_module` to fall back to replacing hyphens with underscores, allowing `mesh-cp` to seamlessly map to `commands.mesh_cp`.
-- Fixed a safe check for `UserManager.getPrimaryGroupForUser` in `_handleMeshFilePush` and `_handleMeshFilePullReply` to gracefully fall back if the method is omitted in lightweight contexts.
+- In Node unit testing of `tests/mesh_unit.js`, active WebRTC/socket polling references in Node's event loop kept the process running without an explicit `process.exit(0)`. Updated both `mesh_unit.js` and `netgame_unit.js` to explicitly exit on completion, ensuring automated CI suites terminate immediately.
 **Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-03 (Multiplayer Terminal Applications).
+**Next session should start with:** P7-04 (Mesh Node Presence & Discovery UI).
 
 
 ### Session 22: 2026-09-30: Phase 5 (Networking and Portable Mode)

@@ -184,7 +184,9 @@ async function runTests() {
     console.log("ALL P7-01 AND P7-02 MESH TESTS PASSED");
 }
 
-runTests().catch(err => {
+runTests().then(() => {
+    process.exit(0);
+}).catch(err => {
     console.error("Test failed:", err);
     process.exit(1);
 });
