@@ -42,6 +42,7 @@ window.onload = async () => {
     const multiplexerManager = new MultiplexerManager();
     const windowManager = new WindowManager();
     const statusBarManager = new StatusBarManager();
+    const clipboardManager = new ClipboardManager();
 
     Object.assign(dependencies, {
         Config: configManager, StorageManager: storageManager, FileSystemManager: fsManager,
@@ -51,7 +52,7 @@ window.onload = async () => {
         HistoryManager: historyManager, TabCompletionManager: tabCompletionManager, Utils: Utils,
         ErrorHandler: ErrorHandler, AIManager: aiManager, NetworkManager: networkManager,
         HardwareManager: hardwareManager, MultiplexerManager: multiplexerManager, WindowManager: windowManager,
-        StatusBarManager: statusBarManager,
+        StatusBarManager: statusBarManager, ClipboardManager: clipboardManager,
         UIComponents: uiComponents, domElements: domElements, SoundManager: soundManager,
         AuditManager: auditManager,
         EnvironmentManager: environmentManager,
@@ -87,6 +88,7 @@ window.onload = async () => {
     multiplexerManager.initialize(domElements);
     windowManager.initialize(domElements);
     statusBarManager.initialize(domElements);
+    clipboardManager.initialize(domElements);
     modalManager.initialize(domElements);
     appLayerManager.initialize(domElements);
     outputManager.initializeConsoleOverrides();

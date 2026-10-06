@@ -254,7 +254,7 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 - [x] P7-09 **Terminal Split Panes (Multiplexer)**: Support horizontal and vertical pane splits in the terminal interface (`split-v`, `split-h`, keyboard shortcuts) with independent shell contexts (D-037, 2026-10-06).
 - [x] P7-10 **TUI Window Management**: Move overlay apps (editor, paint, top, adventure) into floating/docked panels or tiled viewports alongside the terminal (D-038, 2026-10-06).
 - [x] P7-11 **Persistent Status & Notification Bar**: System tray / status line displaying active background jobs, mesh peer count, audio mute, and agent status (D-039, 2026-10-06).
-- [ ] P7-12 **Clipboard & Drag-and-Drop Bridge**: Seamless clipboard sharing and drag-and-drop file import into the VFS from the browser / host environment.
+- [x] P7-12 **Clipboard & Drag-and-Drop Bridge**: Seamless clipboard sharing and drag-and-drop file import into the VFS from the browser / host environment (D-040, 2026-10-06).
 
 ### Milestone 7.4: Package Ecosystem & Community Registry Tooling
 - [ ] P7-13 **Package Publishing Tool (`pkg publish`)**: Command to validate, package, generate manifest metadata, and export/publish packages for community repositories.

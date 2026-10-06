@@ -463,7 +463,16 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 4. We updated `SoundManager` with `isMuted`, `toggleMute()`, and `setMute()`, suppressing tone synthesis when muted and syncing with the status bar tray.
 5. We introduced `status.py` (`status`, `status bar [on|off]`, `status mute [on|off]`, `status notifications`, `status clear`) and `notify.py` (`notify <msg> [--success|--warn|--error|--silent]`, `notify list`, `notify clear`).
 **Consequences:** Provides a permanent, live system tray and alert delivery mechanism in both the graphical TUI and CLI without third-party widgets or desktop dependencies.
-
-
-
+## D-040 Clipboard Bridge and Drag-and-Drop VFS Import (`clip`, `pbcopy`, `pbpaste`, `ClipboardManager`) (2026-10-06, status: accepted)
+**Context:** P7-12. Users needed seamless interoperability between the host operating system and FractalOS: copying and pasting shell text, piping command output directly into the host clipboard, reading host clipboard data into commands, and importing local host files into the virtual filesystem without manually base64-encoding or typing them out.
+**Decision:**
+1. We introduced `ClipboardManager` (`resources/scripts/clipboard_manager.js`) to provide cross-platform clipboard access with a robust fallback tier: Neutralinojs OS clipboard (`Neutralino.clipboard`) -> Browser Clipboard API (`navigator.clipboard`) -> internal in-memory fallback buffer (`_memoryBuffer`). This guarantees reliable operation across desktop Neutralino mode, HTTPS web servers, insecure local developer servers, and headless test runners (Playwright/Node).
+2. We added keyboard shortcuts: `Ctrl+Shift+C` (copies active DOM text selection) and `Ctrl+Shift+V` (pastes clipboard content into the active terminal prompt or editor).
+3. We implemented HTML5 Drag-and-Drop bridge: dragging files over the terminal bezel or body triggers `#drag-drop-overlay` displaying destination target (`cwd`). Dropping files uses `FileReader` to stream contents and writes them directly into the Pyodide kernel virtual file system via `FileSystemManager.createOrUpdateFile`, followed by `FileSystemManager.getFsData()` cache synchronization, audio confirmation chime, and system notifications.
+4. We implemented CLI utilities:
+   - `clip.py` (`clip copy <text>`, `clip paste`, `clip clear`, `clip status`, plus piped stdin `echo "foo" | clip`).
+   - `pbcopy.py` (reads stdin/args and copies to clipboard silently, matching macOS/BSD conventions).
+   - `pbpaste.py` (prints clipboard text to stdout, matching macOS/BSD conventions).
+5. Front-end effect handler handles `clipboard_action` for copy, paste, clear, and status actions.
+**Consequences:** Seamless clipboard and file data exchange between host environment and the virtual browser operating system.
 

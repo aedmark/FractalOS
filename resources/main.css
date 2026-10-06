@@ -1107,3 +1107,64 @@ body {
     overflow-x: auto;
     margin-bottom: var(--spacing-sm);
 }
+
+/* Drag and Drop Bridge Overlay */
+.drag-drop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    pointer-events: none;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.drag-drop-overlay.hidden {
+    display: none !important;
+}
+
+.drag-drop-overlay__card {
+    border: 2px dashed var(--color-accent-sky, #38bdf8);
+    background: var(--color-background-dark, #1a1a1a);
+    padding: 2rem;
+    border-radius: var(--border-radius-md, 8px);
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    max-width: 90%;
+    animation: pulse-border 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-border {
+    from { border-color: var(--color-accent-sky, #38bdf8); }
+    to { border-color: var(--color-text-primary, #00ff5b); }
+}
+
+.drag-drop-overlay__icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-overlay__title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--color-text-primary, #00ff5b);
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-overlay__dest {
+    font-family: var(--font-family-mono, monospace);
+    color: var(--color-accent-amber, #fbbf24);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.drag-drop-overlay__hint {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary, #a3a3a3);
+}

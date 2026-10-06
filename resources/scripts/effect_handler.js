@@ -4,7 +4,7 @@ async function handleEffect(result, options) {
         UserManager, ErrorHandler, Config, OutputManager, PagerManager, Utils, domElements,
         GroupManager, NetworkManager, MessageBusManager, ModalManager, StorageManager,
         AuditManager, StorageHAL, SudoManager, ThemeManager, UIStateManager, WindowManager,
-        StatusBarManager
+        StatusBarManager, ClipboardManager
     } = dependencies;
 
     switch (result.effect) {
@@ -1167,6 +1167,48 @@ async function handleEffect(result, options) {
                         sbm.clearNotifications();
                         await OutputManager.appendToOutput("Cleared all system notifications.");
                     }
+                    break;
+                }
+            }
+            break;
+        }
+
+        case 'clipboard_action': {
+            const cm = ClipboardManager || window.ClipboardManager;
+            if (!cm) {
+                await OutputManager.appendToOutput("ClipboardManager is not initialized.", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+
+            switch (result.action) {
+                case 'copy': {
+                    const text = result.text !== undefined ? result.text : '';
+                    await cm.copy(text);
+                    if (result.silent !== true) {
+                        await OutputManager.appendToOutput(`Copied ${text.length} character(s) to clipboard.`);
+                    }
+                    break;
+                }
+                case 'paste': {
+                    const text = await cm.paste();
+                    await OutputManager.appendToOutput(text);
+                    break;
+                }
+                case 'clear': {
+                    cm.clear();
+                    await OutputManager.appendToOutput("Clipboard cleared.");
+                    break;
+                }
+                case 'status': {
+                    const status = cm.getStatus();
+                    let out = "\x1b[1;36m=== CLIPBOARD STATUS ===\x1b[0m\n";
+                    out += `Length: ${status.bufferLength} characters\n`;
+                    if (status.bufferLength > 0) {
+                        out += `Preview: ${status.preview}${status.bufferLength > 40 ? '...' : ''}\n`;
+                    } else {
+                        out += "Buffer is currently empty.\n";
+                    }
+                    await OutputManager.appendToOutput(out);
                     break;
                 }
             }
