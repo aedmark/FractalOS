@@ -377,5 +377,11 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 **Decision:** We built `netgame` (with dedicated shortcuts `c4` and `ttt`) providing turn-based multiplayer games (Connect 4 and Tic-Tac-Toe). The game engine lives in Python (`resources/core/commands/netgame.py`), performing board validation, win/draw detection, minimax/heuristic bot calculations, and ANSI-colored board rendering. Network coordination runs over `NetworkManager` using `mesh_game` message payloads (`invite`, `accept`, `move`, `resign`). For rich graphical interaction, the app launches `NetgameManager` / `NetgameUI` via `AppLayerManager`, providing click-to-drop columns, numeric keyboard hotkeys (1-7), move history, tone synthesis via `SoundManager`, and live WebRTC/BroadcastChannel synchronization. Solo matches against a local bot are supported out of the box (`netgame bot <game>`).
 **Consequences:** Supports both headless scriptable CLI play (`netgame move 4`) and an arcade graphical TUI app (`netgame play`). All moves are validated within the kernel and synced peer-to-peer without central server dependencies.
 
+## D-032 Mesh Node Presence & Discovery UI (`peers`, `netstat --mesh`) (2026-10-06, status: accepted)
+**Context:** P7-04. Users need visibility into discovered mesh peers, latency measurements, and shared capabilities across the network, both via shell commands and a live visual monitor.
+**Decision:** We introduced the `peers` command (and extended `netstat` with `--mesh` and `--gui`). `NetworkManager` now exchanges peer metadata (username, hostname, capabilities, transport type, uptime) during `discover` handshakes and caches it in `peerMetadata`. `getPeersDetailed({ doPing })` and `getPeerInfo(peerId)` expose structured peer lists with live round-trip latency measured via ping/pong messages. The command formats ANSI presence tables (`peers`), runs active pings (`peers -p`), outputs structured JSON (`peers --json`), and inspects specific nodes (`peers info <id>`). A dedicated fullscreen TUI app (`PeersManager` / `PeersUI` via `peers --gui`) provides live auto-polling, summary status cards, and direct action shortcuts (Attach, Ping).
+**Consequences:** Complete visibility into distributed mesh topology without requiring root privileges or external networking tools.
+
+
 
 

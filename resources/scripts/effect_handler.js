@@ -464,6 +464,89 @@ async function handleEffect(result, options) {
             await OutputManager.appendToOutput(output.join('\n'));
             break;
 
+        case 'peers_display': {
+            if (!NetworkManager || !NetworkManager.isNetworkingEnabled) {
+                await OutputManager.appendToOutput("peers: networking is disabled on this system.", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+
+            const localNode = NetworkManager.getLocalNodeInfo();
+            const peers = await NetworkManager.getPeersDetailed({ doPing: result.doPing });
+
+            if (result.asJson) {
+                await OutputManager.appendToOutput(JSON.stringify({ local: localNode, peers }, null, 2));
+                break;
+            }
+
+            const sigStatus = localNode.signalingConnected ? "\x1b[1;32mConnected\x1b[0m" : "\x1b[1;33mStandalone\x1b[0m";
+            const lines = [
+                `\x1b[1;36m=== FractalOS Mesh Network Nodes ===\x1b[0m`,
+                `Local Node: \x1b[1;32m${localNode.id}\x1b[0m (${localNode.user}) | Signaling: ${localNode.signalingServerUrl} [${sigStatus}]`,
+                `Active Mesh Peers: \x1b[1;33m${peers.length}\x1b[0m\n`
+            ];
+
+            if (peers.length === 0) {
+                lines.push("  \x1b[2m(No remote peers discovered on local mesh)\x1b[0m");
+                lines.push("  Tip: Open another browser tab or launch signaling_server.py to connect nodes.");
+            } else {
+                lines.push("NODE ID            USER@HOST          TRANSPORT            LATENCY   CAPABILITIES");
+                lines.push("───────────────────────────────────────────────────────────────────────────────────────");
+                peers.forEach(p => {
+                    const idPad = p.id.padEnd(18).slice(0, 18);
+                    const userPad = (p.user || "guest").padEnd(18).slice(0, 18);
+                    const transPad = p.transport.padEnd(20).slice(0, 20);
+                    let latStr = "—";
+                    if (p.latency !== null) {
+                        latStr = p.latency >= 0 ? `${p.latency}ms` : "timeout";
+                    }
+                    const latPad = latStr.padEnd(9).slice(0, 9);
+                    const caps = (p.capabilities || []).join(", ");
+                    const attachedTag = p.attached ? " \x1b[1;33m[ATTACHED]\x1b[0m" : "";
+                    lines.push(`${idPad} ${userPad} ${transPad} ${latPad} ${caps}${attachedTag}`);
+                });
+            }
+
+            await OutputManager.appendToOutput(lines.join('\n'));
+            break;
+        }
+
+        case 'peers_info': {
+            if (!NetworkManager || !NetworkManager.isNetworkingEnabled) {
+                await OutputManager.appendToOutput("peers: networking is disabled on this system.", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+
+            const targetId = result.targetId;
+            const peer = await NetworkManager.getPeerInfo(targetId, { doPing: true });
+
+            if (!peer) {
+                await OutputManager.appendToOutput(`peers: peer '${targetId}' not found or unreachable.`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+
+            if (result.asJson) {
+                await OutputManager.appendToOutput(JSON.stringify(peer, null, 2));
+                break;
+            }
+
+            const latStr = peer.latency >= 0 ? `${peer.latency} ms` : "unreachable";
+            const infoLines = [
+                `\x1b[1;36m=== Mesh Peer Inspection: ${peer.id} ===\x1b[0m`,
+                `  User/Host:     \x1b[1;32m${peer.user}\x1b[0m`,
+                `  Transport:     ${peer.transport}`,
+                `  Ping Latency:  \x1b[1;33m${latStr}\x1b[0m`,
+                `  Capabilities:  ${(peer.capabilities || []).join(', ')}`,
+                `  Attached:      ${peer.attached ? 'Yes' : 'No'}`,
+                `  Last Seen:     ${new Date(peer.lastSeen).toLocaleTimeString()}`,
+                `\nQuick Actions:`,
+                `  attach ${peer.id}       - Attach to remote shell`,
+                `  mesh-cp <file> ${peer.id}:<path> - Send file`,
+                `  netgame host c4 ${peer.id}  - Invite to Connect 4`
+            ];
+            await OutputManager.appendToOutput(infoLines.join('\n'));
+            break;
+        }
+
         case 'mesh_attach': {
             const targetId = result.targetId;
             if (!targetId) {

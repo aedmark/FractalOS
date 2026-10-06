@@ -20,6 +20,7 @@ class NetworkManager {
         this.pendingFileSendRequests = new Map();
         this.pendingFilePullRequests = new Map();
         this.activeGameApp = null;
+        this.peerMetadata = new Map();
 
         this.channel.onmessage = this._handleBroadcastMessage.bind(this);
 
@@ -112,11 +113,29 @@ class NetworkManager {
         const isNew = !this.remoteInstances.has(payload.sourceId);
         this.remoteInstances.add(payload.sourceId);
 
+        if (payload.data) {
+            this.peerMetadata.set(payload.sourceId, {
+                ...payload.data,
+                lastSeen: Date.now()
+            });
+        } else if (!this.peerMetadata.has(payload.sourceId)) {
+            this.peerMetadata.set(payload.sourceId, {
+                user: 'user@fractal',
+                capabilities: ['shell', 'mesh-cp', 'netgame'],
+                lastSeen: Date.now()
+            });
+        }
+
         if (isNew) {
             console.log(`Discovered remote peer: ${payload.sourceId}`);
             // If peer announced itself to broadcast or to us, acknowledge with our discovery info
             if (payload.targetId === 'broadcast' || !payload.targetId) {
-                const presencePayload = { type: 'discover', sourceId: this.instanceId, targetId: payload.sourceId };
+                const presencePayload = {
+                    type: 'discover',
+                    sourceId: this.instanceId,
+                    targetId: payload.sourceId,
+                    data: this.getLocalMetadata()
+                };
                 try { this.channel.postMessage(presencePayload); } catch (_) {}
                 if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
                     this.websocket.send(JSON.stringify(presencePayload));
@@ -131,7 +150,12 @@ class NetworkManager {
 
         this.websocket.onopen = () => {
             console.log('Connected to signaling server.');
-            const presencePayload = { type: 'discover', sourceId: this.instanceId, targetId: 'broadcast' };
+            const presencePayload = {
+                type: 'discover',
+                sourceId: this.instanceId,
+                targetId: 'broadcast',
+                data: this.getLocalMetadata()
+            };
             this.websocket.send(JSON.stringify(presencePayload));
         };
 
@@ -939,5 +963,73 @@ class NetworkManager {
                 break;
             }
         }
+    }
+
+    getLocalMetadata() {
+        const user = this.dependencies.UserManager?.getCurrentUser()?.username || 'Guest';
+        const host = this.dependencies.EnvironmentManager?.get('HOST') || 'fractal';
+        return {
+            user: `${user}@${host}`,
+            capabilities: ['shell', 'mesh-cp', 'netgame', 'gpio'],
+            uptime: Math.floor(typeof performance !== 'undefined' ? performance.now() / 1000 : 0)
+        };
+    }
+
+    getLocalNodeInfo() {
+        const meta = this.getLocalMetadata();
+        return {
+            id: this.instanceId,
+            user: meta.user,
+            networkingEnabled: this.isNetworkingEnabled,
+            signalingServerUrl: this.signalingServerUrl,
+            signalingConnected: !!(this.websocket && this.websocket.readyState === WebSocket.OPEN),
+            peerCount: this.remoteInstances.size,
+            capabilities: meta.capabilities
+        };
+    }
+
+    async getPeersDetailed({ doPing = false } = {}) {
+        const list = [];
+        for (const peerId of this.remoteInstances) {
+            const meta = this.peerMetadata.get(peerId) || {
+                user: 'guest@fractal',
+                capabilities: ['shell', 'mesh-cp', 'netgame']
+            };
+            const pc = this.peers.get(peerId);
+            let transport = 'BroadcastChannel';
+            if (pc && pc.connectionState === 'connected') {
+                transport = 'WebRTC DataChannel';
+            } else if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                transport = 'WebSocket Signaling';
+            }
+
+            let latency = meta.latency !== undefined ? meta.latency : null;
+            if (doPing) {
+                try {
+                    latency = await this.sendPing(peerId);
+                    meta.latency = latency;
+                    this.peerMetadata.set(peerId, meta);
+                } catch (_) {
+                    latency = -1;
+                }
+            }
+
+            list.push({
+                id: peerId,
+                user: meta.user || 'guest@fractal',
+                transport: transport,
+                capabilities: meta.capabilities || ['shell', 'mesh-cp', 'netgame'],
+                latency: latency,
+                lastSeen: meta.lastSeen || Date.now(),
+                attached: this.attachedClients.has(peerId) || (this.attachedSession?.targetId === peerId)
+            });
+        }
+        return list;
+    }
+
+    async getPeerInfo(peerId, { doPing = false } = {}) {
+        if (!this.remoteInstances.has(peerId)) return null;
+        const peers = await this.getPeersDetailed({ doPing });
+        return peers.find(p => p.id === peerId) || null;
     }
 }

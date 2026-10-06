@@ -11,7 +11,8 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/apps/basic/basic.css",
         "./scripts/apps/top/top.css",
         "./scripts/apps/onboarding/onboarding.css",
-        "./scripts/apps/netgame/netgame.css"
+        "./scripts/apps/netgame/netgame.css",
+        "./scripts/apps/peers/peers.css"
     ],
     js: [
         "./dep/marked.min.js",
@@ -62,6 +63,8 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/apps/samwise_chat/samwise_chat_manager.js",
         "./scripts/apps/netgame/netgame_ui.js",
         "./scripts/apps/netgame/netgame_manager.js",
+        "./scripts/apps/peers/peers_ui.js",
+        "./scripts/apps/peers/peers_manager.js",
 
         "./scripts/theme_manager.js",
         "./scripts/command_registry.js",

@@ -1,0 +1,185 @@
+/* peers.css - Styling for FractalOS Mesh Network Monitor app */
+
+#peers-app-container {
+    width: 95%;
+    max-width: 1050px;
+    height: 90%;
+    max-height: 750px;
+}
+
+.peers-main {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: var(--spacing-md, 16px);
+    background-color: var(--color-background-dark, #0d1117);
+}
+
+.peers-summary-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.peers-summary-card {
+    background: #161f2e;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.peers-summary-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.peers-summary-val {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.peers-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.peers-status-dot.online {
+    background-color: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+}
+
+.peers-status-dot.standalone {
+    background-color: #f59e0b;
+    box-shadow: 0 0 8px #f59e0b;
+}
+
+.peers-table-container {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    background: #090d16;
+}
+
+.peers-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.peers-table th {
+    background: #111827;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #cbd5e1;
+    border-bottom: 2px solid #1e293b;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.peers-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #161f2e;
+    color: #94a3b8;
+}
+
+.peers-table tr:hover {
+    background-color: #161f2e;
+}
+
+.peer-node-id {
+    font-family: var(--font-family-mono, monospace);
+    font-weight: bold;
+    color: #38bdf8;
+}
+
+.peer-latency-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.peer-latency-fast {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.peer-latency-medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.peer-latency-slow {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.peer-caps-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.peer-cap-tag {
+    background: #1e293b;
+    color: #cbd5e1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.72rem;
+}
+
+.peer-actions-cell {
+    display: flex;
+    gap: 6px;
+}
+
+.peer-btn-action {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.peer-btn-action:hover {
+    background: #38bdf8;
+    color: #0f172a;
+}
+
+.peers-empty-msg {
+    text-align: center;
+    padding: 30px;
+    color: #64748b;
+    font-style: italic;
+}
+
+.peers-footer-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}

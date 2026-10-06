@@ -11,27 +11,28 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-P7-01 ("Remote Shell & Session Attachment"), P7-02 ("Peer-to-Peer File Transfer"), and P7-03 ("Multiplayer Terminal Applications") are complete! FractalOS now includes a multiplayer terminal gaming platform (`netgame`, `c4`, `ttt`) featuring turn-based Connect 4 and Tic-Tac-Toe across mesh nodes. Games can be played directly from the shell with ANSI boards or in an interactive graphical TUI app (`NetgameUI` / `NetgameManager`) with column drop controls, keyboard hotkeys (1-7), sound synthesis via `SoundManager`, and live P2P WebRTC/BroadcastChannel sync. Solo play against a local heuristic/minimax bot is supported out of the box (`netgame bot <game>`). All automated test suites pass with 100% success: 85/85 smoke assertions, 40/40 in-OS diag assertions, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 network unit tests, 26/26 agent unit tests, 22/22 grading tests, and all structure checks.
+Milestone 7.1 ("Collaborative P2P & Multi-Node Mesh") is 100% complete (`P7-01`, `P7-02`, `P7-03`, `P7-04`)! FractalOS now supports complete peer-to-peer distributed mesh capabilities: remote shell session attachment (`attach`, `detach`, `wall`, `talk`), secure direct file transfer (`mesh-cp` / `scp`), multiplayer terminal arcade games (`netgame`, `c4`, `ttt`), and live mesh node presence and discovery (`peers`, `netstat --mesh`, and the `Peers` graphical monitor app). Discovered nodes exchange metadata (username, hostname, transport layer, capabilities, uptime), support live ping/latency measurements, and can be inspected via CLI or monitored with live auto-refreshing TUI cards. All automated test batteries pass with 100% success: 85/85 smoke checks, 40/40 in-OS diag assertions, 10/10 peers command tests, 6/6 peers network unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh network tests, 26/26 agent unit tests, 22/22 grading tests, and all structure tests.
 
 ## Next steps
 
-1. Implement P7-04: Mesh Node Presence & Discovery UI (`peers` / `netstat --mesh`).
-2. When physical hardware is available, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
-3. Advance to Milestone 7.2 (Multi-Agent Swarms & Physical IoT Autopilot).
+1. Begin Milestone 7.2: Multi-Agent Swarms & Physical IoT Autopilot.
+2. Implement P7-05: Hardware Sensor Monitoring Daemon (`gpio` kernel background monitoring and event callbacks).
+3. Implement P7-06: IoT Autopilot Actions for `samwise`.
+4. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
 
 
 ## Session log
 
-### Session 11: 2026-10-06: P7-03 Multiplayer Terminal Applications (`netgame`, `c4`, `ttt`)
+### Session 12: 2026-10-06: P7-04 Mesh Node Presence & Discovery UI (`peers`, `netstat --mesh`)
 
-**Goal:** Implement P7-03: Shared turn-based multiplayer terminal applications over the mesh network.
-**Done:** P7-03, D-031. Created `netgame.py`, `c4.py`, and `ttt.py` supporting Connect 4 and Tic-Tac-Toe over the mesh. Implemented full game mechanics, board verification, win/draw detection, minimax/heuristic bot opponents, and ANSI board rendering. Created `NetgameManager` and `NetgameUI` with `netgame.css` for a rich fullscreen arcade TUI with drop animations, hotkeys, move log, and Tone.js audio cues. Added `mesh_game` messaging in `NetworkManager` for peer invite, accept, move, and resign events. Wrote comprehensive Python tests (`tests/netgame_test.py`) and JS unit tests (`tests/netgame_unit.js`). Verified all test suites (85/85 smoke, 40/40 in-OS diag, 26/26 agent unit, structure, and mesh).
-**Changed:** `resources/core/commands/netgame.py`, `resources/core/commands/c4.py`, `resources/core/commands/ttt.py`, `resources/scripts/apps/netgame/netgame_ui.js`, `resources/scripts/apps/netgame/netgame_manager.js`, `resources/scripts/apps/netgame/netgame.css`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/netgame_test.py`, `tests/netgame_unit.js`, `tests/mesh_unit.js`.
-**Decisions:** D-031 (Multiplayer terminal games & network coordination).
+**Goal:** Implement P7-04: Live network status app and shell command (`peers` / `netstat --mesh`) displaying discovered nodes, latency, and shared capabilities.
+**Done:** P7-04, D-032. Milestone 7.1 complete! Created `resources/core/commands/peers.py` and enhanced `netstat.py` with `--mesh` and `--gui` flags. Extended `NetworkManager` to broadcast and cache rich peer metadata (user, host, transport, capabilities, uptime) in `peerMetadata`, with `getLocalNodeInfo()`, `getPeersDetailed({ doPing })`, and `getPeerInfo(peerId)`. Added `peers_display` and `peers_info` handlers in `effect_handler.js` for ANSI table formatting, ping measurements, and JSON export. Built `PeersManager` and `PeersUI` with `peers.css` for a live auto-polling Mesh Network Monitor app with status cards, latency badges, and action buttons. Created unit tests in `tests/peers_command_test.py` and `tests/peers_unit.js`. Verified 85/85 smoke checks, structure tests, and all test suites.
+**Changed:** `resources/core/commands/peers.py`, `resources/core/commands/netstat.py`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/apps/peers/peers_ui.js`, `resources/scripts/apps/peers/peers_manager.js`, `resources/scripts/apps/peers/peers.css`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/peers_command_test.py`, `tests/peers_unit.js`.
+**Decisions:** D-032 (Mesh node presence, discovery protocol, and monitor TUI).
 **Problems / surprises:**
-- In Node unit testing of `tests/mesh_unit.js`, active WebRTC/socket polling references in Node's event loop kept the process running without an explicit `process.exit(0)`. Updated both `mesh_unit.js` and `netgame_unit.js` to explicitly exit on completion, ensuring automated CI suites terminate immediately.
+- In `tests/peers_unit.js`, `createMockElement` threw a TypeError when children was passed as a single element or non-array. Guarded with `Array.isArray(children)` to allow both forms safely.
 **Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-04 (Mesh Node Presence & Discovery UI).
+**Next session should start with:** Milestone 7.2 (P7-05: Hardware Sensor Monitoring Daemon).
 
 
 ### Session 22: 2026-09-30: Phase 5 (Networking and Portable Mode)

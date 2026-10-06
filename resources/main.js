@@ -62,6 +62,8 @@ window.onload = async () => {
         PaintUI: window.PaintUI, TopUI: window.TopUI,
         NetgameManager: window.NetgameManager,
         NetgameUI: window.NetgameUI,
+        PeersManager: window.PeersManager,
+        PeersUI: window.PeersUI,
     });
 
     const userManager = new UserManager(dependencies);
