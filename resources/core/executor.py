@@ -587,6 +587,11 @@ class CommandExecutor:
         try:
             return import_module(f"commands.{command_name}")
         except ImportError:
+            if '-' in command_name:
+                try:
+                    return import_module(f"commands.{command_name.replace('-', '_')}")
+                except ImportError:
+                    pass
             # Check user packages
             pkg_path = f"/etc/packages/commands/{command_name}.py"
             node = self.fs_manager.get_node(pkg_path)

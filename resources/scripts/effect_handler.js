@@ -464,6 +464,113 @@ async function handleEffect(result, options) {
             await OutputManager.appendToOutput(output.join('\n'));
             break;
 
+        case 'mesh_attach': {
+            const targetId = result.targetId;
+            if (!targetId) {
+                await OutputManager.appendToOutput("attach: missing target instance ID. Usage: attach <instanceId>", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+            if (targetId === NetworkManager.getInstanceId()) {
+                await OutputManager.appendToOutput("attach: cannot attach to self.", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+            await OutputManager.appendToOutput(`Connecting to session on ${targetId}...`);
+            try {
+                await NetworkManager.requestAttach(targetId, { timeoutMs: 5000 });
+                await OutputManager.appendToOutput(`\x1b[1;32mAttached to remote session on ${targetId}.\x1b[0m\nType 'detach' or 'exit' to return to local shell.`);
+                await TerminalUI.updatePrompt();
+            } catch (err) {
+                await OutputManager.appendToOutput(`attach: ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+            }
+            break;
+        }
+
+        case 'mesh_attach_list': {
+            const instances = NetworkManager.getRemoteInstances();
+            const output = [`Your Instance ID: ${NetworkManager.getInstanceId()}`];
+            if (NetworkManager.isAttached()) {
+                output.push(`Currently attached to: ${NetworkManager.getAttachedSession().targetId}`);
+            }
+            output.push("\nDiscovered Peers for Attachment:");
+            if (instances.length === 0) {
+                output.push("  (No peers discovered on local mesh)");
+            } else {
+                instances.forEach(id => {
+                    const peer = NetworkManager.getPeers().get(id);
+                    const status = peer ? peer.connectionState : 'Connected (Mesh/Broadcast)';
+                    output.push(`  - ${id} (${status})`);
+                });
+            }
+            output.push("\nUsage: attach <instanceId> | attach -d (detach)");
+            await OutputManager.appendToOutput(output.join('\n'));
+            break;
+        }
+
+        case 'mesh_detach': {
+            if (!NetworkManager.isAttached()) {
+                await OutputManager.appendToOutput("detach: not currently attached to any remote session.");
+            } else {
+                await NetworkManager.detachSession();
+                await OutputManager.appendToOutput("Detached from remote session.");
+                await TerminalUI.updatePrompt();
+            }
+            break;
+        }
+
+        case 'mesh_wall': {
+            const sender = result.sender || 'user';
+            const message = result.message || '';
+            const timestamp = new Date().toLocaleTimeString();
+            const formatted = `\n\x1b[1;33mBroadcast message from ${sender}@${NetworkManager.getInstanceId()} (${timestamp}):\x1b[0m\n${message}\n`;
+            await OutputManager.appendToOutput(formatted);
+            await NetworkManager.sendMessage('broadcast', 'mesh_wall', {
+                sender,
+                sourceId: NetworkManager.getInstanceId(),
+                message,
+                timestamp
+            });
+            break;
+        }
+
+        case 'mesh_talk': {
+            const sender = result.sender || 'user';
+            const targetId = result.targetId;
+            const message = result.message || '';
+            const timestamp = new Date().toLocaleTimeString();
+            await NetworkManager.sendMessage(targetId, 'mesh_talk', {
+                sender,
+                sourceId: NetworkManager.getInstanceId(),
+                message,
+                timestamp
+            });
+            await OutputManager.appendToOutput(`[talk to ${targetId}]> ${message}`);
+            break;
+        }
+
+        case 'mesh_file_send': {
+            const { targetId, remotePath, localPath, content } = result;
+            await OutputManager.appendToOutput(`Sending ${localPath} -> ${targetId}:${remotePath}...`);
+            try {
+                const ack = await NetworkManager.sendFile(targetId, remotePath, content);
+                await OutputManager.appendToOutput(`\x1b[1;32mTransfer complete: ${localPath} -> ${targetId}:${ack.path} (${ack.bytes} bytes)\x1b[0m`);
+            } catch (err) {
+                await OutputManager.appendToOutput(`mesh-cp: transfer failed: ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+            }
+            break;
+        }
+
+        case 'mesh_file_pull': {
+            const { targetId, remotePath, localPath } = result;
+            await OutputManager.appendToOutput(`Pulling ${targetId}:${remotePath} -> ${localPath}...`);
+            try {
+                const reply = await NetworkManager.pullFile(targetId, remotePath, localPath);
+                await OutputManager.appendToOutput(`\x1b[1;32mTransfer complete: ${targetId}:${remotePath} -> ${reply.localPath} (${reply.bytes} bytes)\x1b[0m`);
+            } catch (err) {
+                await OutputManager.appendToOutput(`mesh-cp: transfer failed: ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+            }
+            break;
+        }
+
         case 'read_messages':
             const messages = MessageBusManager.getMessages(result.job_id);
             await OutputManager.appendToOutput(messages.join(" "));

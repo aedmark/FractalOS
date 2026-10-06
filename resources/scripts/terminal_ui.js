@@ -19,7 +19,7 @@ class TerminalUI {
     }
 
     async updatePrompt() {
-        const { UserManager, FileSystemManager, EnvironmentManager, Config } = this.dependencies;
+        const { UserManager, FileSystemManager, EnvironmentManager, Config, NetworkManager } = this.dependencies;
         const user = (await UserManager.getCurrentUser()) || {
             name: Config.USER.DEFAULT_NAME,
         };
@@ -29,6 +29,16 @@ class TerminalUI {
 
         if (this.isSearchingHistory) {
             this.elements.promptContainer.textContent = `(reverse-i-search)\`${this.historySearchQuery}\`: `;
+            return;
+        }
+
+        if (NetworkManager && typeof NetworkManager.isAttached === 'function' && NetworkManager.isAttached()) {
+            const attached = NetworkManager.getAttachedSession();
+            const hostIdShort = (attached.targetId || 'remote').substring(0, 8);
+            const rUser = attached.user || user.name;
+            const rHost = attached.host || hostIdShort;
+            const rPath = attached.path || '~';
+            this.elements.promptContainer.textContent = `[${hostIdShort}] ${rUser}@${rHost}:${rPath}$ `;
             return;
         }
 

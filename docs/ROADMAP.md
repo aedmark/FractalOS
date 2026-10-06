@@ -234,3 +234,32 @@ Bring FractalOS full circle by deploying it as the primary interface of physical
 - [x] P6-02 **Build Script (`build_distro.sh`)**: A script to automate the provisioning of a base image (e.g., Raspberry Pi OS Lite), installing dependencies, and configuring auto-login and auto-start.
 - [x] P6-03 **Hardware Integration**: Expose Python modules to allow FractalOS to interact with GPIO pins or local hardware interfaces (bridging Neutralino's native API or a local WebSocket backend).
 - [x] P6-04 **Peer Discovery on Boot**: Ensure the OS automatically starts the signaling server or connects to the local mesh network upon boot.
+
+## Phase 7: Distributed Mesh, Multiplexing & Swarm Ecosystem
+
+Post-1.0 expansion across networking, physical agent interaction, desktop-grade terminal UX, and package ecosystem.
+
+### Milestone 7.1: Collaborative P2P & Multi-Node Mesh
+- [x] P7-01 **Remote Shell & Session Attachment**: Attach to a shared terminal session across nodes via the signaling server / WebRTC data channels and local BroadcastChannel (`attach`, `detach`, `wall`, `talk`) (D-029, 2026-10-06).
+- [x] P7-02 **Peer-to-Peer File Transfer (`mesh-cp` / `scp`)**: Securely send or pull files between connected FractalOS nodes across the mesh network without external cloud storage (D-030, 2026-10-06).
+- [ ] P7-03 **Multiplayer Terminal Applications**: Shared turn-based or interactive terminal applications (e.g. 2-player text games or collaborative editor sessions) over BroadcastChannel / WebRTC mesh.
+- [ ] P7-04 **Mesh Node Presence & Discovery UI**: Live network status app or shell command (`peers` / `netstat --mesh`) displaying discovered nodes, latency, and shared capabilities.
+
+### Milestone 7.2: Multi-Agent Swarms & Physical IoT Autopilot
+- [ ] P7-05 **Hardware Sensor Monitoring Daemon**: Add background monitoring capabilities in `gpio` / Python kernel for reading pin states, button presses, or sensor streams with callback events.
+- [ ] P7-06 **IoT Autopilot Actions**: Teach `samwise` to interact with hardware sensors and actuators (e.g. "turn on LED when disk is full", "monitor pin 17 and alert").
+- [ ] P7-07 **Distributed Agent Task Delegation**: Allow `samwise` on one node to dispatch sub-tasks or queries to a peer node's agent over the mesh network and await synthesized results.
+- [ ] P7-08 **Swarm Safety & Voltage Policies for Mesh**: Voltage budgeting and confirmation rules specifically tailored for remote commands and physical hardware actions across nodes.
+
+### Milestone 7.3: Terminal Multiplexing & Windowing UX
+- [ ] P7-09 **Terminal Split Panes (Multiplexer)**: Support horizontal and vertical pane splits in the terminal interface (`split-v`, `split-h`, keyboard shortcuts) with independent shell contexts.
+- [ ] P7-10 **TUI Window Management**: Move overlay apps (editor, paint, top, adventure) into floating/docked panels or tiled viewports alongside the terminal.
+- [ ] P7-11 **Persistent Status & Notification Bar**: System tray / status line displaying active background jobs, mesh peer count, audio mute, and agent status.
+- [ ] P7-12 **Clipboard & Drag-and-Drop Bridge**: Seamless clipboard sharing and drag-and-drop file import into the VFS from the browser / host environment.
+
+### Milestone 7.4: Package Ecosystem & Community Registry Tooling
+- [ ] P7-13 **Package Publishing Tool (`pkg publish`)**: Command to validate, package, generate manifest metadata, and export/publish packages for community repositories.
+- [ ] P7-14 **Package Dependency Resolution**: Support dependencies in `/etc/pkg_manifest.json` (specifying required Pyodide wheels or dependent command packages).
+- [ ] P7-15 **Standard Library Expansion**: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages.
+- [ ] P7-16 **Package Security & Sandboxing**: Verification hashes and permission scopes for installed third-party packages before execution.
+

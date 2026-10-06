@@ -11,30 +11,28 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-Phase 6 ("Fractal Pi") architecture and base networking is complete! The OS now ships with a fully universal `provision_appliance.sh` script that automatically downloads the right Neutralino binaries (x86_64, aarch64, armhf) and configures a lightweight Wayland/X11 kiosk environment. We also built an async `execHostCommand` bridge (Neutralino.os.execCommand) into the Python kernel and exposed a `gpio` utility for native hardware integration. Finally, the Onboarding screen now offers an option to turn a fresh FractalOS node into a local signaling server on boot. All automated tests (85/85 smoke and 40/40 diag) pass cleanly on the new async core.
+P7-01 ("Remote Shell & Session Attachment") and P7-02 ("Peer-to-Peer File Transfer") are complete! FractalOS now supports secure peer-to-peer file transfer across connected mesh nodes via `mesh-cp` (also aliased as `scp`). Files can be pushed or pulled using standard `node:path` syntax or `send` / `pull` subcommands with full VFS permission checks, integrity transfer, and live progress reporting. Remote interactive sessions (`attach`, `detach`), network broadcasts (`wall`), and direct peer chat (`talk`) are also fully operational. All automated test suites pass cleanly: 85/85 smoke assertions, 40/40 in-OS diag assertions, 8/8 mesh command tests, 8/8 network unit tests, 26/26 agent unit tests, 22/22 grading tests, and all structure tests.
 
 ## Next steps
 
-1. Create a public community package repository to host our very first Python packages (like `tetris.py`), testing the `pkg` manager end-to-end. (Wait, the user already did this, and we already wrote `tetris.py`!). 
-2. Test the new `gpio` module on a real Raspberry Pi.
-3. Write a developer log update declaring the Phase 6 OS Appliance features.
+1. Implement P7-03: Multiplayer Terminal Applications over the mesh.
+2. Implement P7-04: Mesh Node Presence & Discovery UI (`peers` / `netstat --mesh`).
+3. When physical hardware is available, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
 
 
 ## Session log
 
-### Session 7: 2026-09-30: Phase 6 Appliance, GPIO Bridge, and Auto-Signaling Server
+### Session 10: 2026-10-06: P7-02 Peer-to-Peer File Transfer (`mesh-cp` / `scp`)
 
-**Goal:** Execute the vision for P6: a bare-metal Fractal Pi appliance, hardware integration, and mesh peer discovery on boot.
-**Done:** P6-01, P6-02, P6-03, P6-04. Wrote `extras/provision_appliance.sh` for universal kiosk provisioning. Extended the Phase 5 async kernel bridge to pass `Neutralino.os.execCommand` down to the Python OS, and wrapped it in `commands/gpio.py` to allow native control of physical hardware. Added a "Mesh Network Setup" step to the Onboarding UI that saves a config to `/etc/network.conf`, which `network_manager.js` reads on boot to optionally spawn the Python signaling server directly from the appliance. Fixed `tests/smoke.js` args and ran the full 85-assertion suite and 40-assertion diag suite successfully. Also wrote and published the first community package (`tetris.py` turn-based game) to the user's public registry!
-**Changed:** `docs/ROADMAP.md`, `extras/provision_appliance.sh`, `resources/bridge.js`, `resources/core/host_api.py`, `resources/core/kernel.py`, `resources/core/commands/gpio.py`, `resources/scripts/apps/onboarding/onboarding_ui.js`, `resources/scripts/apps/onboarding/onboarding_manager.js`, `resources/scripts/network_manager.js`, `resources/main.js`, `resources/core/users.py`, `tests/smoke.js`.
-**Decisions:** Extended Neutralino async bridge pattern for arbitrary native execution on the host (`execHostCommand`) when running in appliance mode. Onboarding now determines the root node for peer discovery.
+**Goal:** Implement P7-02: Peer-to-peer file transfers across mesh nodes without third-party cloud storage.
+**Done:** P7-02, D-030. Created `mesh_cp.py` and `scp.py` in `resources/core/commands/` supporting standard scp syntax (`node:path`) and `send` / `pull` subcommands. Updated `resources/core/executor.py` to allow hyphenated commands (mapping `mesh-cp` to `mesh_cp`). Added effects `mesh_file_send` and `mesh_file_pull` in `effect_handler.js`. Extended `NetworkManager` with `sendFile` / `pullFile`, payload routing (`mesh_file_push`, `mesh_file_push_ack`, `mesh_file_pull`, `mesh_file_pull_reply`), and target VFS persistence via `FileSystemManager.createOrUpdateFile()`. Created and verified Python tests in `tests/mesh_command_test.py` and JS unit tests in `tests/mesh_unit.js`. Verified 85/85 smoke checks and all test suites.
+**Changed:** `resources/core/commands/mesh_cp.py`, `resources/core/commands/scp.py`, `resources/core/executor.py`, `resources/core/manifest.json`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/mesh_command_test.py`, `tests/mesh_unit.js`.
+**Decisions:** D-030 (Peer-to-Peer file transfer protocol, scp syntax, and hyphenated command mapping).
 **Problems / surprises:**
-- A simple Pyodide exception (Permission denied) in `pkg` was too noisy for standard users; patched `pkg.py` to gracefully suggest `sudo`.
-- Discovered that `first_time_setup` never actually created an `/etc/sudoers` file, leaving the first user without sudo access! Patched `users.py` to add `username ALL` on creation.
-- A typo in Phase 5 (`FileSystemManager.getNode` instead of `getNodeByPath` in `bridge.js`) caused the package manager to silently fail parsing manifests on boot. Fixed it before running smoke tests.
-- Had to debug a JavaScript optional chaining error when inserting the `startNetworking` method dynamically because I didn't slice the source text right. Replaced the whole method instead.
-**Left undone:** Have not tested the GPIO script on physical hardware yet.
-**Next session should start with:** "Next steps" above.
+- Hyphenated command names like `mesh-cp` could not be directly imported as Python modules (`import_module("commands.mesh-cp")`). Updated `executor._load_command_module` to fall back to replacing hyphens with underscores, allowing `mesh-cp` to seamlessly map to `commands.mesh_cp`.
+- Fixed a safe check for `UserManager.getPrimaryGroupForUser` in `_handleMeshFilePush` and `_handleMeshFilePullReply` to gracefully fall back if the method is omitted in lightweight contexts.
+**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
+**Next session should start with:** P7-03 (Multiplayer Terminal Applications).
 
 
 ### Session 22: 2026-09-30: Phase 5 (Networking and Portable Mode)

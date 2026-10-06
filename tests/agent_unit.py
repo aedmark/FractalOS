@@ -160,7 +160,7 @@ class AgentTests(unittest.TestCase):
     # P2-17: validation rejections go back to the model, up to MAX_PLAN_ATTEMPTS calls.
     def run_replies(self, replies, agent=False, **options):
         calls = []
-        async def llm(provider, model, conversation, api_key, system_prompt=None):
+        async def llm(provider, model, conversation, api_key, system_prompt=None, signal=None):
             calls.append(conversation)
             if system_prompt == self.am.SYNTHESIZER_SYSTEM_PROMPT:
                 return {'success': True, 'answer': 'SYNTH'}

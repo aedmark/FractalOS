@@ -17,7 +17,7 @@ function startOnboardingProcess(dependencies) {
 
 async function executePythonCommand(rawCommandText, options = {}) {
     const { isInteractive = true, scriptingContext = null, stdinContent = null, asUser = null } = options;
-    const { ModalManager, OutputManager, TerminalUI, AppLayerManager, HistoryManager, Config, ErrorHandler, Utils, FileSystemManager } = dependencies;
+    const { ModalManager, OutputManager, TerminalUI, AppLayerManager, HistoryManager, Config, ErrorHandler, Utils, FileSystemManager, NetworkManager } = dependencies;
 
     if (isInteractive && !scriptingContext) {
         TerminalUI.hideInputLine();
@@ -31,6 +31,31 @@ async function executePythonCommand(rawCommandText, options = {}) {
     if (rawCommandText.trim() === "") {
         if (isInteractive) await finalizeInteractiveModeUI(rawCommandText);
         return { success: true, output: "" };
+    }
+
+    if (NetworkManager && typeof NetworkManager.isAttached === 'function' && NetworkManager.isAttached() && isInteractive && !scriptingContext) {
+        const cmdTrimmed = rawCommandText.trim();
+        if (cmdTrimmed === 'detach' || cmdTrimmed === 'exit') {
+            await NetworkManager.detachSession();
+            await OutputManager.appendToOutput("Detached from remote session.");
+            await finalizeInteractiveModeUI(rawCommandText);
+            return { success: true, output: "Detached." };
+        }
+
+        try {
+            const remoteResult = await NetworkManager.sendRemoteCommand(cmdTrimmed);
+            if (remoteResult.output) {
+                await OutputManager.appendToOutput(remoteResult.output);
+            }
+            if (remoteResult.error) {
+                await OutputManager.appendToOutput(remoteResult.error, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+            }
+        } catch (err) {
+            await OutputManager.appendToOutput(`Remote error: ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+        }
+
+        await finalizeInteractiveModeUI(rawCommandText);
+        return { success: true };
     }
 
     const commandName = rawCommandText.trim().split(/\s+/)[0];
