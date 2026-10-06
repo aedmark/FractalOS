@@ -662,20 +662,25 @@ async function handleEffect(result, options) {
         }
 
         case 'mesh_agent_delegate': {
-            const { target, prompt, isAutopilot, timeout, asJson } = result;
+            const { target, prompt, isAutopilot, maxVoltage, isDryRun, isForce, timeout, asJson } = result;
             if (!target || !prompt) {
                 await OutputManager.appendToOutput("mesh-agent: target node and prompt required. Usage: mesh-agent <nodeId> <prompt>", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
                 break;
             }
 
             const resolvedTarget = NetworkManager.resolvePeerId(target) || target;
+            const modeLabel = isDryRun ? 'plan dry-run ' : (isAutopilot ? 'autopilot ' : '');
+            const budgetLabel = maxVoltage !== undefined && maxVoltage !== null ? ` (budget: ${maxVoltage}V)` : '';
             await OutputManager.appendToOutput(
-                `\x1b[1;34m[Mesh Swarm]\x1b[0m Delegating ${isAutopilot ? 'autopilot ' : ''}task to peer \x1b[1m${resolvedTarget.substring(0, 8)}\x1b[0m: "${prompt}"...`
+                `\x1b[1;34m[Mesh Swarm]\x1b[0m Delegating ${modeLabel}task to peer \x1b[1m${resolvedTarget.substring(0, 8)}\x1b[0m${budgetLabel}: "${prompt}"...`
             );
 
             try {
                 const response = await NetworkManager.delegateAgentTask(target, prompt, {
                     isAutopilot,
+                    maxVoltage,
+                    isDryRun,
+                    isForce,
                     timeout: timeout || 30
                 });
 
@@ -683,13 +688,16 @@ async function handleEffect(result, options) {
                     await OutputManager.appendToOutput(JSON.stringify(response, null, 2));
                 } else {
                     const nodeLabel = response.targetId ? response.targetId.substring(0, 8) : target.substring(0, 8);
-                    const formattedHeader = `\x1b[1;35m╭── [Swarm Agent @ ${nodeLabel}] ──────────────────────────────────────────\x1b[0m`;
+                    const vLabel = response.voltage !== undefined && response.voltage !== null ? ` | ${response.voltage}V` : '';
+                    const formattedHeader = `\x1b[1;35m╭── [Swarm Agent @ ${nodeLabel}${vLabel}] ──────────────────────────────────────────\x1b[0m`;
                     const formattedFooter = `\x1b[1;35m╰──────────────────────────────────────────────────────────────────────────\x1b[0m`;
                     const content = response.data || "(No output returned from remote agent)";
                     await OutputManager.appendToOutput(`${formattedHeader}\n${content}\n${formattedFooter}`);
                 }
             } catch (err) {
-                await OutputManager.appendToOutput(`mesh-agent: ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                const isSafetyAlert = err.message && err.message.includes('🛑');
+                const errColor = isSafetyAlert ? '\x1b[1;31m' : '';
+                await OutputManager.appendToOutput(`${errColor}mesh-agent: ${err.message}\x1b[0m`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
             }
             break;
         }

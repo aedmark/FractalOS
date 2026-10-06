@@ -62,7 +62,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             "ls", "cat", "grep", "find", "tree", "pwd", "head", "tail",
             "wc", "man", "help", "echo", "bc", "expr", "whoami", "date", "story",
             "cd", "mkdir", "touch", "mv", "cp", "rm", "rmdir", "forge", "run", "chmod",
-            "python", "true", "gpio", "mesh-agent", "mesh_agent"
+            "python", "true", "gpio", "mesh-agent", "mesh_agent", "swarm"
         ]
         self.PLANNER_SYSTEM_PROMPT = self.PLANNER_SYSTEM_PROMPT.replace(
             "{tool_manifest}", ", ".join(self.COMMAND_WHITELIST))
@@ -82,7 +82,9 @@ Always use absolute paths for all file and directory arguments to prevent contex
         if cmd == "gpio":
             sub = parts[1].lower() if len(parts) > 1 else ""
             return sub in {"write", "simulate", "monitor", "watch", "stop", "unmonitor"}
-        if cmd in {"mesh-agent", "mesh_agent"}:
+        if cmd in {"mesh-agent", "mesh_agent", "swarm"}:
+            if cmd == "swarm" and len(parts) > 1 and parts[1] == "policy" and len(parts) > 2 and parts[2] == "set":
+                return True
             return any(p in {"--autopilot", "-a"} for p in parts[1:])
         return cmd in self.DANGEROUS_COMMANDS
 
@@ -472,6 +474,43 @@ Always use absolute paths for all file and directory arguments to prevent contex
 
         print(f"[BONE] Plan Voltage: {voltage} | Status: {safety_status}")
 
+        max_voltage_budget = options.get("max_voltage_budget")
+        if max_voltage_budget is not None and voltage is not None and voltage > max_voltage_budget:
+            return {
+                "success": False,
+                "voltage": voltage,
+                "safety_status": safety_status,
+                "error": f"🛑 SWARM VOLTAGE EXCEEDED: Plan voltage ({voltage} V) exceeds allowed threshold ({max_voltage_budget} V).\nPlan:\n{plan_text}"
+            }
+
+        swarm_context = options.get("swarm_context")
+        if swarm_context and not swarm_context.get("allow_gpio", False):
+            for cmd_str in commands_to_execute:
+                try:
+                    parts = shlex.split(cmd_str)
+                except ValueError:
+                    continue
+                if parts and parts[0] == "gpio":
+                    sub = parts[1].lower() if len(parts) > 1 else ""
+                    if sub in {"mode", "write", "simulate", "monitor", "watch", "stop", "unmonitor"}:
+                        return {
+                            "success": False,
+                            "voltage": voltage,
+                            "safety_status": safety_status,
+                            "error": f"🛑 SWARM POLICY VIOLATION: Remote physical hardware actuation (gpio {sub}) is prohibited on this node.\nPlan:\n{plan_text}"
+                        }
+
+        if options.get("dry_run", False):
+            return {
+                "success": True,
+                "dry_run": True,
+                "data": f"### 🍄 BONEAMANITA AUTOPILOT PLAN (DRY RUN)\n**Status:** {safety_status} (Voltage: {voltage} V)\n\n**Plan:**\n{plan_text}\n\n**Commands:**\n" + "\n".join(f"- `{c}`" for c in commands_to_execute),
+                "plan_text": plan_text,
+                "commands": commands_to_execute,
+                "voltage": voltage,
+                "safety_status": safety_status
+            }
+
         if voltage >= 20.0 and not options.get("force_override", False):
             return {
                 "success": False, 
@@ -479,7 +518,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             }
 
         if not commands_to_execute:
-            return {"success": True, "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}"}
+            return {"success": True, "data": f"BoneAmanita Analysis (No Kinetic Action Detected):\n{plan_text}", "voltage": voltage, "safety_status": safety_status}
 
         execution_log = ""
         collected_plan_effects = []
@@ -509,7 +548,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
         env_manager.unset('_AI_LAST_ERROR')
         final_report = f"### 🍄 BONEAMANITA AUTOPILOT REPORT\n**Status:** {safety_status} (Voltage: {voltage})\n\n**Execution Log:**\n```\n{execution_log}\n```"
         
-        response = {"success": True, "data": final_report}
+        response = {"success": True, "data": final_report, "voltage": voltage, "safety_status": safety_status}
         if collected_plan_effects:
             response["effects"] = collected_plan_effects
         if warning: response["warning"] = warning

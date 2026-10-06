@@ -114,7 +114,9 @@ For example, if asked to write and run hello.py in the home directory:
                         base += BoneDriver.command_voltage(action_cmd)
                 return base
             return 5.0
-        if name in {"mesh-agent", "mesh_agent"}:
+        if name in {"mesh-agent", "mesh_agent", "swarm"}:
+            if name == "swarm" and len(parts) > 1 and parts[1] == "policy" and len(parts) > 2 and parts[2] == "set":
+                return 5.0
             is_auto = any(p in {"--autopilot", "-a"} for p in parts[1:])
             return 5.0 if is_auto else 1.0
         return 20.0
@@ -126,7 +128,7 @@ For example, if asked to write and run hello.py in the home directory:
             if not parts:
                 continue
             name = parts[0]
-            if name in {"gpio", "mesh-agent", "mesh_agent"}:
+            if name in {"gpio", "mesh-agent", "mesh_agent", "swarm"}:
                 continue
             if name not in BoneDriver.READ_COMMANDS | {"cd", "story"} or parts[:2] == ["story", "rewind"]:
                 return True

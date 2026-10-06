@@ -14,6 +14,7 @@ from apps import top as top_app
 from apps import log as log_app
 from apps import basic as basic_app
 from audit import audit_manager
+from swarm_manager import swarm_manager
 import json
 import traceback
 import inspect
@@ -22,6 +23,7 @@ import asyncio
 sudo_manager = SudoManager(fs_manager)
 ai_manager = AIManager(fs_manager, command_executor)
 command_executor.set_ai_manager(ai_manager)
+swarm_manager.set_ai_manager(ai_manager)
 
 MODULE_DISPATCHER = {
     "executor": command_executor, "filesystem": fs_manager, "host": host_api, "session": session_manager,
@@ -29,7 +31,8 @@ MODULE_DISPATCHER = {
     "groups": group_manager, "users": user_manager, "sudo": sudo_manager, "ai": ai_manager,
     "story": story_manager,
     "editor": editor_manager, "paint": paint_manager,
-    "adventure": adventure_manager, "top": top_app, "log": log_app, "basic": basic_app, "audit": audit_manager
+    "adventure": adventure_manager, "top": top_app, "log": log_app, "basic": basic_app, "audit": audit_manager,
+    "swarm": swarm_manager
 }
 
 def initialize_kernel(save_function, read_host_function=None, write_host_function=None, exec_host_function=None):

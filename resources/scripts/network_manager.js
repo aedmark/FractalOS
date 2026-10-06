@@ -1085,6 +1085,9 @@ class NetworkManager {
                 reqId,
                 prompt,
                 isAutopilot: !!options.isAutopilot,
+                maxVoltage: options.maxVoltage !== undefined ? options.maxVoltage : null,
+                isDryRun: !!options.isDryRun,
+                isForce: !!options.isForce,
                 sourceId: this.instanceId,
                 senderUser: options.senderUser || 'Guest'
             });
@@ -1094,37 +1097,46 @@ class NetworkManager {
     async _handleMeshAgentRequest(payload) {
         const sourceId = payload?.sourceId || payload?.data?.sourceId;
         const msgData = payload?.data || payload || {};
-        const { reqId, prompt, isAutopilot, senderUser } = msgData;
+        const { reqId, prompt, isAutopilot, senderUser, maxVoltage, isDryRun, isForce } = msgData;
         const { OutputManager } = this.dependencies;
 
+        const voltageInfo = maxVoltage !== undefined && maxVoltage !== null ? ` [Budget: ${maxVoltage}V]` : '';
+        const modeInfo = isDryRun ? ' (dry-run)' : (isAutopilot ? ' (autopilot)' : '');
         if (OutputManager && sourceId) {
             await OutputManager.appendToOutput(
-                `\n\x1b[1;35m[Mesh Swarm]\x1b[0m Delegated task from \x1b[1m${sourceId.substring(0, 8)}\x1b[0m (${senderUser || 'Guest'}): "${prompt}"\n`
+                `\n\x1b[1;35m[Mesh Swarm]\x1b[0m Incoming task from \x1b[1m${sourceId.substring(0, 8)}\x1b[0m (${senderUser || 'Guest'})${modeInfo}${voltageInfo}: "${prompt}"\n`
             );
         }
 
         try {
-            const escaped = (prompt || '').replace(/"/g, '\\"');
-            const cmd = isAutopilot ? `samwise --autopilot "${escaped}"` : `samwise "${escaped}"`;
-            
             let resultData = "";
             let isSuccess = true;
             let errorDetails = null;
+            let resultVoltage = null;
 
-            if (typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.execute_command) {
-                let contextJson = "{}";
-                if (typeof createKernelContext === 'function') {
-                    contextJson = await createKernelContext({ asUser: { name: 'Guest', primaryGroup: 'Guest' } });
-                }
-                const rawResult = await FractalOS_Kernel.execute_command(cmd, contextJson);
+            if (typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.isReady && FractalOS_Kernel.syscall) {
+                const requestPayload = {
+                    reqId,
+                    prompt,
+                    isAutopilot: !!isAutopilot,
+                    senderUser: senderUser || 'Guest',
+                    sourceId: sourceId,
+                    maxVoltage: maxVoltage !== undefined ? maxVoltage : null,
+                    isDryRun: !!isDryRun,
+                    isForce: !!isForce
+                };
+                const rawResult = await FractalOS_Kernel.syscall("swarm", "handle_remote_agent_request", [requestPayload]);
                 const pyResult = JSON.parse(rawResult);
-                
+
                 isSuccess = !!pyResult.success;
-                resultData = pyResult.output || pyResult.content || pyResult.data || "";
+                resultData = pyResult.data || "";
+                resultVoltage = pyResult.voltage !== undefined ? pyResult.voltage : null;
                 if (!isSuccess) {
                     errorDetails = pyResult.error?.message || pyResult.error || "Remote task execution failed.";
                 }
             } else if (this.dependencies.CommandExecutor) {
+                const escaped = (prompt || '').replace(/"/g, '\\"');
+                const cmd = isAutopilot ? `samwise --autopilot "${escaped}"` : `samwise "${escaped}"`;
                 const execResult = await this.dependencies.CommandExecutor.processSingleCommand(cmd, { isInteractive: false });
                 isSuccess = execResult?.success !== false;
                 resultData = execResult?.output || "Task executed.";
@@ -1136,6 +1148,7 @@ class NetworkManager {
                     success: isSuccess,
                     data: resultData,
                     error: errorDetails,
+                    voltage: resultVoltage,
                     targetId: this.instanceId
                 });
             }

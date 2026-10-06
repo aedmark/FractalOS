@@ -48,5 +48,39 @@ class AuditManager:
         except Exception as e:
             return {"success": False, "error": f"Failed to write to audit log: {repr(e)}"}
 
+    def log_swarm(self, peer_id, sender_user, action, voltage=None, details="", user_context=None):
+        """
+        Logs a remote swarm / mesh agent event with peer node provenance and voltage.
+        """
+        user_ctx = user_context or {"name": "root", "group": "root"}
+        if not self._ensure_log_file_exists(user_ctx):
+            return {"success": False, "error": "Failed to ensure log file exists."}
+
+        try:
+            timestamp = datetime.utcnow().isoformat() + "Z"
+            v_str = f" | VOLTAGE: {voltage}V" if voltage is not None else ""
+            peer_str = f"PEER: {peer_id}" + (f" ({sender_user})" if sender_user else "")
+            log_entry = f"{timestamp} | {peer_str} | ACTION: {action}{v_str} | DETAILS: {details}\n"
+
+            log_node = fs_manager.get_node(LOG_PATH)
+            current_content = log_node.get('content', '') if log_node else ''
+            new_content = current_content + log_entry
+
+            fs_manager.write_file(LOG_PATH, new_content, {"name": "root", "group": "root"})
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": f"Failed to write to audit log: {repr(e)}"}
+
+    def get_swarm_entries(self, limit=50):
+        """
+        Retrieves recent swarm / mesh audit log entries.
+        """
+        log_node = fs_manager.get_node(LOG_PATH)
+        if not log_node or not log_node.get('content'):
+            return []
+        lines = log_node.get('content', '').splitlines()
+        swarm_lines = [l for l in lines if " | PEER: " in l]
+        return swarm_lines[-limit:]
+
 
 audit_manager = AuditManager()

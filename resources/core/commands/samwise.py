@@ -15,8 +15,9 @@ def define_flags():
             {'name': 'dry-run', 'long': 'dry-run', 'takes_value': False},
             {'name': 'sleep', 'long': 'sleep', 'takes_value': False, 'description': 'Enter sleep cycle to consolidate memories into the subconscious.'},
             {'name': 'node', 'short': 'n', 'long': 'node', 'takes_value': True, 'description': 'Delegate task to a remote peer node.'},
+            {'name': 'max-voltage', 'short': 'v', 'long': 'max-voltage', 'takes_value': True, 'description': 'Maximum voltage budget allowed for the task.'},
         ],
-        'metadata': {}
+        'metadata': {'--max-voltage': {'type': 'float'}, '-v': {'type': 'float'}}
     }
 
 async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manager=None, **kwargs):
@@ -125,6 +126,13 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
 
     user_prompt = " ".join(args)
 
+    max_voltage = None
+    if 'max-voltage' in flags:
+        try:
+            max_voltage = float(flags['max-voltage'])
+        except (ValueError, TypeError):
+            pass
+
     target_node = flags.get('node')
     if target_node:
         return {
@@ -132,6 +140,9 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
             "target": target_node,
             "prompt": user_prompt,
             "isAutopilot": is_autopilot,
+            "maxVoltage": max_voltage,
+            "isDryRun": is_dry_run,
+            "isForce": force_override,
             "timeout": 30,
             "asJson": False
         }
@@ -140,7 +151,13 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         return await _dry_run(ai_manager, user_prompt, provider, model, api_key, is_autopilot, force_override)
 
     signal = kwargs.get('signal')
-    options = {"apiKey": api_key, "force_override": force_override, "signal": signal}
+    options = {
+        "apiKey": api_key,
+        "force_override": force_override,
+        "signal": signal,
+        "max_voltage_budget": max_voltage,
+        "dry_run": is_dry_run
+    }
 
     if is_autopilot:
         result = await ai_manager.perform_autopilot(

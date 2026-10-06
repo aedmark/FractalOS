@@ -407,3 +407,18 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 5. `effect_handler.js` handles `mesh_agent_delegate`, displaying styled ANSI swarm borders with peer badges.
 **Consequences:** Enables decentralized agent networks where specialized nodes (e.g. Raspberry Pi sensor nodes, computation hosts) can be queried or actuated remotely by other agents or users across the mesh.
 
+## D-036 Swarm Safety Policies, Remote Voltage Budgets & Provenance Auditing (2026-10-06, status: accepted)
+**Context:** P7-08. Distributed task delegation across nodes introduces significant safety and physical security risks: a remote peer could attempt to trigger High Voltage operations (> 20.0 V), actuate physical hardware (relays, motors, LEDs via GPIO), bypass safety interlocks using `--force`, or flood the node with unconstrained workloads.
+**Decision:** We implemented a unified Swarm Safety & Voltage Policy architecture:
+1. `SwarmManager` (`resources/core/swarm_manager.py`) manages local node policy configured in `/etc/swarm.conf`:
+   - `max_remote_voltage`: Default 10.0 V. Any incoming plan scoring higher is automatically disengaged with a `🛑 SWARM VOLTAGE EXCEEDED` alert.
+   - `allow_remote_autopilot`: Default `true`. Can disable remote autopilot entirely.
+   - `allow_remote_gpio`: Default `false`. Protects local physical pins from unauthorized actuation by blocking any plan containing `gpio mode`, `gpio write`, `gpio monitor`, or `gpio simulate` with a `🛑 SWARM POLICY VIOLATION` alert.
+   - `allow_remote_force`: Default `false`. Prevents remote peers from passing `--force` to bypass safety interlocks on the receiving node.
+   - `audit_remote_tasks`: Default `true`.
+2. Delegators can specify an explicit voltage budget cap (`--max-voltage <V>` or `-v <V>`) in `mesh-agent` or `samwise --node`. The effective limit enforced by the receiver is `min(policy.max_remote_voltage, request.maxVoltage)`.
+3. `--dry-run` is supported in `mesh-agent` and `samwise --node`, allowing operators to remotely plan and audit voltage without executing kinetic commands.
+4. Cryptographic provenance and voltage ratings for all incoming swarm tasks are permanently recorded in `/var/log/audit.log` via `AuditManager.log_swarm()` (`timestamp | PEER: <sourceId> (<user>) | ACTION: ... | VOLTAGE: ... | DETAILS: ...`).
+5. We introduced the `swarm` command (`swarm status`, `swarm policy [set|reset]`, `swarm log`, `swarm run`) and subcommands in `mesh-agent` (`mesh-agent policy`, `mesh-agent log`) for policy configuration and audit inspection.
+**Consequences:** Provides distributed safety interlocks, physical hardware protection, and provenance tracking across the mesh network without requiring central coordination.
+

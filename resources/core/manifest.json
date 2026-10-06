@@ -12,6 +12,7 @@
     "session",
     "story_manager",
     "sudo",
+    "swarm_manager",
     "time_utils",
     "users"
   ],
@@ -136,6 +137,7 @@
     "storyboard",
     "su",
     "sudo",
+    "swarm",
     "sync",
     "tail",
     "talk",

@@ -11,16 +11,29 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-Milestone 7.2 ("Multi-Agent Swarms & Physical IoT Autopilot") advances with `P7-05`, `P7-06`, and `P7-07` completed! FractalOS now supports distributed multi-agent swarm task delegation over the mesh network (`mesh-agent`, `samwise --node`, `NetworkManager`). Nodes can dispatch queries or autopilot operations to remote peer agents, which execute in the remote node's local kernel context (with its local file system, GPIO sensors, and environment) and return synthesized responses or execution logs with clean ANSI swarm banners. Delegation requests track unique request IDs and configurable timeouts, resolve peers via full ID, prefix, or metadata, and price risk through voltage budgeting (1.0 V for inquiries, 5.0 V with confirmation for remote autopilot). All test suites pass: 85/85 smoke checks, 37/37 agent unit tests, 22/22 grading tests, 4/4 mesh-agent command tests, 5/5 mesh-agent JS tests, 8/8 gpio command tests, 6/6 hardware daemon JS tests, 10/10 peers command tests, 6/6 peers unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh unit tests, and all structure tests.
+Milestone 7.2 ("Multi-Agent Swarms & Physical IoT Autopilot") is 100% COMPLETE (`P7-05`, `P7-06`, `P7-07`, and `P7-08`)! FractalOS now has a production-grade Swarm Safety & Voltage Policy framework (`SwarmManager`, `/etc/swarm.conf`, `swarm`, `mesh-agent`, `AuditManager.log_swarm`). Nodes can configure voltage ceilings (`max_remote_voltage`, default 10.0 V), prohibit unauthorized physical hardware actuation (`allow_remote_gpio`, default `false`), block remote force bypasses (`allow_remote_force`, default `false`), and specify caller voltage caps (`--max-voltage <V>`). Remote task planning can be audited without side effects using `--dry-run`, and all incoming swarm actions record node provenance and voltage ratings in `/var/log/audit.log`. All test suites pass: 85/85 smoke checks, 6/6 swarm safety tests, 3/3 swarm safety JS tests, 37/37 agent unit tests, 22/22 grading tests, 4/4 mesh-agent command tests, 5/5 mesh-agent JS tests, 8/8 gpio command tests, 6/6 hardware daemon JS tests, 10/10 peers command tests, 6/6 peers unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh unit tests, and all structure tests (14 core, 6 apps, 139 commands, 70 asset entries).
 
 ## Next steps
 
-1. Implement P7-08: Swarm Safety & Voltage Policies for Mesh (remote command budgeting, confirmation policies, and remote action safeguards across distributed nodes), completing Milestone 7.2.
-2. Begin Milestone 7.3: Terminal Multiplexing & Windowing UX (`P7-09` split panes, `P7-10` TUI window manager, `P7-11` status bar).
+1. Begin Milestone 7.3: Terminal Multiplexing & Windowing UX (`P7-09` split panes `split-v`/`split-h`, `P7-10` TUI window manager, `P7-11` status bar, `P7-12` clipboard bridge).
+2. Start with P7-09: Terminal Split Panes (Multiplexer): support horizontal and vertical pane splits in the terminal interface with independent shell contexts.
 3. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
 
 
 ## Session log
+
+### Session 16: 2026-10-06: P7-08 Swarm Safety & Voltage Policies for Mesh (`SwarmManager`, `/etc/swarm.conf`, `swarm`, `audit.py`)
+
+**Goal:** Implement P7-08: Swarm Safety & Voltage Policies for Mesh (voltage budgeting and confirmation rules specifically tailored for remote commands and physical hardware actions across nodes).
+**Done:** P7-08, D-036. Created `resources/core/swarm_manager.py` with `SwarmManager` managing `/etc/swarm.conf` policies (`max_remote_voltage`, `allow_remote_autopilot`, `allow_remote_gpio`, `allow_remote_force`, `audit_remote_tasks`). Extended `resources/core/audit.py` with `log_swarm` and `get_swarm_entries` for cryptographically verifiable peer provenance logging in `/var/log/audit.log`. Updated `resources/core/ai_manager.py` (`perform_autopilot`) to enforce `max_voltage_budget`, GPIO actuation prohibitions under `swarm_context`, and `--dry-run` plan generation. Added `resources/core/commands/swarm.py` providing unified CLI commands (`swarm status`, `swarm policy [set|reset]`, `swarm log`, `swarm run`). Enhanced `resources/core/commands/mesh_agent.py` and `resources/core/commands/samwise.py` with `--max-voltage` (`-v`), `--dry-run`, and policy subcommands. Updated `NetworkManager.delegateAgentTask` and `_handleMeshAgentRequest` to coordinate voltage budgets and kernel-level swarm safety syscalls. Created unit tests in `tests/swarm_safety_test.py` (6/6 passing) and `tests/swarm_safety_unit.js` (3/3 passing). Regenerated `manifest.json` (14 core, 6 apps, 139 commands). Verified 85/85 smoke checks, structure tests, and all test suites.
+**Changed:** `resources/core/swarm_manager.py`, `resources/core/kernel.py`, `resources/core/audit.py`, `resources/core/ai_manager.py`, `resources/core/bone_driver.py`, `resources/core/commands/swarm.py`, `resources/core/commands/mesh_agent.py`, `resources/core/commands/samwise.py`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/swarm_safety_test.py`, `tests/swarm_safety_unit.js`.
+**Decisions:** D-036 (Swarm Safety Policies, Remote Voltage Budgets & Provenance Auditing).
+**Problems / surprises:**
+- In `ai_manager.py`, `perform_autopilot` now natively handles both `max_voltage_budget` and `swarm_context`, immediately blocking remote physical actuation (such as `gpio write` or `gpio mode`) and excessive plan voltage before running any kinetic commands.
+- `audit.py` captures peer provenance (`PEER: <sourceId> (<user>)`) and voltage ratings in `/var/log/audit.log`, queryable via `swarm log`.
+**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
+**Next session should start with:** P7-09: Terminal Split Panes (Multiplexer) for Milestone 7.3.
+
 
 ### Session 15: 2026-10-06: P7-07 Distributed Agent Task Delegation (`mesh-agent`, `samwise --node`, `NetworkManager`)
 
