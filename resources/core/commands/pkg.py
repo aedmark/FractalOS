@@ -29,6 +29,8 @@ def define_flags():
             {'name': 'mesh', 'short': 'm', 'long': 'mesh', 'takes_value': False},
             {'name': 'force', 'short': 'f', 'long': 'force', 'takes_value': False},
             {'name': 'no_deps', 'short': None, 'long': 'no-deps', 'takes_value': False},
+            {'name': 'skip_verify', 'short': None, 'long': 'skip-verify', 'takes_value': False},
+            {'name': 'trust', 'short': 't', 'long': 'trust', 'takes_value': False},
         ],
         'aliases': {
             'h': 'help',
@@ -38,7 +40,8 @@ def define_flags():
             'e': 'export',
             'o': 'out',
             'm': 'mesh',
-            'f': 'force'
+            'f': 'force',
+            't': 'trust'
         },
         'metadata': {}
     }
@@ -157,6 +160,10 @@ def _validate_module(module, default_name=None):
     license_type = meta.get("license", "MIT")
     wheels = meta.get("wheels", [])
     dependencies = meta.get("dependencies", [])
+    permissions = meta.get("permissions", ["fs:read", "fs:write"])
+    if not isinstance(permissions, (list, tuple)):
+        warnings.append("Package 'permissions' must be a list of scope strings (e.g. ['fs:read', 'fs:write']).")
+        permissions = ["fs:read", "fs:write"]
 
     return {
         "valid": len(errors) == 0,
@@ -167,6 +174,7 @@ def _validate_module(module, default_name=None):
         "license": str(license_type),
         "wheels": list(wheels) if isinstance(wheels, (list, tuple)) else [],
         "dependencies": list(dependencies) if isinstance(dependencies, (list, tuple)) else [],
+        "permissions": list(permissions),
         "errors": errors,
         "warnings": warnings,
         "raw_meta": meta
@@ -264,6 +272,113 @@ def _format_tree(node, prefix="", is_last=True):
         lines.extend(_format_tree(child, new_prefix, i == len(deps) - 1))
     return lines
 
+def _audit_code(code_str, declared_permissions=None):
+    findings = []
+    risk_score = 0
+
+    try:
+        import ast
+        tree = ast.parse(code_str)
+    except SyntaxError as e:
+        return {
+            "valid_syntax": False,
+            "error": str(e),
+            "risk_level": "UNKNOWN",
+            "risk_score": 10,
+            "findings": [{"severity": "HIGH", "message": f"Syntax error: {e}"}]
+        }
+
+    detected_calls = set()
+    detected_attributes = set()
+    string_constants = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                detected_calls.add(node.func.id)
+            elif isinstance(node.func, ast.Attribute):
+                detected_attributes.add(node.func.attr)
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            string_constants.append(node.value)
+
+    # 1. Critical code execution primitives
+    for dangerous in ("eval", "exec", "compile"):
+        if dangerous in detected_calls:
+            findings.append({
+                "severity": "HIGH",
+                "message": f"Dynamic code evaluation primitive detected: '{dangerous}()'"
+            })
+            risk_score += 4
+
+    if "__import__" in detected_calls:
+        findings.append({
+            "severity": "MODERATE",
+            "message": "Dynamic module import '__import__()' detected"
+        })
+        risk_score += 2
+
+    # 2. Process execution or dangerous OS attributes
+    for dangerous in ("system", "popen", "spawn", "fork"):
+        if dangerous in detected_attributes:
+            findings.append({
+                "severity": "HIGH",
+                "message": f"Process execution or OS system call detected: '.{dangerous}()'"
+            })
+            risk_score += 4
+
+    # 3. Path inspection in string constants
+    for s in string_constants:
+        if s.startswith("/etc/") and not s.startswith("/etc/packages"):
+            findings.append({
+                "severity": "MODERATE",
+                "message": f"Reference to sensitive system path: '{s}'"
+            })
+            risk_score += 2
+        elif s.startswith("/dev/") or s.startswith("/proc/"):
+            findings.append({
+                "severity": "MODERATE",
+                "message": f"Reference to device or pseudo-filesystem path: '{s}'"
+            })
+            risk_score += 2
+
+    # 4. Scope inspection
+    declared_perms = declared_permissions or []
+    if "root" in declared_perms:
+        findings.append({
+            "severity": "HIGH",
+            "message": "Package requests 'root' superuser execution privileges"
+        })
+        risk_score += 3
+    if "hardware" in declared_perms:
+        findings.append({
+            "severity": "MODERATE",
+            "message": "Package requests physical 'hardware' / GPIO access"
+        })
+        risk_score += 2
+    if "fs:system" in declared_perms:
+        findings.append({
+            "severity": "MODERATE",
+            "message": "Package requests 'fs:system' write access to system directories"
+        })
+        risk_score += 2
+
+    if risk_score == 0:
+        level = "SAFE"
+    elif risk_score <= 3:
+        level = "LOW RISK"
+    elif risk_score <= 7:
+        level = "MODERATE RISK"
+    else:
+        level = "HIGH RISK"
+
+    return {
+        "valid_syntax": True,
+        "risk_level": level,
+        "risk_score": risk_score,
+        "declared_permissions": declared_perms,
+        "findings": findings
+    }
+
 async def _install_package_internal(source, user_context, flags=None, chain=None, installed_packages=None, all_wheels=None):
     if chain is None:
         chain = []
@@ -277,14 +392,27 @@ async def _install_package_internal(source, user_context, flags=None, chain=None
     if err:
         return False, err, installed_packages, all_wheels
 
+    expected_checksum = None
     # If bundle (.fpkg), unpack JSON
     if content and (filename.endswith(".fpkg") or (content.strip().startswith("{") and "fractalos-package-v1" in content)):
         try:
             bundle = json.loads(content)
+            expected_checksum = bundle.get("checksum")
             content = bundle.get("source", "")
             filename = f"{bundle.get('name', 'pkg')}.py"
         except Exception as e:
             return False, f"Corrupted package bundle '{source}': {str(e)}", installed_packages, all_wheels
+
+    # Verify bundle checksum if declared
+    actual_checksum = _get_checksum(content)
+    if expected_checksum and not flags.get("skip_verify") and not flags.get("force"):
+        if actual_checksum != expected_checksum:
+            return False, (
+                f"Security Error: Checksum mismatch for package '{source}'!\n"
+                f"  Expected: {expected_checksum}\n"
+                f"  Actual:   {actual_checksum}\n"
+                f"Package bundle may be corrupted or tampered with. Use --skip-verify or --force to bypass."
+            ), installed_packages, all_wheels
 
     module, comp_err = _compile_and_inspect(content, filename)
     if comp_err:
@@ -296,6 +424,16 @@ async def _install_package_internal(source, user_context, flags=None, chain=None
         return False, f"Package '{source}' failed validation: {'; '.join(v_res['errors'])}", installed_packages, all_wheels
 
     pkg_name = v_res["name"]
+
+    # Permission verification
+    perms = v_res.get("permissions", ["fs:read", "fs:write"])
+    elevated_perms = {"root", "fs:system", "hardware"}
+    requested_elevated = set(perms).intersection(elevated_perms)
+    if requested_elevated and not flags.get("trust") and not flags.get("force"):
+        return False, (
+            f"Security Error: Package '{pkg_name}' requests elevated permission scopes: {sorted(requested_elevated)}.\n"
+            f"Installation requires explicit authorization flag (--trust / -t)."
+        ), installed_packages, all_wheels
 
     # Check for circular dependency in the current installation chain
     if pkg_name in chain:
@@ -343,6 +481,8 @@ async def _install_package_internal(source, user_context, flags=None, chain=None
         "license": v_res["license"],
         "wheels": v_res["wheels"],
         "dependencies": v_res["dependencies"],
+        "permissions": v_res["permissions"],
+        "checksum": actual_checksum,
         "installed_at": now_iso
     }
     _save_manifest(manifest, user_context)
@@ -1067,12 +1207,193 @@ def help(args, flags, user_context, **kwargs):
 
         return res
 
+    # ---------------------------------------------------------
+    # pkg verify [name]
+    # ---------------------------------------------------------
+    elif cmd in ("verify", "check", "integrity"):
+        target_name = args[1] if len(args) > 1 else None
+        manifest = _get_manifest(user_context)
+        if not manifest:
+            return "No packages installed to verify."
+
+        packages_to_check = [target_name] if target_name else sorted(manifest.keys())
+        results = []
+        any_failed = False
+
+        for pname in packages_to_check:
+            if pname not in manifest:
+                results.append({
+                    "package": pname,
+                    "status": "not_installed",
+                    "error": f"Package '{pname}' is not in installed manifest."
+                })
+                any_failed = True
+                continue
+
+            info = manifest[pname]
+            expected_hash = info.get("checksum")
+            file_path = f"/etc/packages/commands/{pname}.py"
+            node = fs_manager.get_node(file_path)
+
+            if not node or node.get("type") != "file":
+                results.append({
+                    "package": pname,
+                    "version": info.get("version", "1.0.0"),
+                    "status": "missing_file",
+                    "expected_checksum": expected_hash,
+                    "error": f"Installed command file '{file_path}' is missing from filesystem."
+                })
+                any_failed = True
+                continue
+
+            content = node.get("content", "")
+            actual_hash = _get_checksum(content)
+
+            if not expected_hash:
+                results.append({
+                    "package": pname,
+                    "version": info.get("version", "1.0.0"),
+                    "status": "unhashed",
+                    "checksum": actual_hash,
+                    "note": "Package has no recorded checksum in manifest."
+                })
+            elif actual_hash == expected_hash:
+                results.append({
+                    "package": pname,
+                    "version": info.get("version", "1.0.0"),
+                    "status": "verified",
+                    "checksum": actual_hash
+                })
+            else:
+                results.append({
+                    "package": pname,
+                    "version": info.get("version", "1.0.0"),
+                    "status": "tampered",
+                    "expected_checksum": expected_hash,
+                    "actual_checksum": actual_hash,
+                    "error": "Checksum mismatch! File has been altered after installation."
+                })
+                any_failed = True
+
+        if flags.get("json"):
+            return json.dumps({
+                "verified": not any_failed,
+                "packages": results
+            }, indent=2)
+
+        out = ["\x1b[1;36m=== PACKAGE INTEGRITY VERIFICATION ===\x1b[0m"]
+        for r in results:
+            pname = r["package"]
+            ver = f" (v{r.get('version', '1.0.0')})" if "version" in r else ""
+            status = r["status"]
+            if status == "verified":
+                hash_short = r["checksum"][:12] + "..."
+                out.append(f"  \x1b[1;32m✓\x1b[0m {pname}{ver}: \x1b[32mVerified\x1b[0m (sha256: {hash_short})")
+            elif status == "tampered":
+                out.append(f"  \x1b[1;31m✗\x1b[0m {pname}{ver}: \x1b[1;31mTAMPERED / CORRUPTED!\x1b[0m")
+                out.append(f"      Expected sha256: {r.get('expected_checksum')}")
+                out.append(f"      Actual sha256:   {r.get('actual_checksum')}")
+            elif status == "missing_file":
+                out.append(f"  \x1b[1;31m✗\x1b[0m {pname}{ver}: \x1b[1;31mMISSING FILE\x1b[0m (/etc/packages/commands/{pname}.py)")
+            elif status == "unhashed":
+                out.append(f"  \x1b[1;33m?\x1b[0m {pname}{ver}: \x1b[33mUnhashed legacy package\x1b[0m (sha256: {r.get('checksum', '')[:12]}...)")
+            else:
+                out.append(f"  \x1b[1;31m✗\x1b[0m {pname}: {r.get('error')}")
+
+        if any_failed:
+            out.append("\n\x1b[1;31mWarning: One or more package integrity checks failed! Reinstall with 'pkg install --force <name>'.\x1b[0m")
+            return {"success": False, "output": "\n".join(out)}
+        else:
+            out.append("\n\x1b[1;32mAll installed packages verified clean.\x1b[0m")
+            return "\n".join(out)
+
+    # ---------------------------------------------------------
+    # pkg audit [name|file]
+    # ---------------------------------------------------------
+    elif cmd in ("audit", "sec", "security"):
+        target = args[1] if len(args) > 1 else None
+        manifest = _get_manifest(user_context)
+
+        items_to_audit = []
+        if target:
+            # 1. If installed package
+            if target in manifest:
+                pkg_path = f"/etc/packages/commands/{target}.py"
+                node = fs_manager.get_node(pkg_path)
+                if not node:
+                    return {"success": False, "error": {"message": f"pkg audit: package file '{pkg_path}' not found"}}
+                items_to_audit.append((target, node.get("content", ""), manifest[target].get("permissions", [])))
+            else:
+                # 2. If file path in VFS
+                content, err = _read_file_from_vfs(target, user_context)
+                if err:
+                    return {"success": False, "error": {"message": f"pkg audit: '{target}' not found", "suggestion": err}}
+                mod, _ = _compile_and_inspect(content, os.path.basename(target))
+                perms = []
+                if mod and hasattr(mod, "metadata"):
+                    try:
+                        perms = mod.metadata().get("permissions", [])
+                    except:
+                        pass
+                items_to_audit.append((os.path.basename(target), content, perms))
+        else:
+            if not manifest:
+                return "No packages installed to audit."
+            for pname in sorted(manifest.keys()):
+                pkg_path = f"/etc/packages/commands/{pname}.py"
+                node = fs_manager.get_node(pkg_path)
+                if node and node.get("type") == "file":
+                    items_to_audit.append((pname, node.get("content", ""), manifest[pname].get("permissions", [])))
+
+        audit_results = []
+        for name, code_str, perms in items_to_audit:
+            res = _audit_code(code_str, perms)
+            audit_results.append({
+                "package": name,
+                "risk_level": res["risk_level"],
+                "risk_score": res["risk_score"],
+                "declared_permissions": res["declared_permissions"],
+                "findings": res["findings"]
+            })
+
+        if flags.get("json"):
+            return json.dumps(audit_results, indent=2)
+
+        out_lines = ["\x1b[1;36m=== PACKAGE SECURITY AUDIT REPORT ===\x1b[0m"]
+        for r in audit_results:
+            pname = r["package"]
+            level = r["risk_level"]
+            score = r["risk_score"]
+            if level == "SAFE":
+                lvl_tag = f"\x1b[1;32m{level}\x1b[0m"
+            elif level == "LOW RISK":
+                lvl_tag = f"\x1b[1;34m{level}\x1b[0m"
+            elif level == "MODERATE RISK":
+                lvl_tag = f"\x1b[1;33m{level}\x1b[0m"
+            else:
+                lvl_tag = f"\x1b[1;31m{level}\x1b[0m"
+
+            out_lines.append(f"\n  Package: \x1b[1;37m{pname}\x1b[0m | Security Rating: {lvl_tag} (Risk Score: {score})")
+            perms_str = ", ".join(r["declared_permissions"]) if r["declared_permissions"] else "(none)"
+            out_lines.append(f"  Declared Permissions: \x1b[36m{perms_str}\x1b[0m")
+
+            if r["findings"]:
+                out_lines.append("  Security Findings:")
+                for f in r["findings"]:
+                    sev = f["severity"]
+                    sev_col = "\x1b[1;31m" if sev == "HIGH" else "\x1b[1;33m"
+                    out_lines.append(f"    - [{sev_col}{sev}\x1b[0m] {f['message']}")
+            else:
+                out_lines.append("  \x1b[32m✓ No security anomalies or dangerous primitives detected.\x1b[0m")
+
+        return "\n".join(out_lines)
+
     else:
         return {
             "success": False,
             "error": {
                 "message": f"pkg: unknown command '{cmd}'",
-                "suggestion": "Try 'pkg list', 'pkg install', 'pkg remove', 'pkg deps', 'pkg validate', 'pkg init', 'pkg pack', 'pkg publish', or 'pkg search'"
+                "suggestion": "Try 'pkg list', 'pkg install', 'pkg remove', 'pkg verify', 'pkg audit', 'pkg deps', 'pkg validate', 'pkg init', 'pkg pack', 'pkg publish', or 'pkg search'"
             }
         }
 
@@ -1089,14 +1410,16 @@ SYNOPSIS
     pkg publish <path|name> [-n|--dry-run] [-e <dir>] [-r <url>] [-m|--mesh]
     pkg search [query]
     pkg deps <name|file.py> [-j|--json]
-    pkg install <name|url|path> [--no-deps]
+    pkg install <name|url|path> [--no-deps] [--skip-verify] [-t|--trust]
     pkg remove <name> [-f|--force]
+    pkg verify [name] [-j|--json]
+    pkg audit [name|file] [-j|--json]
 
 DESCRIPTION
     Manages, validates, bundles, publishes, resolves dependencies, and installs
-    community packages in FractalOS.
+    community packages in FractalOS with integrity verification and security sandboxing.
     Packages are Python files defining the command interface:
-      - metadata(): returns dict with name, version, description, author, license, wheels, dependencies
+      - metadata(): returns dict with name, version, description, author, license, wheels, dependencies, permissions
       - define_flags(): declares command line flags and aliases
       - run(args, flags, user_context, ...): execution entry point
       - man(...) and help(...): documentation
@@ -1119,15 +1442,19 @@ SUBCOMMANDS
         Display dependency hierarchy, reverse dependents, and required Pyodide wheels.
     install <source>, i, add
         Install a package from local repository, .fpkg bundle, file path, URL, or registry,
-        automatically resolving and installing required dependencies.
+        automatically resolving and installing required dependencies with checksum and permission checks.
     remove <name>, rm, uninstall
         Uninstall a package from the system (guarded against breaking dependent packages).
+    verify [name], check, integrity
+        Verify cryptographic SHA256 integrity hashes of installed packages to detect file tampering.
+    audit [name|file], sec, security
+        Perform static AST security analysis on package code, inspecting permission scopes and dangerous primitives.
 
 OPTIONS
     -n, --dry-run
         Simulate packaging/publishing and preview the catalog entry without modifying files.
     -j, --json
-        Output manifest, validation, dependency tree, or package bundle in JSON format.
+        Output manifest, validation, dependency tree, audit report, or package bundle in JSON format.
     -e, --export <dir>
         Specify custom export directory for package publishing.
     -o, --out <file>
@@ -1135,20 +1462,26 @@ OPTIONS
     -m, --mesh
         Announce published package to peer nodes across the local mesh network.
     -f, --force
-        Force package removal even if other installed packages depend on it.
+        Force package removal or installation, overriding dependency and verification checks.
     --no-deps
         Skip automatic dependency resolution during package installation.
+    --skip-verify
+        Bypass cryptographic bundle checksum verification during installation.
+    -t, --trust
+        Authorize installation of packages requesting elevated permission scopes without root.
 
 EXAMPLES
     pkg init mycalc
     pkg validate ./mycalc.py
-    pkg publish ./mycalc.py --dry-run
+    pkg audit ./mycalc.py
     pkg publish ./mycalc.py
     pkg install mycalc
+    pkg verify
+    pkg verify mycalc
     pkg deps mycalc
     pkg remove mycalc
     mycalc --help
 """
 
 def help(args, flags, user_context, **kwargs):
-    return "Usage: pkg [list | init <name> | validate <file> | pack <file> | publish <file> | search | deps <name> | install <source> | remove <name>]"
+    return "Usage: pkg [list | init <name> | validate <file> | pack <file> | publish <file> | search | deps <name> | install <source> | remove <name> | verify [name] | audit [name|file]]"

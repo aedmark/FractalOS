@@ -260,5 +260,5 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 - [x] P7-13 **Package Publishing Tool (`pkg publish`)**: Command to validate, package, generate manifest metadata, and export/publish packages for community repositories (D-041, 2026-10-06).
 - [x] P7-14 **Package Dependency Resolution**: Support dependencies in `/etc/pkg_manifest.json` (specifying required Pyodide wheels or dependent command packages) (D-042, 2026-10-06).
 - [x] P7-15 **Standard Library Expansion**: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages (D-043, 2026-10-06).
-- [ ] P7-16 **Package Security & Sandboxing**: Verification hashes and permission scopes for installed third-party packages before execution.
+- [x] P7-16 **Package Security & Sandboxing**: Verification hashes and permission scopes for installed third-party packages before execution (D-044, 2026-10-06).
 

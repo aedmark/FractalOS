@@ -512,3 +512,24 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 3. Default directories `/var/pkg/repo` and `/etc/packages/commands` are provisioned during VFS initialization (`filesystem.py`).
 **Consequences:** Complete, delightful standard utilities available for instant installation and shell pipeline composition (`fortune | cowsay`, `date | banner`).
 
+## D-044 Package Security, Cryptographic Verification & Sandboxing (`pkg verify`, `pkg audit`, integrity checks, permission scopes) (2026-10-06, status: accepted)
+**Context:** P7-16. Community packages execute Python code inside Pyodide WebAssembly. To ensure security, tamper resistance, and operator visibility, the OS needed cryptographic verification of package contents, sandboxing permission scopes, and static security auditing.
+**Decision:**
+1. **Cryptographic Verification Hashes**:
+   - `pkg pack`, `pkg publish`, and `pkg install` compute SHA256 checksums of package code.
+   - Package bundle archives (`.fpkg`) and repository indexes (`index.json`) record the cryptographic checksum.
+   - During `pkg install`, the content hash is verified against the archive/index checksum. Checksum mismatches are rejected as potential tampering or corruption unless overridden with `--skip-verify` or `--force`.
+   - The verified checksum is stored in `/etc/pkg_manifest.json` under `manifest[pkg_name]["checksum"]`.
+2. **On-Demand & Runtime Integrity Verification**:
+   - `pkg verify [name]`: Inspects installed package files in `/etc/packages/commands/{name}.py`, recalculates actual SHA256 hashes against `/etc/pkg_manifest.json`, and reports verified vs tampered packages in text or JSON (`--json`).
+   - `executor.py`: Before executing any community command loaded from `/etc/packages/commands/`, `_load_command_module` computes the SHA256 hash of the file on disk and verifies it against `/etc/pkg_manifest.json`. If a file has been modified or corrupted post-installation, `executor.py` raises `SecurityError` and refuses execution, preventing execution of tampered payloads. User packages are loaded directly from VFS rather than through stale `sys.modules` caching.
+3. **Permission Scopes & Elevated Authorization**:
+   - Packages declare permission scopes in `metadata()["permissions"]` (`fs:read`, `fs:write`, `fs:system`, `network`, `hardware`, `root`).
+   - Packages requesting elevated scopes (`root`, `fs:system`, `hardware`) require explicit operator authorization via `--trust` (`-t`) or `--force` during installation.
+4. **Static AST Security Auditing (`pkg audit [name|file]`)**:
+   - Uses Python's standard `ast` module to analyze Python source code.
+   - Detects dynamic execution primitives (`eval()`, `exec()`, `compile()`, `__import__()`), process execution (`.system()`, `.popen()`, `.spawn()`), and access to sensitive paths (`/etc/`, `/proc/`, `/dev/`).
+   - Evaluates a security risk rating (`SAFE`, `LOW RISK`, `MODERATE RISK`, `HIGH RISK`) with detailed findings in human-readable or structured JSON (`--json`) output.
+**Consequences:** End-to-end package security with cryptographic tamper protection, pre-execution integrity verification, authorization barriers for elevated permissions, and comprehensive static analysis.
+
+

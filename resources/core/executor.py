@@ -12,6 +12,10 @@ import fnmatch
 import asyncio
 import traceback
 
+class SecurityError(Exception):
+    """Raised when a package fails security integrity verification or permission checks."""
+    pass
+
 class CommandExecutor:
     def __init__(self):
         self.fs_manager = fs_manager
@@ -572,6 +576,14 @@ class CommandExecutor:
                 return json.dumps(result)
             else:
                 return json.dumps({"success": True, "output": str(result)})
+        except SecurityError as se:
+            return json.dumps({
+                "success": False,
+                "error": {
+                    "message": f"Security Error: {str(se)}",
+                    "suggestion": "Run 'pkg verify' or 'pkg audit' to inspect package integrity, or reinstall with 'pkg install --force'."
+                }
+            })
         except Exception as e:
             return json.dumps({
                 "success": False,
@@ -584,6 +596,46 @@ class CommandExecutor:
 
     def _load_command_module(self, command_name):
         from importlib import import_module
+
+        # 1. Check user packages in VFS first (ensures live updates and integrity checks)
+        pkg_path = f"/etc/packages/commands/{command_name}.py"
+        node = self.fs_manager.get_node(pkg_path)
+        if node and node.get("type") == "file":
+            content = node.get("content", "")
+
+            # P7-16 Security: Package Integrity Verification before execution
+            manifest_node = self.fs_manager.get_node("/etc/pkg_manifest.json")
+            if manifest_node and manifest_node.get("type") == "file":
+                try:
+                    manifest_data = json.loads(manifest_node.get("content", "{}"))
+                    pkg_meta = manifest_data.get(command_name)
+                    if pkg_meta and "checksum" in pkg_meta:
+                        import hashlib
+                        actual_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+                        if actual_hash != pkg_meta["checksum"]:
+                            raise SecurityError(
+                                f"Package '{command_name}' failed integrity check (checksum mismatch). "
+                                f"The file on disk has been modified or corrupted after installation."
+                            )
+                except SecurityError:
+                    raise
+                except Exception:
+                    pass
+
+            import importlib.util
+            import sys
+            spec = importlib.util.spec_from_loader(command_name, loader=None)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[f"commands.{command_name}"] = module
+            try:
+                exec(content, module.__dict__)
+                return module
+            except Exception as e:
+                import traceback
+                tb = traceback.format_exc()
+                raise ImportError(f"Failed to execute package {command_name}:\n{e}\n{tb}")
+
+        # 2. Check built-in core commands
         try:
             return import_module(f"commands.{command_name}")
         except ImportError:
@@ -592,24 +644,6 @@ class CommandExecutor:
                     return import_module(f"commands.{command_name.replace('-', '_')}")
                 except ImportError:
                     pass
-            # Check user packages
-            pkg_path = f"/etc/packages/commands/{command_name}.py"
-            node = self.fs_manager.get_node(pkg_path)
-            if node and node.get("type") == "file":
-                content = node.get("content", "")
-                import importlib.util
-                import sys
-                spec = importlib.util.spec_from_loader(command_name, loader=None)
-                module = importlib.util.module_from_spec(spec)
-                # To support internal imports if needed
-                sys.modules[f"commands.{command_name}"] = module
-                try:
-                    exec(content, module.__dict__)
-                    return module
-                except Exception as e:
-                    import traceback
-                    tb = traceback.format_exc()
-                    raise ImportError(f"Failed to execute package {command_name}:\n{e}\n{tb}")
             raise ImportError(f"No module named {command_name}")
 
 command_executor = CommandExecutor()
