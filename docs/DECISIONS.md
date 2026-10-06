@@ -422,3 +422,15 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 5. We introduced the `swarm` command (`swarm status`, `swarm policy [set|reset]`, `swarm log`, `swarm run`) and subcommands in `mesh-agent` (`mesh-agent policy`, `mesh-agent log`) for policy configuration and audit inspection.
 **Consequences:** Provides distributed safety interlocks, physical hardware protection, and provenance tracking across the mesh network without requiring central coordination.
 
+
+## D-037 Terminal Multiplexer Architecture & Split Panes (2026-10-06, status: accepted)
+**Context:** P7-09. FractalOS required native split panes and terminal multiplexing (`split`, `split-v`, `split-h`, `panes`, `focus`, `close-pane`, keyboard shortcuts `Alt+V`, `Alt+H`, `Alt+W`, `Alt+Z`, `Alt+Arrows`) allowing users to monitor jobs, edit files, and interact with multiple shell contexts side by side.
+**Decision:**
+1. We introduced `MultiplexerManager` (`resources/scripts/multiplexer_manager.js`) to coordinate pane lifecycles, DOM tree wrapping, and focus management. To maintain 100% backwards compatibility with single-pane smoke and Playwright tests, the OS boots in non-destructive single-pane mode using default `#output` and `.terminal__input-line`. When a split is requested, elements are dynamically wrapped into `.terminal-pane` containers within `#multiplexer-container`.
+2. Each pane maintains an independent working directory (`cwd`), command history, active command state, and header status (`[id] user@host:path`).
+3. Switching focus (`focusPane(id)`) synchronizes directory state with `FileSystemManager.setCurrentPath(pane.cwd)`, directs `TerminalUI.elements.outputDiv` and `editableInputDiv` to the active pane's DOM nodes, and triggers prompt re-rendering.
+4. Python commands (`split`, `split-v`, `split-h`, `panes`, `focus`, `close-pane`) return `multiplexer_action` effects (`split_vertical`, `split_horizontal`, `close`, `focus`, `zoom`, `list`).
+5. Key handling in `boot.js` intercepts `Alt+V` (split vertical), `Alt+H` (split horizontal), `Alt+W` (close pane), `Alt+Z` (toggle zoom), and `Alt+Left`/`Alt+Right` (cycle focus), preventing browser hotkey collisions.
+**Consequences:** Provides lightweight, tmux-like terminal multiplexing purely inside the browser without external dependencies.
+
+

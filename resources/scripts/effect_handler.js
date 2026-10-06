@@ -759,6 +759,79 @@ async function handleEffect(result, options) {
             break;
         }
 
+        case 'multiplexer_action': {
+            const { action, orientation, command, paneId } = result;
+            const mux = dependencies.MultiplexerManager;
+            if (!mux) {
+                await OutputManager.appendToOutput("Multiplexer is not available.", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+
+            switch (action) {
+                case 'split_vertical': {
+                    const res = await mux.split('vertical', { command });
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`split-v: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'split_horizontal': {
+                    const res = await mux.split('horizontal', { command });
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`split-h: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'close': {
+                    const res = await mux.closePane(paneId);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`close-pane: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'focus': {
+                    if (paneId === 'next') {
+                        await mux.focusNext();
+                    } else if (paneId === 'prev') {
+                        await mux.focusPrev();
+                    } else {
+                        const res = await mux.focusPane(paneId);
+                        if (!res.success) {
+                            await OutputManager.appendToOutput(`focus: ${res.error}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                        }
+                    }
+                    break;
+                }
+                case 'zoom': {
+                    const res = mux.toggleZoom(paneId);
+                    if (!res.success) {
+                        await OutputManager.appendToOutput(`zoom: failed to toggle zoom.`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                    break;
+                }
+                case 'list': {
+                    const list = mux.listPanes();
+                    const lines = [
+                        "\x1b[1;36m=== FractalOS Terminal Panes ===\x1b[0m",
+                        "  ID        INDEX  CWD                           STATUS"
+                    ];
+                    list.forEach(p => {
+                        const activeMark = p.active ? "\x1b[1;32m* ACTIVE\x1b[0m" : "  idle";
+                        const zoomMark = p.isZoomed ? " (zoomed)" : "";
+                        const idStr = p.id.padEnd(8);
+                        const idxStr = String(p.index).padEnd(5);
+                        const cwdStr = p.cwd.padEnd(30);
+                        lines.push(`  ${idStr}  ${idxStr}  ${cwdStr}  ${activeMark}${zoomMark}`);
+                    });
+                    lines.push("");
+                    lines.push("Shortcuts: Alt+V (split-v) | Alt+H (split-h) | Alt+W (close) | Alt+Z (zoom) | Alt+Arrows (navigate)");
+                    await OutputManager.appendToOutput(lines.join("\n"));
+                    break;
+                }
+            }
+            break;
+        }
+
         case 'read_messages':
             const messages = MessageBusManager.getMessages(result.job_id);
             await OutputManager.appendToOutput(messages.join(" "));

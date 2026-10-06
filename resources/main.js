@@ -39,6 +39,7 @@ window.onload = async () => {
     const themeManager = new ThemeManager();
     const uiStateManager = new UIStateManager();
     const hardwareManager = new HardwareManager();
+    const multiplexerManager = new MultiplexerManager();
 
     Object.assign(dependencies, {
         Config: configManager, StorageManager: storageManager, FileSystemManager: fsManager,
@@ -47,7 +48,7 @@ window.onload = async () => {
         ModalManager: modalManager, AppLayerManager: appLayerManager, AliasManager: aliasManager,
         HistoryManager: historyManager, TabCompletionManager: tabCompletionManager, Utils: Utils,
         ErrorHandler: ErrorHandler, AIManager: aiManager, NetworkManager: networkManager,
-        HardwareManager: hardwareManager,
+        HardwareManager: hardwareManager, MultiplexerManager: multiplexerManager,
         UIComponents: uiComponents, domElements: domElements, SoundManager: soundManager,
         AuditManager: auditManager,
         EnvironmentManager: environmentManager,
@@ -80,6 +81,7 @@ window.onload = async () => {
     sudoManager.setDependencies(fsManager, groupManager, configManager);
     outputManager.initialize(domElements);
     terminalUI.initialize(domElements);
+    multiplexerManager.initialize(domElements);
     modalManager.initialize(domElements);
     appLayerManager.initialize(domElements);
     outputManager.initializeConsoleOverrides();

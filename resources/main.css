@@ -139,6 +139,117 @@ body {
     position: relative;
 }
 
+/* Multiplexer & Terminal Split Panes (P7-09) */
+.multiplexer-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    min-height: 0;
+    min-width: 0;
+    position: relative;
+    gap: 6px;
+    grid-row: 1 / -1;
+    overflow: hidden;
+}
+
+.multiplexer-split--vertical {
+    flex-direction: row;
+}
+
+.multiplexer-split--horizontal {
+    flex-direction: column;
+}
+
+.terminal-pane {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-background-darkest);
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow-inset-light);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.terminal-pane--active {
+    border-color: var(--ansi-cyan);
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+}
+
+.terminal-pane__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.terminal-pane--active .terminal-pane__header {
+    background: rgba(34, 211, 238, 0.12);
+    color: var(--ansi-cyan);
+    font-weight: bold;
+}
+
+.terminal-pane__title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.terminal-pane__controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.terminal-pane__btn {
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 0 4px;
+    font-size: 12px;
+    border-radius: 2px;
+    user-select: none;
+}
+
+.terminal-pane__btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.terminal-pane__body {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-sm);
+    overflow: hidden;
+}
+
+.terminal-pane__body .terminal__output {
+    flex: 1 1 0;
+    min-height: 0;
+}
+
+.terminal-pane--zoomed {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 5;
+}
+
 .terminal__output {
     overflow-y: auto;
     overflow-x: hidden;

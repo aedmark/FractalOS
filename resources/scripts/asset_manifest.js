@@ -35,6 +35,7 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/user_manager.js",
         "./scripts/sudo_manager.js",
         "./scripts/terminal_ui.js",
+        "./scripts/multiplexer_manager.js",
         "./scripts/modal_manager.js",
         "./scripts/sound_manager.js",
         "./scripts/message_bus_manager.js",

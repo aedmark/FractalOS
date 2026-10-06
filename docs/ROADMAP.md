@@ -251,7 +251,7 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 - [x] P7-08 **Swarm Safety & Voltage Policies for Mesh**: Voltage budgeting and confirmation rules specifically tailored for remote commands and physical hardware actions across nodes (D-036, 2026-10-06).
 
 ### Milestone 7.3: Terminal Multiplexing & Windowing UX
-- [ ] P7-09 **Terminal Split Panes (Multiplexer)**: Support horizontal and vertical pane splits in the terminal interface (`split-v`, `split-h`, keyboard shortcuts) with independent shell contexts.
+- [x] P7-09 **Terminal Split Panes (Multiplexer)**: Support horizontal and vertical pane splits in the terminal interface (`split-v`, `split-h`, keyboard shortcuts) with independent shell contexts (D-037, 2026-10-06).
 - [ ] P7-10 **TUI Window Management**: Move overlay apps (editor, paint, top, adventure) into floating/docked panels or tiled viewports alongside the terminal.
 - [ ] P7-11 **Persistent Status & Notification Bar**: System tray / status line displaying active background jobs, mesh peer count, audio mute, and agent status.
 - [ ] P7-12 **Clipboard & Drag-and-Drop Bridge**: Seamless clipboard sharing and drag-and-drop file import into the VFS from the browser / host environment.

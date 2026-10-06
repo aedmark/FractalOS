@@ -74,6 +74,12 @@ async function executePythonCommand(rawCommandText, options = {}) {
 
     let result;
     try {
+        if (dependencies.MultiplexerManager) {
+            const activePane = dependencies.MultiplexerManager.getActivePane();
+            if (activePane && activePane.cwd && FileSystemManager) {
+                FileSystemManager.setCurrentPath(activePane.cwd);
+            }
+        }
         const kernelContextJson = await createKernelContext({ asUser });
         const jsonResult = await FractalOS_Kernel.execute_command(rawCommandText, kernelContextJson, stdinContent, options.signal);
         const pyResult = JSON.parse(jsonResult);
@@ -97,6 +103,14 @@ async function executePythonCommand(rawCommandText, options = {}) {
             }
             const updatedFsData = await FileSystemManager.getFsData();
             FileSystemManager.setFsData(updatedFsData);
+
+            if (dependencies.MultiplexerManager) {
+                const activePane = dependencies.MultiplexerManager.getActivePane();
+                if (activePane && FileSystemManager) {
+                    activePane.cwd = FileSystemManager.getCurrentPath();
+                    dependencies.MultiplexerManager.updatePaneTitle(activePane);
+                }
+            }
 
         } else {
             const errorObject = ErrorHandler.createError(pyResult.error);
@@ -239,7 +253,46 @@ function initializeTerminalEventListeners(domElements, dependencies) {
             return;
         }
 
-        if (e.target !== domElements.editableInputDiv && !TerminalUI.isSearchingHistory) return;
+        const { MultiplexerManager } = dependencies;
+        if (MultiplexerManager && e.altKey) {
+            const k = e.key.toLowerCase();
+            if (k === 'v') {
+                e.preventDefault();
+                await MultiplexerManager.split('vertical');
+                return;
+            }
+            if (k === 'h') {
+                e.preventDefault();
+                await MultiplexerManager.split('horizontal');
+                return;
+            }
+            if (k === 'w') {
+                e.preventDefault();
+                await MultiplexerManager.closePane();
+                return;
+            }
+            if (k === 'z') {
+                e.preventDefault();
+                MultiplexerManager.toggleZoom();
+                return;
+            }
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                await MultiplexerManager.focusNext();
+                return;
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                await MultiplexerManager.focusPrev();
+                return;
+            }
+        }
+
+        const isTerminalInput = e.target === domElements.editableInputDiv ||
+                                e.target === TerminalUI.elements.editableInputDiv ||
+                                (e.target?.classList && e.target.classList.contains('terminal__input'));
+
+        if (!isTerminalInput && !TerminalUI.isSearchingHistory) return;
 
         if (e.ctrlKey && e.key === 'r') {
             e.preventDefault();
@@ -283,7 +336,7 @@ function initializeTerminalEventListeners(domElements, dependencies) {
                 const result = await TabCompletionManager.handleTab(currentInput, TerminalUI.getSelection().start);
                 if (result?.textToInsert !== null) {
                     TerminalUI.setCurrentInputValue(result.textToInsert, false);
-                    TerminalUI.setCaretPosition(domElements.editableInputDiv, result.newCursorPos);
+                    TerminalUI.setCaretPosition(TerminalUI.elements.editableInputDiv || domElements.editableInputDiv, result.newCursorPos);
                 }
                 break;
         }
