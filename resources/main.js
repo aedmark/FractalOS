@@ -41,6 +41,7 @@ window.onload = async () => {
     const hardwareManager = new HardwareManager();
     const multiplexerManager = new MultiplexerManager();
     const windowManager = new WindowManager();
+    const statusBarManager = new StatusBarManager();
 
     Object.assign(dependencies, {
         Config: configManager, StorageManager: storageManager, FileSystemManager: fsManager,
@@ -50,6 +51,7 @@ window.onload = async () => {
         HistoryManager: historyManager, TabCompletionManager: tabCompletionManager, Utils: Utils,
         ErrorHandler: ErrorHandler, AIManager: aiManager, NetworkManager: networkManager,
         HardwareManager: hardwareManager, MultiplexerManager: multiplexerManager, WindowManager: windowManager,
+        StatusBarManager: statusBarManager,
         UIComponents: uiComponents, domElements: domElements, SoundManager: soundManager,
         AuditManager: auditManager,
         EnvironmentManager: environmentManager,
@@ -84,6 +86,7 @@ window.onload = async () => {
     terminalUI.initialize(domElements);
     multiplexerManager.initialize(domElements);
     windowManager.initialize(domElements);
+    statusBarManager.initialize(domElements);
     modalManager.initialize(domElements);
     appLayerManager.initialize(domElements);
     outputManager.initializeConsoleOverrides();

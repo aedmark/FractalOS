@@ -131,12 +131,318 @@ body {
     background-color: var(--color-background-darkest);
     border: var(--border-width-thick) solid var(--color-border-secondary);
     border-radius: var(--border-radius-md);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
     box-shadow: var(--shadow-inset-light);
     overflow: hidden;
-    display: grid;
-    grid-template-rows: 1fr auto;
+    display: flex;
+    flex-direction: column;
     position: relative;
+    gap: 4px;
+}
+
+.terminal > .terminal__output,
+.terminal > .multiplexer-container {
+    flex: 1 1 0;
+    min-height: 0;
+}
+
+.terminal__input-line {
+    flex-shrink: 0;
+}
+
+/* Persistent Status & Notification Bar (P7-11) */
+.status-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 8px;
+    background: rgba(15, 23, 42, 0.75);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-family-mono), monospace;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    user-select: none;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 25;
+    box-sizing: border-box;
+}
+
+.status-bar__left,
+.status-bar__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.status-bar__center {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 12px;
+}
+
+.status-bar__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.status-bar__item--os {
+    color: var(--ansi-cyan);
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.status-bar__item--user {
+    color: var(--color-text-primary);
+}
+
+.status-bar__item--cwd {
+    color: var(--ansi-blue);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 1px 5px;
+    border-radius: 2px;
+}
+
+.status-bar__item--panes {
+    color: var(--ansi-magenta);
+    font-weight: bold;
+}
+
+.status-bar__item--jobs {
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.status-bar__item--jobs:hover {
+    opacity: 1;
+    color: var(--ansi-yellow);
+}
+
+.status-bar__item--active-jobs {
+    color: var(--ansi-yellow);
+    font-weight: bold;
+    opacity: 1;
+}
+
+.status-bar__item--agent {
+    color: var(--ansi-magenta);
+}
+
+.status-bar__item--pulse {
+    animation: statusPulse 1.5s infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+.status-bar__item--mesh {
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.status-bar__item--connected {
+    color: var(--ansi-green);
+    font-weight: bold;
+}
+
+.status-bar__item--clock {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.status-bar__btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 1px 4px;
+    border-radius: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.status-bar__btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+
+.status-bar__btn--muted {
+    opacity: 0.5;
+}
+
+.status-bar__badge {
+    background: var(--ansi-cyan);
+    color: var(--color-background-darkest);
+    font-size: 9px;
+    font-weight: bold;
+    padding: 0 4px;
+    border-radius: 6px;
+    line-height: 12px;
+}
+
+/* Notification Ticker */
+.status-bar__ticker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 1px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.65;
+    transition: opacity 0.2s, background 0.2s, transform 0.2s;
+}
+
+.status-bar__ticker:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.status-bar__ticker--active {
+    opacity: 1;
+    font-weight: 500;
+}
+
+.status-bar__ticker--info {
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-bar__ticker--success {
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: var(--ansi-green);
+}
+
+.status-bar__ticker--warn {
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    color: var(--ansi-yellow);
+}
+
+.status-bar__ticker--error {
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: var(--color-error);
+    animation: statusPulse 1s 3;
+}
+
+/* Notification Drawer */
+.notification-drawer {
+    position: absolute;
+    top: 100%;
+    right: 8px;
+    width: 340px;
+    max-height: 280px;
+    background: var(--color-background-medium);
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.notification-drawer__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notification-drawer__title {
+    font-weight: bold;
+    font-size: 11px;
+    color: var(--color-text-primary);
+}
+
+.notification-drawer__clear-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.notification-drawer__clear-btn:hover {
+    color: var(--color-error);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.notification-drawer__list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.notification-drawer__empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    font-size: 11px;
+}
+
+.notification-drawer__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 3px;
+    border-left: 3px solid rgba(255, 255, 255, 0.2);
+    font-size: 11px;
+}
+
+.notification-drawer__item--info { border-left-color: var(--ansi-blue); }
+.notification-drawer__item--success { border-left-color: var(--ansi-green); }
+.notification-drawer__item--warn { border-left-color: var(--ansi-yellow); }
+.notification-drawer__item--error { border-left-color: var(--color-error); }
+
+.notification-drawer__item-icon {
+    font-size: 12px;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+
+.notification-drawer__item-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.notification-drawer__item-text {
+    word-break: break-word;
+    color: var(--color-text-primary);
+}
+
+.notification-drawer__item-time {
+    font-size: 9px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
 }
 
 /* Multiplexer & Terminal Split Panes (P7-09) */

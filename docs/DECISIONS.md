@@ -451,4 +451,19 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 **Consequences:** FractalOS supports concurrent, side-by-side graphical applications and terminal multitasking without external window manager libraries or npm dependencies.
 
 
+## D-039 Persistent Status Bar, System Tray & Notification Center (2026-10-06, status: accepted)
+**Context:** P7-11. Users and autonomous agents needed real-time visibility into active background jobs, connected mesh peers, audio sound mute status, agent thinking/planning status, directory location, and system alerts without running manual polling commands.
+**Decision:**
+1. We created `StatusBarManager` (`resources/scripts/status_bar_manager.js`) and rendered `#status-bar` as a persistent header strip at the top of the terminal interface.
+2. The bar provides three sections:
+   - Left: OS logo (`⬡ fractal`), user & host (`User@fractal`), current working directory badge (`~`), multiplexer pane count badge (`[N panes]`), and active background jobs counter (`⚙ N jobs`, pulsing when active, clickable to run `jobs`).
+   - Center: Real-time notification ticker displaying icons and alerts (`✓`, `⚠️`, `🛑`, `ℹ️`) with auto-dismiss timers.
+   - Right (System Tray): AI Agent status (`🤖 idle` / `🤖 planning...` / `🤖 running`), connected mesh peer counter (`🌐 N peers`, green when active, clickable to run `peers`), audio mute toggle button (`🔊`/`🔇`), notification bell with unread badge (`🔔 N`), and live tabular clock (`HH:MM:SS`).
+3. We implemented `#notification-drawer` as a dropdown notification center attached to the bell, retaining the history of the last 50 alerts with timestamps, severity levels, and a "Clear" button.
+4. We updated `SoundManager` with `isMuted`, `toggleMute()`, and `setMute()`, suppressing tone synthesis when muted and syncing with the status bar tray.
+5. We introduced `status.py` (`status`, `status bar [on|off]`, `status mute [on|off]`, `status notifications`, `status clear`) and `notify.py` (`notify <msg> [--success|--warn|--error|--silent]`, `notify list`, `notify clear`).
+**Consequences:** Provides a permanent, live system tray and alert delivery mechanism in both the graphical TUI and CLI without third-party widgets or desktop dependencies.
+
+
+
 

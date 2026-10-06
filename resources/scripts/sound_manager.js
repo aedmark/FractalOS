@@ -3,9 +3,26 @@ window.SoundManager = class SoundManager {
         this.dependencies = dependencies;
         this.synth = null;
         this.isInitialized = false;
+        this.isMuted = false;
         this.soundPack = {
             beepNote: "G5"
         };
+    }
+
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        if (this.dependencies?.StatusBarManager) {
+            this.dependencies.StatusBarManager.update();
+        }
+        return this.isMuted;
+    }
+
+    setMute(val) {
+        this.isMuted = !!val;
+        if (this.dependencies?.StatusBarManager) {
+            this.dependencies.StatusBarManager.update();
+        }
+        return this.isMuted;
     }
 
     async initialize() {
@@ -29,6 +46,7 @@ window.SoundManager = class SoundManager {
     }
 
     beep() {
+        if (this.isMuted) return;
         if (!this.isInitialized || !this.synth) {
             console.error("SoundManager not initialized. Cannot play beep.");
             return;
@@ -41,6 +59,7 @@ window.SoundManager = class SoundManager {
     }
 
     playNote(notes, duration) {
+        if (this.isMuted) return;
         if (!this.isInitialized || !this.synth) {
             console.error("SoundManager not initialized. Cannot play note.");
             return;

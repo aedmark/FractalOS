@@ -3,7 +3,8 @@ async function handleEffect(result, options) {
         FileSystemManager, TerminalUI, SoundManager, SessionManager, AppLayerManager,
         UserManager, ErrorHandler, Config, OutputManager, PagerManager, Utils, domElements,
         GroupManager, NetworkManager, MessageBusManager, ModalManager, StorageManager,
-        AuditManager, StorageHAL, SudoManager, ThemeManager, UIStateManager, WindowManager
+        AuditManager, StorageHAL, SudoManager, ThemeManager, UIStateManager, WindowManager,
+        StatusBarManager
     } = dependencies;
 
     switch (result.effect) {
@@ -1093,6 +1094,81 @@ async function handleEffect(result, options) {
                 default:
                     await OutputManager.appendToOutput(`Unknown wm action: ${result.action}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
                     break;
+            }
+            break;
+        }
+
+        case 'notify': {
+            const sbm = dependencies.StatusBarManager;
+            if (sbm) {
+                sbm.notify(result.message, {
+                    level: result.level || 'info',
+                    timeout: result.timeout !== undefined ? result.timeout : 4500,
+                    silent: !!result.silent
+                });
+            }
+            break;
+        }
+
+        case 'status_action': {
+            const sbm = dependencies.StatusBarManager;
+            const sm = dependencies.SoundManager;
+            switch (result.action) {
+                case 'summary': {
+                    if (sbm) {
+                        const s = sbm.getStatusSummary();
+                        let out = "\x1b[1;36m=== FRACTALOS SYSTEM STATUS ===\x1b[0m\n";
+                        out += `  Status Bar:      ${s.isVisible ? '\x1b[32menabled\x1b[0m' : '\x1b[33mhidden\x1b[0m'}\n`;
+                        out += `  Working Dir:     \x1b[34m${s.cwd}\x1b[0m\n`;
+                        out += `  Terminal Panes:  ${s.panesCount}\n`;
+                        out += `  Background Jobs: ${s.jobCount > 0 ? `\x1b[32m${s.jobCount} active\x1b[0m` : '0 active'}\n`;
+                        out += `  Mesh Network:    ${s.peerCount > 0 ? `\x1b[32m${s.peerCount} connected peer(s)\x1b[0m` : '0 connected peers'}\n`;
+                        out += `  Audio Sound:     ${s.isMuted ? '\x1b[31mmuted (silent)\x1b[0m' : '\x1b[32munmuted\x1b[0m'}\n`;
+                        out += `  AI Agent:        \x1b[35m${s.agentStatus}\x1b[0m\n`;
+                        out += `  Notifications:   ${s.unreadCount} unread (${s.totalNotifications} in drawer)\n`;
+                        out += "---------------------------------\n";
+                        out += "Shortcuts: Click 🔊 to toggle mute, 🔔 to view alerts, Alt+D/F/M for windows.";
+                        await OutputManager.appendToOutput(out);
+                    }
+                    break;
+                }
+                case 'toggle_bar': {
+                    if (sbm) {
+                        const state = result.value !== undefined ? sbm.setVisible(result.value) : sbm.toggleVisible();
+                        await OutputManager.appendToOutput(`Status bar is now: ${sbm.isVisible ? 'enabled' : 'hidden'}`);
+                    }
+                    break;
+                }
+                case 'set_mute': {
+                    if (sm) {
+                        const isMuted = result.value !== undefined ? sm.setMute(result.value) : sm.toggleMute();
+                        await OutputManager.appendToOutput(`Audio sound is now: ${isMuted ? 'muted (silent)' : 'unmuted'}`);
+                    }
+                    break;
+                }
+                case 'list_notifications': {
+                    if (sbm) {
+                        if (sbm.notifications.length === 0) {
+                            await OutputManager.appendToOutput("No notifications logged.");
+                        } else {
+                            let out = "\x1b[1;36m=== RECENT NOTIFICATIONS ===\x1b[0m\n";
+                            sbm.notifications.slice(0, 15).forEach((n) => {
+                                const timeStr = n.timestamp.toLocaleTimeString();
+                                const lvl = n.level.toUpperCase();
+                                out += `[${timeStr}] [${lvl}] ${n.text}\n`;
+                            });
+                            await OutputManager.appendToOutput(out);
+                        }
+                    }
+                    break;
+                }
+                case 'clear_notifications': {
+                    if (sbm) {
+                        sbm.clearNotifications();
+                        await OutputManager.appendToOutput("Cleared all system notifications.");
+                    }
+                    break;
+                }
             }
             break;
         }
