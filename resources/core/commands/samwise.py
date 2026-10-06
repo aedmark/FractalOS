@@ -14,6 +14,7 @@ def define_flags():
             {'name': 'resume-agent', 'long': 'resume-agent', 'takes_value': True, 'hidden': True},
             {'name': 'dry-run', 'long': 'dry-run', 'takes_value': False},
             {'name': 'sleep', 'long': 'sleep', 'takes_value': False, 'description': 'Enter sleep cycle to consolidate memories into the subconscious.'},
+            {'name': 'node', 'short': 'n', 'long': 'node', 'takes_value': True, 'description': 'Delegate task to a remote peer node.'},
         ],
         'metadata': {}
     }
@@ -123,6 +124,17 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
         }
 
     user_prompt = " ".join(args)
+
+    target_node = flags.get('node')
+    if target_node:
+        return {
+            "effect": "mesh_agent_delegate",
+            "target": target_node,
+            "prompt": user_prompt,
+            "isAutopilot": is_autopilot,
+            "timeout": 30,
+            "asJson": False
+        }
 
     if is_dry_run:
         return await _dry_run(ai_manager, user_prompt, provider, model, api_key, is_autopilot, force_override)

@@ -661,6 +661,39 @@ async function handleEffect(result, options) {
             break;
         }
 
+        case 'mesh_agent_delegate': {
+            const { target, prompt, isAutopilot, timeout, asJson } = result;
+            if (!target || !prompt) {
+                await OutputManager.appendToOutput("mesh-agent: target node and prompt required. Usage: mesh-agent <nodeId> <prompt>", { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                break;
+            }
+
+            const resolvedTarget = NetworkManager.resolvePeerId(target) || target;
+            await OutputManager.appendToOutput(
+                `\x1b[1;34m[Mesh Swarm]\x1b[0m Delegating ${isAutopilot ? 'autopilot ' : ''}task to peer \x1b[1m${resolvedTarget.substring(0, 8)}\x1b[0m: "${prompt}"...`
+            );
+
+            try {
+                const response = await NetworkManager.delegateAgentTask(target, prompt, {
+                    isAutopilot,
+                    timeout: timeout || 30
+                });
+
+                if (asJson) {
+                    await OutputManager.appendToOutput(JSON.stringify(response, null, 2));
+                } else {
+                    const nodeLabel = response.targetId ? response.targetId.substring(0, 8) : target.substring(0, 8);
+                    const formattedHeader = `\x1b[1;35m╭── [Swarm Agent @ ${nodeLabel}] ──────────────────────────────────────────\x1b[0m`;
+                    const formattedFooter = `\x1b[1;35m╰──────────────────────────────────────────────────────────────────────────\x1b[0m`;
+                    const content = response.data || "(No output returned from remote agent)";
+                    await OutputManager.appendToOutput(`${formattedHeader}\n${content}\n${formattedFooter}`);
+                }
+            } catch (err) {
+                await OutputManager.appendToOutput(`mesh-agent: ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+            }
+            break;
+        }
+
         case 'gpio_monitor_start': {
             if (dependencies.HardwareManager) {
                 dependencies.HardwareManager.startMonitor(result.pin, result);

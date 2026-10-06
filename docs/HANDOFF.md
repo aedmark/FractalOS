@@ -11,16 +11,29 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-Milestone 7.2 ("Multi-Agent Swarms & Physical IoT Autopilot") progresses with `P7-05` and `P7-06` completed! FractalOS now supports complete IoT autopilot actions and physical/virtual hardware interaction for the `samwise` AI agent (`BoneDriver` & `AIManager`). The agent can inspect hardware sensors (`gpio read`), actuate outputs/LEDs (`gpio write`), configure directions (`gpio mode`), and register background event monitoring daemons (`gpio monitor`, `stop`, `monitors`). Safety voltage budgeting prices operations precisely: reads/status are safe (0.1 V), mode configuration is 2.0 V, kinetic actuation is 5.0 V, and embedded action commands in `--action` add recursive voltage risks (blocking hazardous actions like `gpio monitor ... --action "rm -rf /"` with 25.0 V Critical Danger). Non-interactive plan effects (`gpio_monitor_start`, `gpio_monitor_stop`, `gpio_simulate`, `play_sound`, `mesh_broadcast`) pass cleanly through the autopilot loop and execution pipeline to JS. All test suites pass: 85/85 smoke checks, 32/32 agent unit tests, 22/22 grading tests, 8/8 gpio command tests, 6/6 hardware daemon JS tests, 10/10 peers command tests, 6/6 peers unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh unit tests, and all structure tests.
+Milestone 7.2 ("Multi-Agent Swarms & Physical IoT Autopilot") advances with `P7-05`, `P7-06`, and `P7-07` completed! FractalOS now supports distributed multi-agent swarm task delegation over the mesh network (`mesh-agent`, `samwise --node`, `NetworkManager`). Nodes can dispatch queries or autopilot operations to remote peer agents, which execute in the remote node's local kernel context (with its local file system, GPIO sensors, and environment) and return synthesized responses or execution logs with clean ANSI swarm banners. Delegation requests track unique request IDs and configurable timeouts, resolve peers via full ID, prefix, or metadata, and price risk through voltage budgeting (1.0 V for inquiries, 5.0 V with confirmation for remote autopilot). All test suites pass: 85/85 smoke checks, 37/37 agent unit tests, 22/22 grading tests, 4/4 mesh-agent command tests, 5/5 mesh-agent JS tests, 8/8 gpio command tests, 6/6 hardware daemon JS tests, 10/10 peers command tests, 6/6 peers unit tests, 4/4 netgame logic tests, 7/7 netgame JS unit tests, 8/8 mesh command tests, 8/8 mesh unit tests, and all structure tests.
 
 ## Next steps
 
-1. Implement P7-07: Distributed Agent Task Delegation (allow `samwise` on one node to dispatch sub-tasks or queries to a peer node's agent over the mesh network and await synthesized results).
-2. Implement P7-08: Swarm Safety & Voltage Policies for Mesh (remote command budgeting and confirmation safeguards across distributed nodes).
+1. Implement P7-08: Swarm Safety & Voltage Policies for Mesh (remote command budgeting, confirmation policies, and remote action safeguards across distributed nodes), completing Milestone 7.2.
+2. Begin Milestone 7.3: Terminal Multiplexing & Windowing UX (`P7-09` split panes, `P7-10` TUI window manager, `P7-11` status bar).
 3. When physical hardware is accessible, test `provision_appliance.sh` and `gpio` on a Raspberry Pi.
 
 
 ## Session log
+
+### Session 15: 2026-10-06: P7-07 Distributed Agent Task Delegation (`mesh-agent`, `samwise --node`, `NetworkManager`)
+
+**Goal:** Implement P7-07: Allow `samwise` on one node to dispatch sub-tasks or queries to a peer node's agent over the mesh network and await synthesized results.
+**Done:** P7-07, D-035. Extended `NetworkManager` with `mesh_agent_request` and `mesh_agent_response` handling, request tracking via `reqId`, `resolvePeerId`, and `delegateAgentTask(targetPeerId, prompt, options)`. Created `resources/core/commands/mesh_agent.py` supporting `mesh-agent <nodeId> <prompt> [--autopilot] [--timeout <sec>] [--json]` and wired `--node` / `-n` flag support into `resources/core/commands/samwise.py`. Added `mesh_agent_delegate` effect handling in `resources/scripts/effect_handler.js` with styled ANSI swarm border formatting. Updated `AIManager` with `mesh-agent` / `mesh_agent` whitelisting and confirmation checks for remote autopilot, updated `BoneDriver` with swarm courier tool prompt, voltage pricing (1.0 V inquiry, 5.0 V autopilot), and checkpoint bypass. Created unit tests in `tests/mesh_agent_test.py` (4/4 passing), `tests/mesh_agent_unit.js` (5/5 passing), and `tests/agent_unit.py` (37/37 passing). Verified 85/85 smoke checks, structure tests, and all test suites.
+**Changed:** `resources/scripts/network_manager.js`, `resources/core/commands/mesh_agent.py`, `resources/core/commands/samwise.py`, `resources/scripts/effect_handler.js`, `resources/core/ai_manager.py`, `resources/core/bone_driver.py`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/mesh_agent_test.py`, `tests/mesh_agent_unit.js`, `tests/agent_unit.py`.
+**Decisions:** D-035 (Distributed Agent Task Delegation over the Mesh).
+**Problems / surprises:**
+- In `NetworkManager._processIncomingMessage`, outer wrapper payload passed inner payload under `.data`; updated `_handleMeshAgentRequest` and `_handleMeshAgentResponse` to unpack from either `payload.data` or `payload` cleanly.
+**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
+**Next session should start with:** P7-08: Swarm Safety & Voltage Policies for Mesh.
+
+
 
 ### Session 14: 2026-10-06: P7-06 IoT Autopilot Actions (`samwise`, `BoneDriver`, `AIManager`, `gpio`)
 

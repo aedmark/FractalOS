@@ -396,3 +396,14 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 4. In agent mode (`samwise "prompt"`), `is_dangerous` prompts the user for explicit confirmation before executing kinetic actuation (`gpio write`, `gpio monitor`), while allowing sensor reading (`gpio read`) to run immediately and pass observations to the synthesizer.
 5. In autopilot mode (`samwise --autopilot "task"`), `_execute_plan_step` permits allowed non-interactive background/hardware effects (`gpio_monitor_start`, `gpio_monitor_stop`, `gpio_simulate`, `play_sound`, `mesh_broadcast`, `mesh_send`). These effects are collected during plan execution and delivered to the front end alongside the prose report so `HardwareManager` and audio triggers fire without user intervention.
 **Consequences:** `samwise` can fluently understand, automate, and monitor IoT hardware environments safely without prompt injections escaping into hazardous actions.
+
+## D-035 Distributed Agent Task Delegation over the Mesh (`mesh-agent`, `samwise --node`) (2026-10-06, status: accepted)
+**Context:** P7-07. Connected FractalOS nodes in a mesh network need the capability to dispatch sub-tasks, queries, or autopilot actions to peer nodes' AI agents (`samwise`), enabling distributed multi-agent swarm collaboration across machines.
+**Decision:** We introduced a distributed delegation protocol:
+1. `NetworkManager` manages `mesh_agent_request` and `mesh_agent_response` message payloads over WebRTC / WebSocket signaling / BroadcastChannel, with request tracking via unique `reqId`s, target peer resolution (supporting full instance IDs, prefix matches, and username/hostname metadata), and configurable timeouts.
+2. When a node receives a `mesh_agent_request`, it displays an alert in the OS voice and invokes its local kernel (`samwise "<prompt>"` or `samwise --autopilot "<prompt>"`), packaging the execution output or synthesized result back into a `mesh_agent_response`.
+3. We created `mesh_agent.py` (`mesh-agent <nodeId> <prompt> [--autopilot] [--timeout <sec>] [--json]`) and added `--node` / `-n` flag support to `samwise.py`.
+4. `mesh-agent` and `mesh_agent` are whitelisted in `AIManager`. Read/inquiry delegation scores 1.0 V; remote autopilot delegation scores 5.0 V and requires confirmation in interactive agent mode. Home directory checkpoints are bypassed since delegated execution occurs remotely.
+5. `effect_handler.js` handles `mesh_agent_delegate`, displaying styled ANSI swarm borders with peer badges.
+**Consequences:** Enables decentralized agent networks where specialized nodes (e.g. Raspberry Pi sensor nodes, computation hosts) can be queried or actuated remotely by other agents or users across the mesh.
+

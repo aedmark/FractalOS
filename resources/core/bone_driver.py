@@ -54,6 +54,8 @@ You are running inside FractalOS v0.0.5.
 - `python filename.py`: **THE MIND.** Execute a Python script. Also `python -c "code"`.
 - `gpio`: **THE SENSES AND ACTUATORS (IoT).** Read pins, write output, or monitor events.
     - Examples: `gpio mode 17 out`, `gpio write 17 1`, `gpio read 18`, `gpio monitor 18 --trigger falling --action "echo Button Pressed"`.
+- `mesh-agent`: **THE SWARM COURIER.** Delegate tasks or queries to a peer agent across the mesh.
+    - Examples: `mesh-agent node-beta "read pin 17"`, `mesh-agent node-beta "turn on LED 18" --autopilot`.
 - `story save "message"`: **THE SNAPSHOT.** Save a chapter when requested. The OS checkpoints home before autopilot writes.
 - `mkdir`, `cd`, `ls`, `cat`: Standard movement and sight.
 
@@ -112,6 +114,9 @@ For example, if asked to write and run hello.py in the home directory:
                         base += BoneDriver.command_voltage(action_cmd)
                 return base
             return 5.0
+        if name in {"mesh-agent", "mesh_agent"}:
+            is_auto = any(p in {"--autopilot", "-a"} for p in parts[1:])
+            return 5.0 if is_auto else 1.0
         return 20.0
 
     @staticmethod
@@ -121,7 +126,7 @@ For example, if asked to write and run hello.py in the home directory:
             if not parts:
                 continue
             name = parts[0]
-            if name == "gpio":
+            if name in {"gpio", "mesh-agent", "mesh_agent"}:
                 continue
             if name not in BoneDriver.READ_COMMANDS | {"cd", "story"} or parts[:2] == ["story", "rewind"]:
                 return True

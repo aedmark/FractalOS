@@ -19,6 +19,7 @@ class NetworkManager {
         this.pendingExecRequests = new Map();
         this.pendingFileSendRequests = new Map();
         this.pendingFilePullRequests = new Map();
+        this.pendingAgentDelegations = new Map();
         this.activeGameApp = null;
         this.peerMetadata = new Map();
 
@@ -417,6 +418,14 @@ class NetworkManager {
 
             case 'mesh_game':
                 await this._handleMeshGame(payload);
+                break;
+
+            case 'mesh_agent_request':
+                await this._handleMeshAgentRequest(payload);
+                break;
+
+            case 'mesh_agent_response':
+                this._handleMeshAgentResponse(payload);
                 break;
 
             default:
@@ -970,7 +979,7 @@ class NetworkManager {
         const host = this.dependencies.EnvironmentManager?.get('HOST') || 'fractal';
         return {
             user: `${user}@${host}`,
-            capabilities: ['shell', 'mesh-cp', 'netgame', 'gpio'],
+            capabilities: ['shell', 'mesh-cp', 'netgame', 'gpio', 'mesh-agent'],
             uptime: Math.floor(typeof performance !== 'undefined' ? performance.now() / 1000 : 0)
         };
     }
@@ -993,7 +1002,7 @@ class NetworkManager {
         for (const peerId of this.remoteInstances) {
             const meta = this.peerMetadata.get(peerId) || {
                 user: 'guest@fractal',
-                capabilities: ['shell', 'mesh-cp', 'netgame']
+                capabilities: ['shell', 'mesh-cp', 'netgame', 'mesh-agent']
             };
             const pc = this.peers.get(peerId);
             let transport = 'BroadcastChannel';
@@ -1018,7 +1027,7 @@ class NetworkManager {
                 id: peerId,
                 user: meta.user || 'guest@fractal',
                 transport: transport,
-                capabilities: meta.capabilities || ['shell', 'mesh-cp', 'netgame'],
+                capabilities: meta.capabilities || ['shell', 'mesh-cp', 'netgame', 'mesh-agent'],
                 latency: latency,
                 lastSeen: meta.lastSeen || Date.now(),
                 attached: this.attachedClients.has(peerId) || (this.attachedSession?.targetId === peerId)
@@ -1031,5 +1040,129 @@ class NetworkManager {
         if (!this.remoteInstances.has(peerId)) return null;
         const peers = await this.getPeersDetailed({ doPing });
         return peers.find(p => p.id === peerId) || null;
+    }
+
+    resolvePeerId(query) {
+        if (!query) return null;
+        if (this.remoteInstances.has(query)) return query;
+        const matching = Array.from(this.remoteInstances).filter(id => id.startsWith(query));
+        if (matching.length === 1) return matching[0];
+        for (const [id, meta] of this.peerMetadata.entries()) {
+            if (meta.user === query || (meta.user && meta.user.startsWith(query)) || id.startsWith(query)) {
+                return id;
+            }
+        }
+        return matching.length > 0 ? matching[0] : query;
+    }
+
+    async delegateAgentTask(targetPeerId, prompt, options = {}) {
+        if (!this.isNetworkingEnabled) throw new Error("Networking is disabled.");
+        const resolvedId = this.resolvePeerId(targetPeerId);
+        if (!resolvedId) throw new Error(`Target peer '${targetPeerId}' not found.`);
+
+        const timeoutSec = options.timeout || 30;
+        const timeoutMs = timeoutSec * 1000;
+        const reqId = `agent-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                this.pendingAgentDelegations.delete(reqId);
+                reject(new Error(`Delegated agent task to ${targetPeerId} timed out after ${timeoutSec}s.`));
+            }, timeoutMs);
+
+            this.pendingAgentDelegations.set(reqId, {
+                resolve: (data) => {
+                    clearTimeout(timer);
+                    resolve(data);
+                },
+                reject: (err) => {
+                    clearTimeout(timer);
+                    reject(err);
+                }
+            });
+
+            this.sendMessage(resolvedId, 'mesh_agent_request', {
+                reqId,
+                prompt,
+                isAutopilot: !!options.isAutopilot,
+                sourceId: this.instanceId,
+                senderUser: options.senderUser || 'Guest'
+            });
+        });
+    }
+
+    async _handleMeshAgentRequest(payload) {
+        const sourceId = payload?.sourceId || payload?.data?.sourceId;
+        const msgData = payload?.data || payload || {};
+        const { reqId, prompt, isAutopilot, senderUser } = msgData;
+        const { OutputManager } = this.dependencies;
+
+        if (OutputManager && sourceId) {
+            await OutputManager.appendToOutput(
+                `\n\x1b[1;35m[Mesh Swarm]\x1b[0m Delegated task from \x1b[1m${sourceId.substring(0, 8)}\x1b[0m (${senderUser || 'Guest'}): "${prompt}"\n`
+            );
+        }
+
+        try {
+            const escaped = (prompt || '').replace(/"/g, '\\"');
+            const cmd = isAutopilot ? `samwise --autopilot "${escaped}"` : `samwise "${escaped}"`;
+            
+            let resultData = "";
+            let isSuccess = true;
+            let errorDetails = null;
+
+            if (typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.execute_command) {
+                let contextJson = "{}";
+                if (typeof createKernelContext === 'function') {
+                    contextJson = await createKernelContext({ asUser: { name: 'Guest', primaryGroup: 'Guest' } });
+                }
+                const rawResult = await FractalOS_Kernel.execute_command(cmd, contextJson);
+                const pyResult = JSON.parse(rawResult);
+                
+                isSuccess = !!pyResult.success;
+                resultData = pyResult.output || pyResult.content || pyResult.data || "";
+                if (!isSuccess) {
+                    errorDetails = pyResult.error?.message || pyResult.error || "Remote task execution failed.";
+                }
+            } else if (this.dependencies.CommandExecutor) {
+                const execResult = await this.dependencies.CommandExecutor.processSingleCommand(cmd, { isInteractive: false });
+                isSuccess = execResult?.success !== false;
+                resultData = execResult?.output || "Task executed.";
+            }
+
+            if (sourceId) {
+                await this.sendMessage(sourceId, 'mesh_agent_response', {
+                    reqId,
+                    success: isSuccess,
+                    data: resultData,
+                    error: errorDetails,
+                    targetId: this.instanceId
+                });
+            }
+        } catch (err) {
+            if (sourceId) {
+                await this.sendMessage(sourceId, 'mesh_agent_response', {
+                    reqId,
+                    success: false,
+                    data: "",
+                    error: err.message,
+                    targetId: this.instanceId
+                });
+            }
+        }
+    }
+
+    _handleMeshAgentResponse(payload) {
+        const msgData = payload?.data || payload || {};
+        const reqId = msgData?.reqId;
+        if (reqId && this.pendingAgentDelegations.has(reqId)) {
+            const pending = this.pendingAgentDelegations.get(reqId);
+            this.pendingAgentDelegations.delete(reqId);
+            if (msgData.success) {
+                pending.resolve(msgData);
+            } else {
+                pending.reject(new Error(msgData.error || "Remote agent failed to complete task."));
+            }
+        }
     }
 }

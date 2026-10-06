@@ -280,6 +280,45 @@ class AgentTests(unittest.TestCase):
         self.assertIn('DISENGAGED', result['error'])
         self.assertEqual(self.executor.calls, [])
 
+    # P7-07: Distributed Agent Task Delegation
+    def test_mesh_agent_voltage_scoring(self):
+        self.assertEqual(BoneDriver.command_voltage('mesh-agent node-beta "query"'), 1.0)
+        self.assertEqual(BoneDriver.command_voltage('mesh_agent node-beta "query"'), 1.0)
+        self.assertEqual(BoneDriver.command_voltage('mesh-agent node-beta "actuate" --autopilot'), 5.0)
+        self.assertEqual(BoneDriver.command_voltage('mesh-agent node-beta "actuate" -a'), 5.0)
+
+    def test_mesh_agent_needs_checkpoint(self):
+        self.assertFalse(BoneDriver.needs_checkpoint(['mesh-agent node-beta "query"']))
+        self.assertTrue(BoneDriver.needs_checkpoint(['forge local.txt "hi"', 'mesh-agent node-beta "query"']))
+
+    def test_mesh_agent_plan_validation(self):
+        self.assertIsNone(self.am.validate_plan(['mesh-agent node-beta "check pin 17"']))
+        self.assertIsNone(self.am.validate_plan(['mesh_agent node-gamma "status" --autopilot']))
+
+    def test_mesh_agent_autopilot_delegation_and_effects(self):
+        self.executor.results['mesh-agent node-beta "status"'] = {
+            'success': True,
+            'output': 'Peer node-beta status OK',
+            'effects': [{'effect': 'mesh_agent_delegate', 'target': 'node-beta', 'prompt': 'status'}]
+        }
+        result = self.run_plan('1. mesh-agent node-beta "status"')
+        self.assertTrue(result['success'], result)
+        self.assertEqual(self.executor.calls[0][0], 'mesh-agent node-beta "status"')
+        self.assertEqual(len(result.get('effects', [])), 1)
+        self.assertEqual(result['effects'][0]['effect'], 'mesh_agent_delegate')
+
+    def test_mesh_agent_dangerous_confirmation(self):
+        # Autopilot delegation requires confirmation in agent mode
+        result = self.run_plan('1. mesh-agent node-beta "turn on LED" --autopilot', agent=True)
+        self.assertEqual(result.get('effect'), 'confirm_ai_command')
+
+        # Read-only query does not require confirmation
+        self.executor.calls.clear()
+        self.executor.results['mesh-agent node-beta "read pin 17"'] = {'success': True, 'output': 'HIGH'}
+        result2 = self.run_plan('1. mesh-agent node-beta "read pin 17"', agent=True)
+        self.assertTrue(result2['success'])
+        self.assertEqual(self.executor.calls[0][0], 'mesh-agent node-beta "read pin 17"')
+
 
 if __name__ == '__main__':
     unittest.main()

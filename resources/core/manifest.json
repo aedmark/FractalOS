@@ -89,6 +89,7 @@
     "logout",
     "ls",
     "man",
+    "mesh_agent",
     "mesh_cp",
     "mkdir",
     "more",

@@ -43,6 +43,7 @@ class AIManager:
 --- END MANIFEST ---
 
 Interact with hardware pins or sensors via `gpio`: `gpio mode <pin> <in|out>`, `gpio read <pin>`, `gpio write <pin> <0|1>`, `gpio monitor <pin> [--trigger <change|rising|falling>] [--action "<cmd>"]`.
+Delegate tasks to peer nodes via `mesh-agent <nodeId> "<prompt>"` (or with `--autopilot`).
 Rename a file with `mv old_path new_path`, never `rename`.
 Create plain text with `forge filename "content"`. Respect the requested path; do not invent a project folder.
 Verify deletions using `ls`, do not attempt to `cd` into directories you just deleted. If you anticipate a command might intentionally fail (like a verification step), append `|| true` to it.
@@ -61,7 +62,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             "ls", "cat", "grep", "find", "tree", "pwd", "head", "tail",
             "wc", "man", "help", "echo", "bc", "expr", "whoami", "date", "story",
             "cd", "mkdir", "touch", "mv", "cp", "rm", "rmdir", "forge", "run", "chmod",
-            "python", "true", "gpio"
+            "python", "true", "gpio", "mesh-agent", "mesh_agent"
         ]
         self.PLANNER_SYSTEM_PROMPT = self.PLANNER_SYSTEM_PROMPT.replace(
             "{tool_manifest}", ", ".join(self.COMMAND_WHITELIST))
@@ -81,6 +82,8 @@ Always use absolute paths for all file and directory arguments to prevent contex
         if cmd == "gpio":
             sub = parts[1].lower() if len(parts) > 1 else ""
             return sub in {"write", "simulate", "monitor", "watch", "stop", "unmonitor"}
+        if cmd in {"mesh-agent", "mesh_agent"}:
+            return any(p in {"--autopilot", "-a"} for p in parts[1:])
         return cmd in self.DANGEROUS_COMMANDS
 
     @staticmethod
@@ -152,6 +155,7 @@ Always use absolute paths for all file and directory arguments to prevent contex
             "play_sound",
             "mesh_broadcast",
             "mesh_send",
+            "mesh_agent_delegate",
         }
 
         collected_step_effects = []
