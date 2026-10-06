@@ -474,5 +474,16 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
    - `pbcopy.py` (reads stdin/args and copies to clipboard silently, matching macOS/BSD conventions).
    - `pbpaste.py` (prints clipboard text to stdout, matching macOS/BSD conventions).
 5. Front-end effect handler handles `clipboard_action` for copy, paste, clear, and status actions.
-**Consequences:** Seamless clipboard and file data exchange between host environment and the virtual browser operating system.
-
+## D-041 Package Publishing Tool, Manifest Validation & Local Community Repositories (`pkg publish`, `pkg pack`, `pkg validate`, `pkg init`, `pkg search`) (2026-10-06, status: accepted)
+**Context:** P7-13. To create a flourishing ecosystem of user-created commands and apps, developers and users need tooling to scaffold, validate, bundle, publish, and install packages without manual JSON editing or third-party web services.
+**Decision:**
+1. We extended `resources/core/commands/pkg.py` with full package lifecycle subcommands:
+   - `pkg init <name> [path]`: Generates a valid package template with `metadata()`, `define_flags()`, `run()`, `man()`, and `help()`.
+   - `pkg validate <file|name>`: Compiles the source, inspects exported functions, validates the metadata schema (name, version, description, author, license, wheels, dependencies), and checks for name collisions against core commands.
+   - `pkg pack <file>`: Packages code into a verified FractalOS Package Archive (`.fpkg`) bundle with SHA256 checksum and ISO timestamp.
+   - `pkg publish <file|name>`: Validates the package, computes checksums, updates repository `index.json`, writes `.py` and `.fpkg` files into the local community repository (`/var/pkg/repo` for root or `~/.pkg/repo` for unprivileged users), exports to custom directories (`--export`), or posts to remote registries (`--registry`). Supports `--dry-run` to preview the catalog entry without disk modifications.
+   - `pkg publish --mesh`: Announces the published package to peer nodes across the local mesh network via `mesh_broadcast` / `pkg_mesh_publish` effect.
+   - `pkg search [query]`: Searches local community repositories (`/var/pkg/repo` and `~/.pkg/repo`) for packages.
+   - `pkg install <source>`: Enhanced to install directly from package names resolved from local repositories (`/var/pkg/repo` and `~/.pkg/repo`) before falling back to remote URLs, supporting offline package development and distribution. Also supports installing `.fpkg` archives directly.
+2. In `resources/scripts/effect_handler.js`, added `case 'pkg_mesh_publish':` to deliver network broadcast announcements and status bar notifications.
+**Consequences:** Complete offline and mesh-capable package development, auditing, publishing, and installation lifecycle within FractalOS.

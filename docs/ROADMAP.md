@@ -257,7 +257,7 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 - [x] P7-12 **Clipboard & Drag-and-Drop Bridge**: Seamless clipboard sharing and drag-and-drop file import into the VFS from the browser / host environment (D-040, 2026-10-06).
 
 ### Milestone 7.4: Package Ecosystem & Community Registry Tooling
-- [ ] P7-13 **Package Publishing Tool (`pkg publish`)**: Command to validate, package, generate manifest metadata, and export/publish packages for community repositories.
+- [x] P7-13 **Package Publishing Tool (`pkg publish`)**: Command to validate, package, generate manifest metadata, and export/publish packages for community repositories (D-041, 2026-10-06).
 - [ ] P7-14 **Package Dependency Resolution**: Support dependencies in `/etc/pkg_manifest.json` (specifying required Pyodide wheels or dependent command packages).
 - [ ] P7-15 **Standard Library Expansion**: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages.
 - [ ] P7-16 **Package Security & Sandboxing**: Verification hashes and permission scopes for installed third-party packages before execution.

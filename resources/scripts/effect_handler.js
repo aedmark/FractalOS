@@ -1215,6 +1215,19 @@ async function handleEffect(result, options) {
             break;
         }
 
+        case 'pkg_mesh_publish': {
+            if (NetworkManager?.sendMessage) {
+                await NetworkManager.sendMessage('broadcast', 'pkg_announcement', {
+                    package: result.package,
+                    sender: result.sender
+                });
+            }
+            if (StatusBarManager) {
+                StatusBarManager.notify(`📢 Published package '${result.package.name}' (v${result.package.version}) to mesh`, { level: 'success' });
+            }
+            break;
+        }
+
         default:
             await OutputManager.appendToOutput(`Unknown effect from Python: ${result.effect}`, { typeClass: 'text-warning' });
             break;
