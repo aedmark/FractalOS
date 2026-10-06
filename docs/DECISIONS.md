@@ -485,5 +485,17 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
    - `pkg publish --mesh`: Announces the published package to peer nodes across the local mesh network via `mesh_broadcast` / `pkg_mesh_publish` effect.
    - `pkg search [query]`: Searches local community repositories (`/var/pkg/repo` and `~/.pkg/repo`) for packages.
    - `pkg install <source>`: Enhanced to install directly from package names resolved from local repositories (`/var/pkg/repo` and `~/.pkg/repo`) before falling back to remote URLs, supporting offline package development and distribution. Also supports installing `.fpkg` archives directly.
-2. In `resources/scripts/effect_handler.js`, added `case 'pkg_mesh_publish':` to deliver network broadcast announcements and status bar notifications.
-**Consequences:** Complete offline and mesh-capable package development, auditing, publishing, and installation lifecycle within FractalOS.
+## D-042 Package Dependency Resolution, Cycle Detection, Removal Guardrails & Dynamic Wheel Loading (2026-10-06, status: accepted)
+**Context:** P7-14. Community packages may depend on other command packages or require Pyodide wheels. Without automatic dependency resolution, users had to manually trace and install prerequisites one by one. Furthermore, uninstalling packages could inadvertently break other dependent commands, and packages requiring Pyodide wheels forced an entire operating system reboot.
+**Decision:**
+1. We upgraded `resources/core/commands/pkg.py` to support full dependency graph management:
+   - **Recursive Dependency Resolution**: When `pkg install <source>` runs, it reads `metadata()["dependencies"]`. Any uninstalled dependencies are recursively resolved and installed from local community repositories (`/var/pkg/repo`, `~/.pkg/repo`), package archives, or remote URLs before the parent package is activated.
+   - **Cycle Detection**: Tracks recursion ancestry chains during installation. If a circular loop is encountered (e.g. `A -> B -> A`), installation halts gracefully with a clear `Circular dependency detected` error.
+   - **`--no-deps` Flag**: Allows operators to bypass dependency resolution when needed.
+   - **Dependency Tree Inspection (`pkg deps <name|file>`)**: Inspects direct and nested dependencies, reverse dependents, and required wheels, with plain-text ASCII branch formatting (`├──`, `└──`) and structured JSON (`--json`).
+   - **Removal Guardrails (`pkg remove <name>`)**: Analyzes reverse dependencies in `/etc/pkg_manifest.json`. If other installed packages rely on `<name>`, removal is rejected with a safety warning listing the dependent packages unless overridden with `--force` (`-f`).
+2. **Dynamic Pyodide Wheel Loading**:
+   - `pkg install` gathers all wheels declared across the package and its installed dependencies.
+   - Returns effect `update_commands_manifest` (or `load_pyodide_wheels`) with `wheels: [...]`.
+   - `resources/scripts/effect_handler.js` invokes `FractalOS_Kernel.pyodide.loadPackage(wheels)` directly at runtime, loading requested wheels into the WebAssembly environment without requiring a page refresh or OS reboot.
+**Consequences:** True package management semantics with dependency integrity, cycle protection, uninstall safety, and live Pyodide runtime expansion.

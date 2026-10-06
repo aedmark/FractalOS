@@ -22,6 +22,8 @@ def define_flags():
             {'name': 'export', 'short': 'e', 'long': 'export', 'takes_value': True},
             {'name': 'out', 'short': 'o', 'long': 'out', 'takes_value': True},
             {'name': 'mesh', 'short': 'm', 'long': 'mesh', 'takes_value': False},
+            {'name': 'force', 'short': 'f', 'long': 'force', 'takes_value': False},
+            {'name': 'no_deps', 'short': None, 'long': 'no-deps', 'takes_value': False},
         ],
         'aliases': {
             'h': 'help',
@@ -30,7 +32,8 @@ def define_flags():
             'r': 'registry',
             'e': 'export',
             'o': 'out',
-            'm': 'mesh'
+            'm': 'mesh',
+            'f': 'force'
         },
         'metadata': {}
     }
@@ -171,6 +174,172 @@ def _get_local_repo_path(user_context, custom_export=None):
     if username == "root":
         return "/var/pkg/repo"
     return f"/home/{username}/.pkg/repo"
+
+async def _find_package_source_content(source, user_context):
+    DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/aedmark/fractalos-packages/main/packages"
+    username = (user_context.get("name") or user_context.get("current_user", "Guest")) if user_context else "Guest"
+
+    if source.startswith("http://") or source.startswith("https://"):
+        content, err = await _fetch_url(source)
+        if err:
+            return None, None, f"Failed to fetch URL '{source}': {err}"
+        filename = os.path.basename(source)
+        return content, filename, None
+
+    # 1. Direct path
+    content, err = _read_file_from_vfs(source, user_context)
+    if not err:
+        return content, os.path.basename(source), None
+
+    # 2. Check local community repos
+    candidate_paths = [
+        f"/var/pkg/repo/{source}.py",
+        f"/var/pkg/repo/{source}.fpkg",
+        f"/home/{username}/.pkg/repo/{source}.py",
+        f"/home/{username}/.pkg/repo/{source}.fpkg"
+    ]
+    for cpath in candidate_paths:
+        c_content, c_err = _read_file_from_vfs(cpath, user_context)
+        if not c_err:
+            return c_content, os.path.basename(cpath), None
+
+    # 3. Remote default registry URL
+    registry_url = f"{DEFAULT_REGISTRY_URL}/{source}.py"
+    content, err = await _fetch_url(registry_url)
+    if not err and content and not content.strip().startswith("404:") and content.strip() != "404: Not Found":
+        return content, f"{source}.py", None
+
+    return None, None, f"Package '{source}' not found locally or in registry."
+
+def _find_reverse_dependencies(pkg_name, manifest):
+    rev_deps = []
+    for name, info in manifest.items():
+        if pkg_name in info.get("dependencies", []):
+            rev_deps.append(name)
+    return sorted(rev_deps)
+
+def _build_dependency_tree(pkg_name, manifest, visited=None):
+    if visited is None:
+        visited = set()
+    if pkg_name in visited:
+        return {"name": pkg_name, "cycle": True, "installed": pkg_name in manifest}
+    visited.add(pkg_name)
+
+    info = manifest.get(pkg_name, {})
+    deps = info.get("dependencies", [])
+    tree_node = {
+        "name": pkg_name,
+        "version": info.get("version", "1.0.0"),
+        "installed": pkg_name in manifest,
+        "wheels": info.get("wheels", []),
+        "dependencies": [
+            _build_dependency_tree(d, manifest, set(visited))
+            for d in deps
+        ]
+    }
+    return tree_node
+
+def _format_tree(node, prefix="", is_last=True):
+    lines = []
+    connector = "└── " if is_last else "├── "
+    inst_tag = "\x1b[1;32m[installed]\x1b[0m" if node.get("installed") else "\x1b[1;31m[missing]\x1b[0m"
+    cycle_tag = " \x1b[1;31m(circular cycle)\x1b[0m" if node.get("cycle") else ""
+    ver = f" (v{node.get('version')})" if node.get("version") else ""
+    lines.append(f"{prefix}{connector}{node['name']}{ver} {inst_tag}{cycle_tag}")
+
+    new_prefix = prefix + ("    " if is_last else "│   ")
+    deps = node.get("dependencies", [])
+    for i, child in enumerate(deps):
+        lines.extend(_format_tree(child, new_prefix, i == len(deps) - 1))
+    return lines
+
+async def _install_package_internal(source, user_context, flags=None, chain=None, installed_packages=None, all_wheels=None):
+    if chain is None:
+        chain = []
+    if installed_packages is None:
+        installed_packages = []
+    if all_wheels is None:
+        all_wheels = []
+    flags = flags or {}
+
+    content, filename, err = await _find_package_source_content(source, user_context)
+    if err:
+        return False, err, installed_packages, all_wheels
+
+    # If bundle (.fpkg), unpack JSON
+    if content and (filename.endswith(".fpkg") or (content.strip().startswith("{") and "fractalos-package-v1" in content)):
+        try:
+            bundle = json.loads(content)
+            content = bundle.get("source", "")
+            filename = f"{bundle.get('name', 'pkg')}.py"
+        except Exception as e:
+            return False, f"Corrupted package bundle '{source}': {str(e)}", installed_packages, all_wheels
+
+    module, comp_err = _compile_and_inspect(content, filename)
+    if comp_err:
+        return False, f"Package '{source}' compilation failed: {comp_err}", installed_packages, all_wheels
+
+    default_name = filename.replace(".py", "")
+    v_res = _validate_module(module, default_name)
+    if not v_res["valid"]:
+        return False, f"Package '{source}' failed validation: {'; '.join(v_res['errors'])}", installed_packages, all_wheels
+
+    pkg_name = v_res["name"]
+
+    # Check for circular dependency in the current installation chain
+    if pkg_name in chain:
+        cycle_str = " -> ".join(chain + [pkg_name])
+        return False, f"Circular dependency detected: {cycle_str}", installed_packages, all_wheels
+
+    current_chain = chain + [pkg_name]
+
+    # Resolve dependencies recursively first (if not --no-deps)
+    dependencies = v_res.get("dependencies", [])
+    if dependencies and not flags.get("no_deps"):
+        manifest = _get_manifest(user_context)
+        for dep in dependencies:
+            if dep not in manifest and dep != pkg_name:
+                ok, dep_err, installed_packages, all_wheels = await _install_package_internal(
+                    dep, user_context, flags, current_chain, installed_packages, all_wheels
+                )
+                if not ok:
+                    return False, f"Failed resolving dependency '{dep}' for '{pkg_name}': {dep_err}", installed_packages, all_wheels
+
+    # Collect wheels
+    for w in v_res.get("wheels", []):
+        if w not in all_wheels:
+            all_wheels.append(w)
+
+    # Save package to VFS in /etc/packages/commands/
+    try:
+        if not fs_manager.get_node("/etc/packages"):
+            fs_manager.create_directory("/etc/packages", user_context, parents=True)
+        if not fs_manager.get_node("/etc/packages/commands"):
+            fs_manager.create_directory("/etc/packages/commands", user_context, parents=True)
+
+        pkg_path = f"/etc/packages/commands/{pkg_name}.py"
+        fs_manager.write_file(pkg_path, content, user_context)
+    except PermissionError:
+        return False, "Permission denied writing to /etc/packages/commands. Root required.", installed_packages, all_wheels
+
+    # Update manifest
+    manifest = _get_manifest(user_context)
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    manifest[pkg_name] = {
+        "version": v_res["version"],
+        "description": v_res["description"],
+        "author": v_res["author"],
+        "license": v_res["license"],
+        "wheels": v_res["wheels"],
+        "dependencies": v_res["dependencies"],
+        "installed_at": now_iso
+    }
+    _save_manifest(manifest, user_context)
+
+    if pkg_name not in installed_packages:
+        installed_packages.append(pkg_name)
+
+    return True, None, installed_packages, all_wheels
 
 async def run(args, flags, user_context, stdin_data=None, **kwargs):
     if flags.get("help"):
@@ -703,6 +872,98 @@ def help(args, flags, user_context, **kwargs):
         return "\n".join(out)
 
     # ---------------------------------------------------------
+    # pkg deps <name|path>
+    # ---------------------------------------------------------
+    elif cmd in ("deps", "tree", "dependents"):
+        if len(args) < 2:
+            return {"success": False, "error": {"message": "pkg deps: missing package name or file path", "suggestion": "Usage: pkg deps <name|file.py>"}}
+        target = args[1]
+        manifest = _get_manifest(user_context)
+
+        # 1. If target is in installed packages
+        if target in manifest:
+            tree = _build_dependency_tree(target, manifest)
+            rev_deps = _find_reverse_dependencies(target, manifest)
+            wheels = manifest[target].get("wheels", [])
+
+            if flags.get("json"):
+                return json.dumps({
+                    "package": target,
+                    "tree": tree,
+                    "reverse_dependencies": rev_deps,
+                    "wheels": wheels
+                }, indent=2)
+
+            out_lines = [f"\x1b[1;36m=== DEPENDENCY TREE: {target} (v{manifest[target].get('version', '1.0.0')}) ===\x1b[0m"]
+            out_lines.append(f"Direct dependencies ({len(manifest[target].get('dependencies', []))}):")
+            tree_lines = _format_tree(tree)
+            out_lines.extend(tree_lines)
+
+            out_lines.append("\nRequired Pyodide wheels:")
+            if wheels:
+                for w in wheels:
+                    out_lines.append(f"  - \x1b[1;33m{w}\x1b[0m")
+            else:
+                out_lines.append("  (none)")
+
+            out_lines.append("\nDependent packages (required by):")
+            if rev_deps:
+                for rd in rev_deps:
+                    out_lines.append(f"  - \x1b[1;32m{rd}\x1b[0m (v{manifest.get(rd, {}).get('version', '1.0.0')})")
+            else:
+                out_lines.append("  (none - safe to remove)")
+
+            return "\n".join(out_lines)
+
+        # 2. If target is a file or local package
+        content, filename, err = await _find_package_source_content(target, user_context)
+        if not err and content:
+            module, comp_err = _compile_and_inspect(content, filename)
+            if comp_err:
+                return {"success": False, "error": {"message": f"pkg deps: compilation failed", "suggestion": comp_err}}
+            v_res = _validate_module(module, filename.replace(".py", ""))
+            deps = v_res.get("dependencies", [])
+            wheels = v_res.get("wheels", [])
+
+            dep_status = []
+            for d in deps:
+                dep_status.append({
+                    "name": d,
+                    "installed": d in manifest,
+                    "version": manifest.get(d, {}).get("version") if d in manifest else None
+                })
+
+            if flags.get("json"):
+                return json.dumps({
+                    "package": v_res["name"],
+                    "version": v_res["version"],
+                    "dependencies": dep_status,
+                    "wheels": wheels
+                }, indent=2)
+
+            out_lines = [f"\x1b[1;36m=== PACKAGE DEPENDENCIES: {v_res['name']} (v{v_res['version']}) ===\x1b[0m"]
+            out_lines.append(f"File: {target}")
+            out_lines.append(f"Declared dependencies ({len(deps)}):")
+            if deps:
+                for ds in dep_status:
+                    tag = "\x1b[1;32m[installed]\x1b[0m" if ds["installed"] else "\x1b[1;31m[not installed]\x1b[0m"
+                    ver_tag = f" (v{ds['version']})" if ds["version"] else ""
+                    out_lines.append(f"  - {ds['name']}{ver_tag} {tag}")
+            else:
+                out_lines.append("  (none)")
+
+            out_lines.append("\nRequired Pyodide wheels:")
+            if wheels:
+                for w in wheels:
+                    out_lines.append(f"  - \x1b[1;33m{w}\x1b[0m")
+            else:
+                out_lines.append("  (none)")
+
+            return "\n".join(out_lines)
+
+        return {"success": False, "error": {"message": f"pkg deps: package or file '{target}' not found", "suggestion": "Use 'pkg list' to view installed packages."}}
+
+    # ---------------------------------------------------------
     # pkg remove <name>
     # ---------------------------------------------------------
     elif cmd in ("remove", "rm", "uninstall"):
@@ -713,6 +974,17 @@ def help(args, flags, user_context, **kwargs):
         if name not in manifest:
             return {"success": False, "error": {"message": f"pkg remove: package '{name}' not found", "suggestion": "Use 'pkg list' to see installed packages."}}
 
+        # Check reverse dependencies (packages that depend on this package)
+        rev_deps = _find_reverse_dependencies(name, manifest)
+        if rev_deps and not flags.get("force"):
+            return {
+                "success": False,
+                "error": {
+                    "message": f"pkg remove: cannot remove '{name}' because it is required by: {', '.join(rev_deps)}",
+                    "suggestion": f"Uninstall dependent packages first, or use 'pkg remove {name} --force' to override."
+                }
+            }
+
         del manifest[name]
         _save_manifest(manifest, user_context)
 
@@ -722,9 +994,13 @@ def help(args, flags, user_context, **kwargs):
         except Exception:
             pass
 
+        out_msg = f"Removed package '{name}'."
+        if rev_deps and flags.get("force"):
+            out_msg += f"\n\x1b[1;33mWarning:\x1b[0m Orphaned dependent packages: {', '.join(rev_deps)}"
+
         return {
             "success": True,
-            "output": f"Removed package '{name}'.",
+            "output": out_msg,
             "effect": "update_commands_manifest"
         }
 
@@ -736,109 +1012,44 @@ def help(args, flags, user_context, **kwargs):
             return {"success": False, "error": {"message": "pkg install: missing source", "suggestion": "Try 'pkg install <name|url|path>'"}}
 
         source = args[1]
-        content = None
-        username = user_context.get("current_user", "Guest") if user_context else "Guest"
-
-        DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/aedmark/fractalos-packages/main/packages"
-
-        if source.startswith("http://") or source.startswith("https://"):
-            content, err = await _fetch_url(source)
-            if err:
-                return {"success": False, "error": {"message": f"pkg install: failed to fetch URL", "suggestion": err}}
-        else:
-            # 1. Check direct path
-            content, err = _read_file_from_vfs(source, user_context)
-
-            # 2. Check local repos (/var/pkg/repo, ~/.pkg/repo)
-            if err:
-                candidate_paths = [
-                    f"/var/pkg/repo/{source}.py",
-                    f"/var/pkg/repo/{source}.fpkg",
-                    f"/home/{username}/.pkg/repo/{source}.py",
-                    f"/home/{username}/.pkg/repo/{source}.fpkg"
-                ]
-                for cpath in candidate_paths:
-                    c_content, c_err = _read_file_from_vfs(cpath, user_context)
-                    if not c_err:
-                        content = c_content
-                        break
-
-            # 3. Check remote default registry URL
-            if not content:
-                registry_url = f"{DEFAULT_REGISTRY_URL}/{source}.py"
-                content, err = await _fetch_url(registry_url)
-                if err or not content or content.strip() == "404: Not Found" or content.startswith("404:"):
-                    return {
-                        "success": False,
-                        "error": {
-                            "message": f"pkg install: package '{source}' not found locally or in registry.",
-                            "suggestion": f"Checked local file, /var/pkg/repo, ~/.pkg/repo, and {registry_url}"
-                        }
-                    }
-
-        # Check if bundle (.fpkg)
-        if content and (source.endswith(".fpkg") or (content.strip().startswith("{") and "fractalos-package-v1" in content)):
-            try:
-                bundle = json.loads(content)
-                content = bundle.get("source", "")
-            except Exception as e:
-                return {"success": False, "error": {"message": f"pkg install: corrupted package bundle: {str(e)}"}}
-
-        filename = os.path.basename(source).replace(".fpkg", ".py")
-        module, comp_err = _compile_and_inspect(content, filename)
-        if comp_err:
-            return {"success": False, "error": {"message": f"pkg install: package compilation failed", "suggestion": comp_err}}
-
-        default_name = filename.replace(".py", "")
-        v_res = _validate_module(module, default_name)
-        if not v_res["valid"]:
-            return {"success": False, "error": {"message": "pkg install: invalid package", "suggestion": "\n".join(v_res["errors"])}}
-
-        name = v_res["name"]
-
-        # Save to VFS in /etc/packages/commands/
-        try:
-            if not fs_manager.get_node("/etc/packages"):
-                fs_manager.create_directory("/etc/packages", user_context, parents=True)
-            if not fs_manager.get_node("/etc/packages/commands"):
-                fs_manager.create_directory("/etc/packages/commands", user_context, parents=True)
-
-            pkg_path = f"/etc/packages/commands/{name}.py"
-            fs_manager.write_file(pkg_path, content, user_context)
-        except PermissionError:
+        ok, err, installed_packages, all_wheels = await _install_package_internal(source, user_context, flags)
+        if not ok:
             return {
                 "success": False,
                 "error": {
-                    "message": "pkg: Permission denied",
-                    "suggestion": "You need root privileges to install system packages. Try 'sudo pkg install'."
+                    "message": f"pkg install: failed to install '{source}'",
+                    "suggestion": err
                 }
             }
 
-        # Update manifest
+        target_pkg = installed_packages[-1] if installed_packages else source
         manifest = _get_manifest(user_context)
-        manifest[name] = {
-            "version": v_res["version"],
-            "description": v_res["description"],
-            "author": v_res["author"],
-            "license": v_res["license"],
-            "wheels": v_res["wheels"],
-            "dependencies": v_res["dependencies"],
-            "installed_at": datetime.datetime.utcnow().isoformat() + "Z"
-        }
-        _save_manifest(manifest, user_context)
+        ver = manifest.get(target_pkg, {}).get("version", "1.0.0")
 
-        return {
+        out_lines = [f"\x1b[1;32m✓ Successfully installed package '{target_pkg}' (v{ver}).\x1b[0m"]
+        if len(installed_packages) > 1:
+            deps_installed = [p for p in installed_packages if p != target_pkg]
+            out_lines.append(f"  Installed dependencies ({len(deps_installed)}): {', '.join(deps_installed)}")
+        if all_wheels:
+            out_lines.append(f"  Pyodide runtime wheel(s): {', '.join(all_wheels)}")
+        out_lines.append(f"Run '{target_pkg}' to execute.")
+
+        res = {
             "success": True,
-            "output": f"Successfully installed package '{name}' (v{v_res['version']}). Run '{name}' to execute.",
+            "output": "\n".join(out_lines),
             "effect": "update_commands_manifest"
         }
+        if all_wheels:
+            res["wheels"] = all_wheels
+
+        return res
 
     else:
         return {
             "success": False,
             "error": {
                 "message": f"pkg: unknown command '{cmd}'",
-                "suggestion": "Try 'pkg list', 'pkg install', 'pkg remove', 'pkg validate', 'pkg init', 'pkg pack', 'pkg publish', or 'pkg search'"
+                "suggestion": "Try 'pkg list', 'pkg install', 'pkg remove', 'pkg deps', 'pkg validate', 'pkg init', 'pkg pack', 'pkg publish', or 'pkg search'"
             }
         }
 
@@ -854,11 +1065,13 @@ SYNOPSIS
     pkg pack <path> [-o <out.fpkg>] [-j|--json]
     pkg publish <path|name> [-n|--dry-run] [-e <dir>] [-r <url>] [-m|--mesh]
     pkg search [query]
-    pkg install <name|url|path>
-    pkg remove <name>
+    pkg deps <name|file.py> [-j|--json]
+    pkg install <name|url|path> [--no-deps]
+    pkg remove <name> [-f|--force]
 
 DESCRIPTION
-    Manages, validates, bundles, publishes, and installs community packages in FractalOS.
+    Manages, validates, bundles, publishes, resolves dependencies, and installs
+    community packages in FractalOS.
     Packages are Python files defining the command interface:
       - metadata(): returns dict with name, version, description, author, license, wheels, dependencies
       - define_flags(): declares command line flags and aliases
@@ -879,22 +1092,29 @@ SUBCOMMANDS
         an export directory, a remote registry, or announce it across the mesh network.
     search [query], find
         Search available community repositories for packages.
+    deps <name|file>, tree
+        Display dependency hierarchy, reverse dependents, and required Pyodide wheels.
     install <source>, i, add
-        Install a package from local repository, .fpkg bundle, file path, URL, or registry.
+        Install a package from local repository, .fpkg bundle, file path, URL, or registry,
+        automatically resolving and installing required dependencies.
     remove <name>, rm, uninstall
-        Uninstall a package from the system.
+        Uninstall a package from the system (guarded against breaking dependent packages).
 
 OPTIONS
     -n, --dry-run
         Simulate packaging/publishing and preview the catalog entry without modifying files.
     -j, --json
-        Output manifest, validation, or package bundle in JSON format.
+        Output manifest, validation, dependency tree, or package bundle in JSON format.
     -e, --export <dir>
         Specify custom export directory for package publishing.
     -o, --out <file>
         Specify output destination file for 'pkg pack'.
     -m, --mesh
         Announce published package to peer nodes across the local mesh network.
+    -f, --force
+        Force package removal even if other installed packages depend on it.
+    --no-deps
+        Skip automatic dependency resolution during package installation.
 
 EXAMPLES
     pkg init mycalc
@@ -902,8 +1122,10 @@ EXAMPLES
     pkg publish ./mycalc.py --dry-run
     pkg publish ./mycalc.py
     pkg install mycalc
+    pkg deps mycalc
+    pkg remove mycalc
     mycalc --help
 """
 
 def help(args, flags, user_context, **kwargs):
-    return "Usage: pkg [list | init <name> | validate <file> | pack <file> | publish <file> | search | install <source> | remove <name>]"
+    return "Usage: pkg [list | init <name> | validate <file> | pack <file> | publish <file> | search | deps <name> | install <source> | remove <name>]"

@@ -1001,7 +1001,33 @@ async function handleEffect(result, options) {
             } catch (e) {
                 console.error("Failed to update commands manifest:", e);
             }
+            if (result.wheels && Array.isArray(result.wheels) && result.wheels.length > 0) {
+                if (typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.pyodide?.loadPackage) {
+                    try {
+                        await OutputManager.appendToOutput(`Loading runtime Pyodide wheel(s): ${result.wheels.join(', ')}...`);
+                        await FractalOS_Kernel.pyodide.loadPackage(result.wheels);
+                        await OutputManager.appendToOutput(`✓ Successfully loaded wheel(s): ${result.wheels.join(', ')}.`);
+                    } catch (err) {
+                        await OutputManager.appendToOutput(`Failed to load wheel(s): ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                }
+            }
             break;
+
+        case "load_pyodide_wheels": {
+            if (result.wheels && Array.isArray(result.wheels) && result.wheels.length > 0) {
+                if (typeof FractalOS_Kernel !== 'undefined' && FractalOS_Kernel.pyodide?.loadPackage) {
+                    try {
+                        await OutputManager.appendToOutput(`Loading runtime Pyodide wheel(s): ${result.wheels.join(', ')}...`);
+                        await FractalOS_Kernel.pyodide.loadPackage(result.wheels);
+                        await OutputManager.appendToOutput(`✓ Successfully loaded wheel(s): ${result.wheels.join(', ')}.`);
+                    } catch (err) {
+                        await OutputManager.appendToOutput(`Failed to load wheel(s): ${err.message}`, { typeClass: Config.CSS_CLASSES.ERROR_MSG });
+                    }
+                }
+            }
+            break;
+        }
 
         case 'toggle_cinematic_mode':
             UIStateManager.toggleCinematicMode(result.mode);
