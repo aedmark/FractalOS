@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everything You Ever Wanted to Know About FractalOS v1.0</title>
+    <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>🌀 FractalOS</h1>
+            <span class="version-tag">v1.0.0 Codex • Pyodide 314.0.7</span>
+        </div>
+        <nav class="sidebar-nav">
+            <section>
+                <h3>Book I: Philosophy & Runtimes</h3>
+                <ul>
+                    <li><a href="#soul-of-a-living-terminal" class="active">1. The Soul of a Living Terminal</a></li>
+                    <li><a href="#human-ai-partnership">2. The Collaborative Partnership</a></li>
+                    <li><a href="#three-runtimes">3. The Three Runtimes</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book II: Engine Room & Architecture</h3>
+                <ul>
+                    <li><a href="#hybrid-architecture">4. The Hybrid Python/Wasm Architecture</a></li>
+                    <li><a href="#pyodide-kernel-bridge">5. Kernel Bridge & Syscall Router</a></li>
+                    <li><a href="#effect-contract">6. The Effect Contract (effect_handler.js)</a></li>
+                    <li><a href="#virtual-filesystem">7. POSIX Virtual File System (filesystem.py)</a></li>
+                    <li><a href="#security-and-users">8. Identity, PBKDF2 & Sudo Enforcer</a></li>
+                    <li><a href="#command-executor">9. The Shell Pipeline & Executor</a></li>
+                    <li><a href="#session-and-audit">10. Sessions, Environment & Audit Log</a></li>
+                    <li><a href="#storage-hal">11. Dual-Tier Storage HAL</a></li>
+                    <li><a href="#sound-engine">12. Tone.js Audio Engine</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book III: Living Shell & Kinetic AI</h3>
+                <ul>
+                    <li><a href="#ai-philosophy">12. Philosophy: AI as an Operator</a></li>
+                    <li><a href="#samwise-engine">13. The Samwise Engine</a></li>
+                    <li><a href="#bone-autopilot">14. Autopilot & BoneAmanita</a></li>
+                    <li><a href="#voltage-safety">15. The Voltage Safety Framework</a></li>
+                    <li><a href="#reliability-mechanisms">16. Self-Correction & Forge</a></li>
+                    <li><a href="#story-versioning">17. Story: VFS Versioning</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book IV: P2P Mesh & Swarms</h3>
+                <ul>
+                    <li><a href="#mesh-topology">18. WebRTC & Mesh Protocols</a></li>
+                    <li><a href="#node-presence">19. Node Presence & Telemetry</a></li>
+                    <li><a href="#remote-attachment">20. Remote Shell Attachment</a></li>
+                    <li><a href="#mesh-file-transfer">21. Zero-Cloud File Transfer</a></li>
+                    <li><a href="#swarm-delegation">22. Swarm Task Delegation</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book V: Multiplexer, WM & Hardware</h3>
+                <ul>
+                    <li><a href="#terminal-multiplexer">23. Terminal Multiplexing</a></li>
+                    <li><a href="#window-manager">24. TUI Window Manager</a></li>
+                    <li><a href="#host-bridges">25. Clipboard & Drag-and-Drop</a></li>
+                    <li><a href="#gpio-automation">26. IoT & GPIO Automation</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book VI: Package Ecosystem</h3>
+                <ul>
+                    <li><a href="#pkg-architecture">27. Package Architecture (.fpkg)</a></li>
+                    <li><a href="#pkg-security">28. Cryptographic Audits</a></li>
+                    <li><a href="#pkg-registry">29. Registry & Wheel Loading</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book VII: Command Codex</h3>
+                <ul>
+                    <li><a href="#command-architecture">30. Anatomy of a Command</a></li>
+                    <li><a href="#command-matrix">31. Master Command Matrix</a></li>
+                    <li><a href="commands.html" target="_blank"><em>Full 151-Command Manual &rarr;</em></a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book VIII: Application Suites</h3>
+                <ul>
+                    <li><a href="#app-lifecycle">32. App Lifecycle Architecture</a></li>
+                    <li><a href="#app-editor">33. FractalOS Editor (edit)</a></li>
+                    <li><a href="#app-paint">34. FractalOS Paint (paint)</a></li>
+                    <li><a href="#app-adventure">35. Adventure Engine & Creator</a></li>
+                    <li><a href="#app-basic">36. Fractal BASIC IDE</a></li>
+                    <li><a href="#app-log">37. Captain's Log (log)</a></li>
+                    <li><a href="#app-chidi">38. Chidi Document Analyst</a></li>
+                    <li><a href="#app-samwise-chat">39. Samwise Chat (samwise -c)</a></li>
+                    <li><a href="#app-top">40. Process Viewer (top)</a></li>
+                    <li><a href="#app-onboarding">41. Onboarding Wizard</a></li>
+                    <li><a href="#app-netgames">42. Multiplayer Mesh Games</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Book IX: The Proving Ground</h3>
+                <ul>
+                    <li><a href="#testing-philosophy">43. Testing Philosophy</a></li>
+                    <li><a href="#tests-structure">44. Structure & Manifest Checks</a></li>
+                    <li><a href="#tests-smoke">45. Browser Smoke Testing</a></li>
+                    <li><a href="#tests-diag">46. The 1,400-Line Diag Gauntlet</a></li>
+                    <li><a href="#tests-inflate">47. Universe Generator (inflate.sh)</a></li>
+                    <li><a href="#tests-agent">48. Autonomous Agent Test Harness</a></li>
+                    <li><a href="#tests-executor">49. In-OS Python Test Suite</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Technical Appendices</h3>
+                <ul>
+                    <li><a href="#runtime-dependencies">Book X: Runtime Dependencies</a></li>
+                    <li><a href="#system-paths-appendix">Appendix: System Paths & Configs</a></li>
+                </ul>
+            </section>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content">
+        <header>
+            <h1 class="doc-title">Everything You Ever Wanted to Know About FractalOS</h1>
+            <p class="subtitle">The Definitive Architectural Codex, System Internals, and Operating Manual</p>
+            <div class="badge-row">
+                <span class="badge emerald">Release v1.0.0</span>
+                <span class="badge cyan">Python 3.14.2 / WebAssembly</span>
+                <span class="badge purple">153 Native Commands</span>
+                <span class="badge">P2P WebRTC Mesh</span>
+                <span class="badge">Kinetic Autopilot AI</span>
+            </div>
+        </header>
+
+        <!-- BOOK I -->
+        <section id="book-1">
+            <h2 id="soul-of-a-living-terminal">Book I: Systems Philosophy & Origins</h2>
+
+            <h3>1. The Soul of a Living Terminal</h3>
+            <p>
+                In an era dominated by opaque cloud computing and walled gardens, <strong>FractalOS</strong> represents a return to first principles: an operating system that lives, breathes, and persists entirely on your machine. Originally conceived as <em>OopisOS</em>—a browser-based Unix simulation—FractalOS has evolved into a full-fledged, dual-engine computational habitat.
+            </p>
+            <p>
+                FractalOS is founded on the concept of <strong>Narrative Computing</strong>. The shell is not merely a dumb parser that executes isolated binaries; it is a collaborative environment where a local Large Language Model (<strong>Samwise</strong>) lives directly alongside the operator. You can interact through orthodox Unix pipelines, inspect system telemetry, or hold a natural conversation with an autonomous agent that inspects file trees, runs Python code, and coordinates distributed swarms on your behalf.
+            </p>
+
+            <div class="callout info">
+                <div class="callout-title">The Five Core Tenets of FractalOS</div>
+                <ol>
+                    <li><strong>Python is the Source of Truth:</strong> The virtual file system, user security model, permissions, and shell execution logic reside exclusively inside the WebAssembly Python kernel. JavaScript mirrors state for presentation, but never decides it.</li>
+                    <li><strong>The Kernel Never Touches the Page:</strong> Anything visible, audible, or browser-specific is expressed as a declarative <em>Effect</em> returned by the kernel. The frontend stage manager fulfills these effects.</li>
+                    <li><strong>Zero Build Step, Zero npm Dependencies:</strong> Clone the repository, serve <code>resources/</code> over any standard HTTP server, and run. There are no node_modules, webpack bundlers, or remote CDN fetches.</li>
+                    <li><strong>The AI is a User, Not Root:</strong> The autonomous agent executes through the identical executor, permission matrix, and audit logging as a human operator. Destructive steps are governed by an objective Voltage Safety policy.</li>
+                    <li><strong>Verified Means Observed:</strong> Claims are invalid until proven by automated headless browser smoke tests or in-OS diagnostic test runners.</li>
+                </ol>
+            </div>
+
+            <h3 id="human-ai-partnership">2. The Collaborative Partnership & Unique License</h3>
+            <p>
+                FractalOS was developed through an intimate partnership between its human curator (<strong>Andrew Edmark</strong>) and AI assistants (<strong>Gemini</strong> & <strong>Claude</strong>). Unlike conventional software where AI serves merely as an autocomplete utility, FractalOS was architected and documented as a deliberate joint venture.
+            </p>
+            <p>
+                The project is governed by a permissive MIT-style license featuring a dedicated <em>Authorship and Contribution Acknowledgment</em>. The preamble acknowledges the shared creative direction: the human curator provides architectural vision, constraints, and approval, while the AI generates code, constructs tests, and documents systems.
+            </p>
+
+            <h3 id="three-runtimes">3. The Three Runtimes</h3>
+            <p>FractalOS does not confine itself to a browser tab. It is engineered to operate across three distinct environments:</p>
+
+            <div class="triad-block">
+                <h3>3.1 Browser Mode (Zero-Install WebOS)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>Runs FractalOS in any modern desktop or mobile browser by serving static files over any standard HTTP server (e.g. <code>python3 -m http.server 8000 --directory resources</code>).</p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>Pyodide WebAssembly fetches its trimmed runtime and Python packages from local disk (<code>./dep/pyodide/</code>). File system changes are persisted to the browser's transactional <strong>IndexedDB</strong> store through an asynchronous Storage Hardware Abstraction Layer (<code>IndexedDBStorageHAL</code>).</p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>Complete portability. Users can boot a fully featured Unix workstation with zero setup, zero permissions, and zero tracking, sandboxed entirely within the browser's WebAssembly memory space.</p>
+                </div>
+            </div>
+
+            <div class="triad-block">
+                <h3>3.2 Portable Desktop Mode (Neutralinojs)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>Executes FractalOS as a native standalone desktop application on Linux, macOS, and Windows with physical disk persistence.</p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>The application runs inside a lightweight Neutralinojs webview shell (under 15 MB). The frontend detects <code>window.Neutralino</code> and automatically swaps the IndexedDB HAL for <code>NeutralinoStorageHAL</code>. System state, user directories, and configuration are persisted directly to the local filesystem in <code>data/</code>.</p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>Frees the user from browser storage quotas and accidental cache clears while avoiding the memory bloat of Electron. The operating system feels like a genuine native workstation.</p>
+                </div>
+            </div>
+
+            <div class="triad-block">
+                <h3>3.3 Bare-Metal Appliance Mode (Fractal Pi)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>Boots directly to a full-screen FractalOS terminal on Raspberry Pi or ARM64 single-board hardware, transforming the board into a dedicated physical appliance.</p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>Provisioned via <code>extras/build_distro.sh</code>, the appliance boots minimal Linux (e.g., Raspberry Pi OS Lite), auto-logs in a dedicated user, initializes an X11 kiosk display server, and launches the FractalOS interface. A host bridge enables direct control over hardware <strong>GPIO pins</strong>, button interrupts, and physical sensors.</p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>Bridges the virtual shell with physical computing. Autonomous agents in the shell can sense hardware buttons, drive LEDs, and act as physical ambient computing hubs.</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK II -->
+        <section id="book-2">
+            <h2 id="hybrid-architecture">Book II: The Core Architecture & Engine Room</h2>
+
+            <p>
+                The fundamental breakthrough separating FractalOS 1.0 from OopisOS v5.0 is the complete migration from an in-browser JavaScript interpreter to a true <strong>Hybrid WebAssembly/Python Kernel</strong> architecture.
+            </p>
+
+            <pre><code>+-----------------------------------------------------------------------------------+
+|                            JAVASCRIPT FRONTEND ("STAGE MANAGER")                  |
+|                                                                                   |
+|   +-------------------+  +--------------------+  +----------------------------+   |
+|   | Terminal UI & Multiplexer |  | Window Manager (wm)|  | Tone.js Audio Synthesizer  |   |
+|   | (split_h / split_v)       |  | (floating / docked)|  | (polyphonic music engine)  |   |
+|   +-------------------+  +--------------------+  +----------------------------+   |
+|             |                      |                           |                  |
+|             v                      v                           v                  |
+|   +---------------------------------------------------------------------------+   |
+|   |                       effect_handler.js (EFFECT ROUTER)                   |   |
+|   |     play_sound | split_pane | launch_app | confirm_ai_command | sudo_exec     |   |
+|   +---------------------------------------------------------------------------+   |
+|             ^                                                                     |
++-------------|---------------------------------------------------------------------+
+              | (Declarative Effects JSON)             | (Context JSON & Stdin)
+              |                                        v
++-------------|---------------------------------------------------------------------+
+|             |               PYTHON KERNEL IN WEBASSEMBLY (PYODIDE 314)            |
+|             |                                                                     |
+|   +---------------------------------------------------------------------------+   |
+|   |           bridge.js  <====== (syscall / execute_command) ======>  kernel.py    |   |
+|   +---------------------------------------------------------------------------+   |
+|             |                                                                     |
+|             v                                                                     |
+|   +---------------------------------------------------------------------------+   |
+|   |                         MODULE_DISPATCHER (kernel.py)                     |   |
+|   +---------------------------------------------------------------------------+   |
+|      |               |               |                |               |           |
+|      v               v               v                v               v           |
+|  executor.py   filesystem.py     users.py          sudo.py       ai_manager.py    |
+|  (Pipes/Jobs)  (POSIX / Inodes)  (PBKDF2 crypto)   (Sudoers)     (Voltage Safety) |
+|      |               |               |                |               |           |
+|      +---------------+---------------+----------------+---------------+           |
+|                                      |                                            |
+|                                      v                                            |
+|                   153 Native Python Commands (commands/*.py)                      |
+|                                      |                                            |
+|                                      v                                            |
+|                   Storage HAL (Save Callback to IndexedDB / Host)                 |
++-----------------------------------------------------------------------------------+</code></pre>
+
+            <div class="triad-block" id="pyodide-kernel-bridge">
+                <h3>4. The Pyodide WebAssembly Kernel & Syscall Bridge</h3>
+                <p><strong>Files:</strong> <code>resources/bridge.js</code>, <code>resources/core/kernel.py</code>, <code>resources/core/manifest.json</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Loads CPython 3.14 compiled to WebAssembly inside the browser, mounts the virtual kernel filesystem, dynamically injects all core Python modules and commands, and exposes a standardized two-way asynchronous communications channel: <code>FractalOS_Kernel.syscall()</code> and <code>FractalOS_Kernel.execute_command()</code>.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Manifest Fetch:</strong> On page boot, <code>bridge.js</code> fetches <code>core/manifest.json</code> (generated by <code>tools/gen_manifest.py</code>), discovering all modules in <code>core/</code>, <code>core/apps/</code>, and <code>core/commands/</code>.</li>
+                        <li><strong>Runtime Initialization:</strong> Pyodide loads from vendored assets in <code>./dep/pyodide/</code>. It installs pre-vendored WebAssembly wheels including <code>cryptography</code> and any community packages listed in <code>/etc/pkg_manifest.json</code>.</li>
+                        <li><strong>VFS Ingestion:</strong> <code>bridge.js</code> calls <code>pyodide.FS.mkdir()</code> to create <code>/core</code>, <code>/core/commands</code>, and <code>/core/apps</code>. It reads Python source files via HTTP <code>fetch()</code> and writes them into Pyodide's memory filesystem.</li>
+                        <li><strong>Module Dispatch:</strong> <code>kernel.py</code> defines <code>MODULE_DISPATCHER</code>, mapping system modules (<code>executor</code>, <code>filesystem</code>, <code>users</code>, <code>groups</code>, <code>sudo</code>, <code>ai</code>, <code>story</code>, <code>audit</code>, <code>swarm</code>).</li>
+                        <li><strong>Type Sanitization:</strong> Raw JavaScript values crossing into Python can be <code>pyodide.ffi.jsnull</code>, which is falsy but not identical to Python <code>None</code>. The bridge normalizes inputs through <code>_from_js()</code> at the single crossing point before execution.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Centralizes all business logic and security authority into genuine Python. Individual shell commands cannot corrupt browser DOM state or leak memory. Python's rich standard library (regular expressions, math, AST parsers, datetime, cryptography) becomes instantly available inside the virtual shell without custom JS reimplementations.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="effect-contract">
+                <h3>5. The Effect Contract</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/effect_handler.js</code>, <code>resources/core/executor.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Defines the formal protocol for the Python kernel to request operations outside its WebAssembly sandbox. Commands never touch the DOM or browser APIs directly; they return declarative JSON "Effect" objects that the JavaScript stage manager fulfills.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li>When a command executes, it returns either text output (<code>{"success": true, "output": "..."}</code>) or one or more effects (<code>{"effect": "name", ...}</code> or <code>{"effects": [...]}</code>).</li>
+                        <li><code>boot.js</code> captures the execution result and passes each effect to <code>handleEffect(result, options)</code> in <code>effect_handler.js</code>.</li>
+                        <li>A centralized switch statement dispatches the effect to the responsible frontend manager:
+                            <ul>
+                                <li><code>play_sound</code>: Dispatches note arrays and durations to <code>SoundManager</code> (Tone.js).</li>
+                                <li><code>split_pane</code> / <code>multiplexer_action</code>: Invokes <code>MultiplexerManager</code> to create horizontal/vertical shell viewports.</li>
+                                <li><code>window_action</code> / <code>wm</code>: Invokes <code>WindowManager</code> to float, tile, dock, minimize, or close GUI panels.</li>
+                                <li><code>confirm_ai_command</code>: Opens a modal dialog asking the operator to authorize high-voltage agent commands.</li>
+                                <li><code>mesh_*</code>: Dispatches peer-to-peer data channel operations to <code>NetworkManager</code>.</li>
+                                <li><code>clipboard_action</code>: Reads or writes to the host system clipboard.</li>
+                                <li><code>clear_screen</code>: Clears the terminal DOM buffer.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Preserves strict separation of concerns (Decision D-002). Because commands only generate data structures, the entire operating system can be verified headlessly via Node.js scripts or unit tested in standard Python without needing a browser window.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="virtual-filesystem">
+                <h3>6. The POSIX Virtual File System</h3>
+                <p><strong>Files:</strong> <code>resources/core/filesystem.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Provides a fully compliant, hierarchical, Unix-like virtual file system supporting files, directories, symbolic links, file owners, group memberships, and octal permission modes (e.g. <code>0o755</code>, <code>0o644</code>).
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Data Model:</strong> The VFS is structured as an in-memory recursive tree of node dictionaries. Each directory contains a <code>children</code> mapping. Each file contains a <code>content</code> string, size, timestamps (<code>mtime</code>, <code>ctime</code>), <code>owner</code>, <code>group</code>, and octal <code>mode</code>.</li>
+                        <li><strong>Symlink Resolution:</strong> <code>get_node_by_path()</code> traverses path components step by step. When it encounters a node of type <code>symlink</code>, it resolves the target path up to a recursion depth limit of 10 to safely prevent circular link loops.</li>
+                        <li><strong>Permission Checking:</strong> <code>has_permission(node, user, permission_type)</code> compares the user's UID and supplementary GIDs against the octal bits (read 4, write 2, execute 1) across owner, group, and other classes. The <code>root</code> superuser bypasses standard checks.</li>
+                        <li><strong>Persistence Loop:</strong> Whenever a mutating operation occurs (write, create, delete, chmod, chown), <code>fs_manager</code> calls the registered <code>save_function</code> callback, serializing the tree back across the bridge to <code>StorageHAL.save()</code>.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        In-memory tree traversal yields microsecond response times for complex pipelines, while background synchronization preserves durability across page reloads. Centralizing permission enforcement inside <code>filesystem.py</code> guarantees that commands cannot bypass security boundaries.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="security-and-users">
+                <h3>7. Identity, Authentication, PBKDF2 & Sudo</h3>
+                <p><strong>Files:</strong> <code>resources/core/users.py</code>, <code>resources/core/groups.py</code>, <code>resources/core/sudo.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Maintains multi-user credentials, group hierarchies, cryptographic password hashing via PBKDF2-HMAC-SHA256, and privilege escalation governed by <code>/etc/sudoers</code>.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Cryptographic Hashing:</strong> Passwords are never stored in plaintext. <code>users.py</code> utilizes Pyodide's compiled <code>cryptography</code> wheel to generate 100,000-iteration PBKDF2-HMAC-SHA256 hashes paired with 16-byte cryptographically secure random salts.</li>
+                        <li><strong>Sudo Policy Engine:</strong> <code>SudoManager</code> parses <code>/etc/sudoers</code> dynamically. It supports user rules, group permissions (e.g. <code>%wheel ALL=(ALL) ALL</code>), specific command whitelists, and <code>NOPASSWD</code> directives.</li>
+                        <li><strong>Timestamp Tickets:</strong> Upon successful password validation, a temporary timestamp ticket is recorded. Subsequent sudo executions within the <code>timestamp_timeout</code> window (default 5 minutes) bypass password prompts.</li>
+                        <li><strong>Privilege Scoping:</strong> <code>sudo_exec</code> returns an effect. The executor elevates the effective user context strictly for the duration of the target command and reverts immediately to the original user upon completion.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Adheres strictly to the principle of least privilege. Real cryptographic key derivation protects user credentials, and the isolated elevation lifecycle prevents privilege leaks across chained shell commands.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="command-executor">
+                <h3>8. The Shell Execution Pipeline</h3>
+                <p><strong>Files:</strong> <code>resources/core/executor.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        The central nervous system of the command line. Deconstructs raw shell text into pipelines, handles environment variable substitution, brace expansion, input/output redirection, background jobs, and chains commands across <code>|</code>, <code>&&</code>, <code>||</code>, and <code>;</code> operators.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Lexical Analysis & Parsing:</strong> Tokenizes input honoring single and double quotes, escaped characters, subshell substitutions (<code>$(...)</code>), and wildcards (<code>*</code>, <code>?</code>).</li>
+                        <li><strong>Pipeline Assembly:</strong> Groups command segments into pipelines. Standard output of an upstream command is fed into the <code>stdin</code> buffer of downstream commands.</li>
+                        <li><strong>Redirection Management:</strong> Intercepts <code>&gt;</code>, <code>&gt;&gt;</code>, and <code>&lt;</code> operators, redirecting stdout and stdin streams to and from virtual file nodes.</li>
+                        <li><strong>Module Loading & Execution:</strong> Resolves the command name to a module in <code>commands/&lt;name&gt;.py</code>. It verifies user permissions, injects execution context (cwd, user, environment, flags), and invokes the command's asynchronous <code>run()</code> function.</li>
+                        <li><strong>Background Job Tracking:</strong> Commands ending with <code>&amp;</code> are registered into an active job table with a unique Process ID (PID) and run asynchronously.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Provides genuine POSIX shell semantics entirely inside Python. Developers can construct complex automation pipelines (e.g. <code>cat logs.txt | grep ERROR | wc -l &gt; count.txt</code>) identically to a native Linux environment.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="session-and-audit">
+                <h3>9. Sessions, Environment & Audit Logging</h3>
+                <p><strong>Files:</strong> <code>resources/core/session.py</code>, <code>resources/core/audit.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Manages user session stacks (supporting nested <code>su</code> and <code>logout</code>), scoped environment variables, command history with search, command aliases, and an immutable security audit trail recorded in <code>/var/log/audit.log</code>.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Session Stack:</strong> <code>session_manager</code> maintains an array of active user states. Logging in with <code>su &lt;user&gt;</code> pushes a new session frame; <code>logout</code> pops the top frame and restores the previous user's cwd and environment.</li>
+                        <li><strong>Environment Scoping:</strong> <code>env_manager</code> supports stacked variable scopes. Running shell scripts (<code>run script.sh</code>) pushes a temporary scope that is discarded upon script completion, preventing environment pollution.</li>
+                        <li><strong>Audit Trail:</strong> <code>audit_manager</code> automatically records security-critical events (login successes/failures, sudo invocations, user creations, permission modifications) into <code>/var/log/audit.log</code> with ISO timestamps and user IDs.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Provides institutional-grade operational security and reproducible shell states, ensuring that scripts run safely and system administrators can trace every privileged action.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="storage-hal">
+                <h3>10. The Dual-Tier Storage HAL</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/storage.js</code>, <code>resources/scripts/storage_hal.js</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Decouples system persistence from specific browser or desktop APIs. Employs a dual-tier strategy: fast key-value storage for UI preferences, and an asynchronous Hardware Abstraction Layer (HAL) for the virtual filesystem tree.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>StorageManager:</strong> Wraps browser <code>localStorage</code> for lightweight configuration (theme choices, window layout, command aliases, active terminal history).</li>
+                        <li><strong>StorageHAL Interface:</strong> Defines an abstract contract requiring <code>init()</code>, <code>load()</code>, <code>save()</code>, and <code>clear()</code>.</li>
+                        <li><strong>IndexedDBStorageHAL:</strong> In Browser Mode, stores the full serialized VFS in an IndexedDB object store with transactional integrity, capable of holding hundreds of megabytes of virtual files.</li>
+                        <li><strong>NeutralinoStorageHAL:</strong> In Portable Desktop Mode, swaps database storage for direct host file writes inside the application's local <code>data/</code> folder.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Decoupling persistence through the HAL contract allows FractalOS to swap storage backends (browser databases, local host disk, or remote cloud buckets) without altering a single line of virtual filesystem or kernel code.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="sound-engine">
+                <h3>11. Tone.js Audio Engine</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/sound_manager.js</code>, <code>resources/dep/Tone.js</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Acts as the auditory nervous system of FractalOS, providing polyphonic music synthesis, system notification tones, and musical scripting capabilities for commands like <code>play</code>, <code>beep</code>, and games.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>AudioContext Management:</strong> Web browsers prohibit audio playback until an explicit user interaction occurs. <code>SoundManager</code> monitors initial mouse and keyboard events to cleanly initialize the Tone.js context.</li>
+                        <li><strong>Polyphonic Synthesis:</strong> Manages a shared <code>Tone.PolySynth</code> instance capable of playing individual frequencies (e.g. <code>C4</code>) or complex polyphonic chords (e.g. <code>["A3", "C4", "E4"]</code>).</li>
+                        <li><strong>Non-blocking Scheduling:</strong> Commands issuing audio effects specify note values and musical durations (e.g. <code>4n</code> for quarter notes). The sound manager schedules synthesis asynchronously while allowing the shell to remain responsive.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Encapsulates complex Web Audio API DSP routing and timing loops within a dedicated, reliable manager, allowing shell scripts and applications to generate expressive sound effects with single-line commands.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK III -->
+        <section id="book-3">
+            <h2>Book III: The Living Shell & Kinetic AI</h2>
+
+            <div class="triad-block" id="ai-philosophy">
+                <h3>12. Philosophy: The AI as an Operator, Not Root</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Establishes the behavioral and security boundary for artificial intelligence within FractalOS. Unlike chatbots with unrestricted API backdoors or arbitrary shell execution, the AI operates as an unprivileged system user subject to the exact same permissions, quotas, and audit logging as a human operator.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>
+                        All commands planned by the language model pass through the central <code>command_executor.execute()</code> entry point. If the agent attempts to read <code>/vault/secret.txt</code> owned by <code>root</code> with mode <code>0o600</code>, the virtual filesystem raises an authentic permission error. The agent cannot grant itself permissions or bypass path validation.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Treating the AI as an unprivileged user guarantees system integrity. The operator retains absolute sovereignty: destructive actions require interactive consent, and all autonomous steps are traceable in <code>/var/log/audit.log</code>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="samwise-engine">
+                <h3>13. The Samwise Engine</h3>
+                <p><strong>Files:</strong> <code>resources/core/ai_manager.py</code>, <code>resources/core/commands/samwise.py</code>, <code>/etc/ai.conf</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        <code>samwise</code> is the primary interface to the system's kinetic AI capabilities. It supports multi-provider connectivity (local Ollama or cloud-based Google Gemini), intent classification, multi-step plan generation, interactive chat mode (<code>samwise -c</code>), and automated shell execution.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Configuration Resolution:</strong> <code>ai_manager.py</code> loads settings from <code>/etc/ai.conf</code> (default provider, model, local endpoints like <code>http://localhost:11434</code>, and request timeouts). Cloud API keys are retrieved from secure browser storage.</li>
+                        <li><strong>Context Assembly:</strong> <code>_get_terminal_context()</code> gathers a live snapshot of the operating environment: effective username, current working directory (<code>cwd</code>), file listings, recent command history, and any active error state.</li>
+                        <li><strong>Intent Routing:</strong> Evaluates incoming prompts to determine whether the inquiry is a general conversational question or a filesystem/system task requiring tool execution.</li>
+                        <li><strong>Plan Generation:</strong> In tool mode, the planner LLM generates a structured sequence of whitelisted shell commands. The synthesizer LLM subsequently consumes the command execution output to craft a comprehensive final response.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Provider abstraction allows users to run completely offline models via Ollama for maximum privacy or cloud models via Gemini for raw reasoning power without altering shell workflows.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="bone-autopilot">
+                <h3>14. Autopilot & The BoneAmanita Driver</h3>
+                <p><strong>Files:</strong> <code>resources/core/bone_driver.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Powers the autonomous kinetic mode of the AI (<code>samwise --autopilot</code> or <code>samwise -a</code>). The BoneAmanita driver acts as the subconscious persona of the operating system, enforcing physical and operational laws upon the language model.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>The Four Laws of Physics:</strong> The driver injects strict operational constraints into the system prompt:
+                            <ul>
+                                <li><em>Gravity:</em> The agent lives in <code>/home/&lt;user&gt;</code> and must operate using absolute paths.</li>
+                                <li><em>Language:</em> Scripts are either Shell (<code>.sh</code>, requiring <code>chmod 755</code> before <code>run</code>) or Python (<code>.py</code>, executed directly via <code>python</code> using standard library only).</li>
+                                <li><em>Ritual:</em> Modifying executable scripts requires explicit permissions.</li>
+                                <li><em>Memory:</em> Long-term agent memory resides in <code>~/.samwise/memory/</code> and vectorizes into <code>subconscious.json</code> during <code>samwise --sleep</code>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Execution Loop:</strong> In autopilot mode, the agent receives a task, generates a clean numbered list of actions, evaluates the plan's voltage, and executes the sequence step-by-step.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        A strictly constrained system prompt eliminates conversational fluff. The model outputs only parseable commands, dramatically improving reliability and execution speed.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="voltage-safety">
+                <h3>15. The Voltage Safety Framework</h3>
+                <p><strong>Files:</strong> <code>resources/core/bone_driver.py</code> (Decision D-016)</p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Quantifies the operational risk of any proposed AI plan through an objective mathematical score ("Voltage"). Plans with high or dangerous voltages trigger automatic circuit breakers, preventing unintended file loss or disruptive hardware actions.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>Voltage is computed purely from command operations, never from speculative argument text or model commentary:</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Operation / Command</th>
+                                <th>Voltage Score</th>
+                                <th>Risk Rationale</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>cd</code></td>
+                                <td><strong>0.0 V</strong></td>
+                                <td>Navigation only; zero filesystem mutation.</td>
+                            </tr>
+                            <tr>
+                                <td>Read commands (<code>ls</code>, <code>cat</code>, <code>grep</code>, <code>tree</code>, <code>pwd</code>, <code>head</code>, <code>whoami</code>)</td>
+                                <td><strong>0.1 V</strong></td>
+                                <td>Read-only inspection; non-destructive.</td>
+                            </tr>
+                            <tr>
+                                <td>Script / Execution (<code>python</code>, <code>run</code>, <code>chmod</code>)</td>
+                                <td><strong>2.0 V</strong></td>
+                                <td>Active computation and permission setting.</td>
+                            </tr>
+                            <tr>
+                                <td>Filesystem Mutation (<code>mkdir</code>, <code>touch</code>, <code>cp</code>, <code>mv</code>, <code>edit</code>, <code>forge</code>)</td>
+                                <td><strong>5.0 V</strong></td>
+                                <td>File creation, overwriting, or structural modification.</td>
+                            </tr>
+                            <tr>
+                                <td>Destructive / Rewind (<code>rm</code>, <code>rmdir</code>, <code>clearfs</code>, <code>story rewind</code>)</td>
+                                <td><strong>20.0 V</strong></td>
+                                <td>Irreversible file deletion or branch reversion.</td>
+                            </tr>
+                            <tr>
+                                <td>Physical Hardware (<code>gpio write</code>, <code>gpio monitor</code>)</td>
+                                <td><strong>5.0 V + Action</strong></td>
+                                <td>Hardware actuation plus nested command voltage.</td>
+                            </tr>
+                            <tr>
+                                <td>Swarm Delegation (<code>mesh-agent</code>, <code>swarm</code>)</td>
+                                <td><strong>1.0 V / 5.0 V</strong></td>
+                                <td>1.0 V for read queries; 5.0 V with <code>--autopilot</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>The total voltage determines the system's safety response:</p>
+                    <ul>
+                        <li><code>&lt; 1.0 V</code>: 🟢 <strong>LOW VOLTAGE (Safe)</strong> — Executes silently.</li>
+                        <li><code>1.0 – 9.9 V</code>: 🟡 <strong>MEDIUM VOLTAGE (Caution)</strong> — Executes with notification.</li>
+                        <li><code>10.0 – 19.9 V</code>: 🟠 <strong>HIGH VOLTAGE (Risk)</strong> — Requires automatic home directory snapshot.</li>
+                        <li><code>&ge; 20.0 V</code>: 🔴 <strong>CRITICAL VOLTAGE (Danger)</strong> — Safety brake engages! Execution halts unless overridden with explicit operator confirmation or the <code>--force</code> flag.</li>
+                    </ul>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Objective scoring prevents catastrophic failures (e.g. hallucinated <code>rm -rf /</code>). The model cannot bypass the circuit breaker by rephrasing its output; the operation itself dictates the score.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="reliability-mechanisms">
+                <h3>16. Reliability: Inner Validation Loop, Scar Tissue & Forge</h3>
+                <p><strong>Files:</strong> <code>resources/core/ai_manager.py</code>, <code>resources/core/commands/forge.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A triumvirate of reliability systems that turn a fallible language model into a dependable system engineer: automated error correction, memory of recent failures, and safe atomic file creation.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Inner Validation Retry Loop (Decision D-022):</strong> When <code>validate_plan()</code> detects an invalid command, syntax flaw, or illegal wildcard (e.g. <code>rm -r *</code>), <code>_request_valid_plan</code> intercepts the error before execution. It silently reprompts the model with the exact reason and the allowed command manifest, granting up to 3 self-correction attempts.</li>
+                        <li><strong>Scar Tissue Context Injection (P2-18):</strong> Runtime errors (e.g., trying to <code>cd</code> into a nonexistent directory) are stored in <code>_AI_LAST_ERROR</code>. This context is injected into the next prompt as a temporary warning so the model avoids repeating the mistake.</li>
+                        <li><strong>Atomic File Scaffolding (<code>forge</code>):</strong> Shell quoting is notoriously fragile when writing multi-line code via <code>echo "..." &gt; file</code>. The <code>forge</code> command allows the agent to scaffold files atomically with clean newline escapes (<code>\n</code>), supporting <code>--literal</code> modes to protect nested Python code.</li>
+                        <li><strong>Dry-Run Planning (<code>samwise --dry-run</code>):</strong> Predicts the execution path, computes voltage, tests validation, and displays the plan without running any code.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        LLMs frequently make minor syntax or quotation slips on their first attempt. Silent retries and scar tissue give the agent self-healing resilience without interrupting the human operator.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="story-versioning">
+                <h3>17. Story: Native VFS Snapshot Versioning</h3>
+                <p><strong>Files:</strong> <code>resources/core/story_manager.py</code>, <code>resources/core/commands/story.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A lightweight, content-addressed version control system embedded directly into the virtual filesystem. Enables time travel, atomic snapshots, and instantaneous rollback of directory trees.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Repository Structure:</strong> <code>story begin</code> creates a hidden <code>.story/</code> directory containing <code>snapshots/</code> (content-addressed blobs named by SHA-1 hash) and <code>log.json</code>.</li>
+                        <li><strong>Snapshot Creation:</strong> <code>story save "message"</code> traverses tracked files, writes new blobs, and records a commit object containing author, timestamp, commit message, and full file tree mapping.</li>
+                        <li><strong>Autopilot Safety Checkpoints:</strong> Before executing any mutating autopilot plan, FractalOS automatically saves a snapshot ("Home checkpoint saved").</li>
+                        <li><strong>Time Travel:</strong> <code>story rewind &lt;id&gt;</code> restores all files to the exact state captured in that snapshot.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Provides a fail-safe parachute for autonomous AI development. If an agent writes faulty code or corrupts a file, the operator or agent can rewind to the prior checkpoint with a single command.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK IV -->
+        <section id="book-4">
+            <h2>Book IV: The Distributed P2P Mesh & Swarms</h2>
+
+            <div class="triad-block" id="mesh-topology">
+                <h3>18. Mesh Topology: WebRTC, BroadcastChannel & Signaling</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/network_manager.js</code>, <code>signaling_server.cjs</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Connects independent FractalOS instances running across different browser tabs or separate physical computers into a decentralized peer-to-peer network without storing user data on a central server.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Dual-Tier Discovery:</strong>
+                            <ul>
+                                <li><em>Local Mesh:</em> Utilizes browser <code>BroadcastChannel</code> for zero-configuration instant discovery between tabs and windows on the same machine.</li>
+                                <li><em>Remote Mesh:</em> Connects to a lightweight WebSocket signaling server (<code>ws://localhost:8080</code>) solely to exchange SDP offers, answers, and ICE candidates.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Direct Data Channels:</strong> Once signaling completes, peers establish an encrypted peer-to-peer <code>RTCDataChannel</code>. All terminal data, files, and chat messages flow directly between client machines.</li>
+                        <li><strong>Node Identity:</strong> Each booting node assigns itself a deterministic ephemeral address: <code>oos-&lt;timestamp&gt;-&lt;random&gt;</code>.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Zero reliance on cloud databases. Communication is low-latency, bandwidth-efficient, and inherently private.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="node-presence">
+                <h3>19. Node Presence & Telemetry</h3>
+                <p><strong>Files:</strong> <code>resources/core/commands/peers.py</code>, <code>resources/core/commands/netstat.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Provides real-time visibility into discovered peers on the mesh network, connection health, round-trip latency, and shared capabilities.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>
+                        <code>peers</code> queries <code>NetworkManager</code> via the effect bridge, rendering an interactive table of active nodes. <code>netstat --mesh</code> outputs connection states (connected, connecting, disconnected) and transport channels (WebRTC vs BroadcastChannel).
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Operators have immediate diagnostic feedback when establishing inter-machine terminal clusters or diagnosing network latency.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="remote-attachment">
+                <h3>20. Remote Shell Attachment & Node Collaboration</h3>
+                <p><strong>Files:</strong> <code>resources/core/commands/attach.py</code>, <code>wall.py</code>, <code>talk.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Enables an operator on Node A to attach their terminal directly to the active shell session on Node B, broadcast messages across the network, or hold private conversations.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Session Mirroring:</strong> Running <code>attach &lt;node-id&gt;</code> intercepts local terminal input in <code>boot.js</code> and transmits commands across the WebRTC data channel. The remote host executes the command in its kernel and streams back output and ANSI codes in real time.</li>
+                        <li><strong>Detachment:</strong> Typing <code>detach</code> or <code>exit</code> cleanly releases the remote channel, returning the operator to their local shell.</li>
+                        <li><strong>Network Broadcast:</strong> <code>wall &lt;message&gt;</code> broadcasts a high-priority system alert to all connected nodes on the mesh.</li>
+                        <li><strong>Direct Messaging:</strong> <code>talk &lt;node-id&gt; &lt;msg&gt;</code> sends point-to-point text messages between terminals.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Delivers collaborative pair-programming and remote administration directly inside the browser terminal without SSH keys or external relay proxies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="mesh-file-transfer">
+                <h3>21. Zero-Cloud P2P File Transfer</h3>
+                <p><strong>Files:</strong> <code>resources/core/commands/mesh_cp.py</code>, <code>scp.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Enables secure, peer-to-peer file transfer between nodes across the mesh network without intermediary cloud storage or servers.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Push Transfer:</strong> <code>mesh-cp local_file.txt oos-node-2:/home/Guest/dest.txt</code> reads the file node from the local VFS, chunks the content into binary or base64 envelopes, and streams it over the active <code>RTCDataChannel</code>.</li>
+                        <li><strong>Pull Transfer:</strong> Specifying a remote source (<code>mesh-cp oos-node-2:/var/log/audit.log ./audit.log</code>) sends a file retrieval request to the peer node. The peer's kernel verifies read permissions and streams the file payload back.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Makes distributed workflows frictionless. Developers can transfer code, configs, or data sets between devices instantly over local networks.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="swarm-delegation">
+                <h3>22. Swarm Task Delegation & Inter-Node Voltage Policies</h3>
+                <p><strong>Files:</strong> <code>resources/core/swarm_manager.py</code>, <code>resources/core/commands/swarm.py</code>, <code>mesh_agent.py</code>, <code>/etc/swarm.conf</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Allows a local Samwise agent to delegate sub-tasks, queries, or hardware automation instructions to peer agents across the mesh network, synthesizing the multi-node outcomes into a unified answer under strict security policies.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Task Dispatch:</strong> <code>mesh-agent &lt;peer-id&gt; "inspect sensor pin 17" --autopilot</code> packages the task prompt and sends it to the target node's swarm channel.</li>
+                        <li><strong>Policy Interlocks:</strong> The remote node's <code>SwarmManager</code> inspects <code>/etc/swarm.conf</code>:
+                            <pre><code>{
+  "max_remote_voltage": 10.0,
+  "allow_remote_autopilot": true,
+  "allow_remote_gpio": false,
+  "allow_remote_force": false,
+  "audit_remote_tasks": true
+}</code></pre>
+                            If the incoming task exceeds <code>max_remote_voltage</code> (default 10.0 V) or requests unauthorized GPIO actuation without <code>allow_remote_gpio: true</code>, the request is immediately rejected.
+                        </li>
+                        <li><strong>Provenance Auditing:</strong> Every dispatched and received swarm task is logged to <code>/var/log/audit.log</code> with the origin node ID and timestamp.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Prevents rogue nodes or compromised agents from driving arbitrary hardware or wiping files on peer machines. Swarm computing operates within safe, verifiable boundaries.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK V -->
+        <section id="book-5">
+            <h2>Book V: Terminal Multiplexing, Window Management & Hardware</h2>
+
+            <div class="triad-block" id="terminal-multiplexer">
+                <h3>23. Terminal Multiplexing & Split Panes</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/multiplexer_manager.js</code>, <code>resources/core/commands/split_h.py</code>, <code>split_v.py</code>, <code>panes.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Transforms the single terminal view into a tiled multiplexer supporting arbitrary horizontal and vertical splits, independent working directories, isolated scrollback buffers, and zoom mode.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Pane State:</strong> <code>MultiplexerManager</code> tracks an array of pane records. Each pane maintains its own working directory (<code>cwd</code>), output DOM container, prompt line, and index.</li>
+                        <li><strong>Splitting:</strong> <code>split-h</code> (horizontal split) and <code>split-v</code> (vertical split) subdivide the active container using responsive Flexbox rules, instantly creating a new child terminal.</li>
+                        <li><strong>Navigation:</strong> Operators switch active panes using <code>focus &lt;id&gt;</code>, the <code>panes</code> selector, or keyboard shortcuts (<code>Ctrl+B</code> followed by arrow keys). When a pane activates, <code>FileSystemManager</code> instantly synchronizes its working directory to the kernel.</li>
+                        <li><strong>Zoom:</strong> <code>split -z</code> toggles zoom mode, temporarily expanding the active pane to 100% viewport dimensions without destroying neighboring splits.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Provides the multitasking power of tmux or screen within a browser environment, allowing operators to monitor logs in one pane while editing code or running tests in another.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="window-manager">
+                <h3>24. The TUI Window Manager</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/window_manager.js</code>, <code>resources/core/commands/wm.py</code>, <code>window.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Evolves full-screen overlay applications (Editor, Paint, Adventure, Process Viewer) into a desktop-grade windowing system supporting floating, tiled, docked, minimized, and restored states.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Window Records:</strong> <code>WindowManager</code> manages application viewports in a central registry. Windows feature titlebars, minimize/maximize buttons, and close controls.</li>
+                        <li><strong>Interactive Manipulation:</strong> Windows can be dragged across the screen or resized from their edges using mouse events, maintaining z-index focus layering.</li>
+                        <li><strong>Dock Bar:</strong> Minimized windows collapse cleanly into the bottom dock bar (<code>#window-dock</code>) and can be restored with a click.</li>
+                        <li><strong>Command Control:</strong> Operators can manipulate windows programmatically via the <code>wm</code> command (<code>wm list</code>, <code>wm tile</code>, <code>wm float &lt;id&gt;</code>, <code>wm dock &lt;id&gt;</code>).</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Prevents graphical applications from hijacking the entire terminal. Users can keep documentation open in a floating window beside their active coding terminal.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="host-bridges">
+                <h3>25. Host Bridges: System Clipboard & Drag-and-Drop</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/clipboard_manager.js</code>, <code>resources/scripts/status_bar_manager.js</code>, <code>clip.py</code>, <code>pbcopy.py</code>, <code>pbpaste.py</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Bridges the virtual OS with the host operating system, providing seamless system clipboard synchronization, drag-and-drop file ingestion, and a persistent top status bar.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Clipboard Sync:</strong> <code>pbcopy</code> and <code>clip --copy</code> capture standard input and copy it directly to the host machine's clipboard via <code>navigator.clipboard.writeText()</code>. <code>pbpaste</code> retrieves host text into the virtual shell.</li>
+                        <li><strong>Drag-and-Drop File Import:</strong> Dragging files from the host desktop into the browser terminal triggers an automatic drop handler in <code>terminal_ui.js</code>, reading file contents and writing them directly into the current working directory in the VFS.</li>
+                        <li><strong>Persistent Status Bar:</strong> <code>StatusBarManager</code> renders a persistent top panel displaying active background PIDs, mesh peer counts, audio mute status, and agent telemetry.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Eliminates the friction of sandboxed browser environments, allowing seamless text and file flow between your host workstation and FractalOS.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="gpio-automation">
+                <h3>26. Physical IoT & GPIO Sensor Automation</h3>
+                <p><strong>Files:</strong> <code>resources/core/commands/gpio.py</code>, <code>resources/scripts/host_api.js</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Enables direct interaction with physical hardware pins, sensors, buttons, and actuators when running on Raspberry Pi or ARM64 boards in Bare-Metal Appliance Mode.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Hardware Control:</strong>
+                            <ul>
+                                <li><code>gpio mode &lt;pin&gt; &lt;in|out&gt;</code>: Configures GPIO pin direction.</li>
+                                <li><code>gpio write &lt;pin&gt; &lt;0|1&gt;</code>: Sets pin output voltage high or low.</li>
+                                <li><code>gpio read &lt;pin&gt;</code>: Queries current logic state (returns 0 or 1).</li>
+                            </ul>
+                        </li>
+                        <li><strong>Sensor Monitor Daemon:</strong> <code>gpio monitor &lt;pin&gt; --trigger &lt;change|rising|falling&gt; --action "&lt;cmd&gt;"</code> launches a background interrupt monitor that executes arbitrary shell commands when physical sensors change state.</li>
+                        <li><strong>Mesh Broadcast:</strong> Adding <code>--mesh</code> broadcasts the hardware event across the peer-to-peer network, allowing a button press on one board to trigger actions on another.</li>
+                        <li><strong>Browser Simulation Fallback:</strong> When running in standard browser mode without physical hardware, <code>gpio simulate &lt;pin&gt; &lt;val&gt;</code> allows developers to test IoT pipelines virtually.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Unlocks physical computing directly from the terminal shell. Ambient AI agents can inspect environmental conditions and actuate real-world devices.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK VI -->
+        <section id="book-6">
+            <h2>Book VI: Package Ecosystem & Sandboxing</h2>
+
+            <div class="triad-block" id="pkg-architecture">
+                <h3>27. Package Architecture (.fpkg)</h3>
+                <p><strong>Files:</strong> <code>resources/core/commands/pkg.py</code>, <code>/etc/pkg_manifest.json</code>, <code>/var/pkg/repo/</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        The native package manager for FractalOS (<code>pkg</code>). Provides end-to-end tooling to scaffold, validate, build, install, audit, and distribute modular software packages.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Package Anatomy:</strong> Packages are distributed as <code>.fpkg</code> archives containing a JSON manifest, documentation (<code>help</code>, <code>man</code>), dependency lists, and the executable Python command module.</li>
+                        <li><strong>Scaffolding & Validation:</strong>
+                            <ul>
+                                <li><code>pkg init &lt;name&gt;</code>: Generates a standardized package template.</li>
+                                <li><code>pkg validate &lt;name&gt;</code>: Verifies required functions (<code>run</code>, <code>man</code>, <code>help</code>, <code>define_flags</code>) and metadata structure.</li>
+                                <li><code>pkg pack &lt;name&gt;</code>: Compiles the source into a distributable <code>.fpkg</code> bundle.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Installation & Manifest:</strong> <code>pkg install &lt;package&gt;</code> extracts the command into <code>/etc/packages/commands/&lt;name&gt;.py</code> and records version, dependencies, and SHA256 checksums in <code>/etc/pkg_manifest.json</code>.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Allows the operating system to grow organically through third-party contributions without touching the immutable kernel codebase.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="pkg-security">
+                <h3>28. Cryptographic Audits & Permission Sandboxing</h3>
+                <p><strong>Files:</strong> <code>resources/core/commands/pkg.py</code>, <code>resources/core/executor.py</code> (Decision D-044)</p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Protects the operating system from malicious or corrupted third-party software through mandatory SHA256 integrity verification, permission scoping, and static AST security audits.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Runtime Integrity Verification (<code>pkg verify</code>):</strong> Before loading a user package into memory, <code>executor.py</code> computes the SHA256 hash of the on-disk file and compares it against the record in <code>/etc/pkg_manifest.json</code>. If the file has been altered or corrupted, execution is blocked with a <code>SecurityError</code>.</li>
+                        <li><strong>Permission Scopes:</strong> Packages declare required privileges (<code>root</code>, <code>hardware</code>, <code>fs:system</code>). Elevated packages require explicit operator approval at installation time via <code>--trust</code> (<code>-t</code>) or <code>--force</code>.</li>
+                        <li><strong>Static Code Audit (<code>pkg audit</code>):</strong> Uses Python's standard <code>ast</code> module to inspect package source code without executing it, detecting dangerous patterns such as:
+                            <ul>
+                                <li>Dynamic code execution (<code>eval</code>, <code>exec</code>, <code>__import__</code>).</li>
+                                <li>Host process execution attempts (<code>os.system</code>, <code>subprocess</code>).</li>
+                                <li>Access to sensitive system paths (<code>/etc/sudoers</code>, <code>/var/log/audit.log</code>).</li>
+                            </ul>
+                            Assigns a formal threat score: <code>SAFE</code>, <code>LOW RISK</code>, <code>MODERATE RISK</code>, or <code>HIGH RISK</code>.
+                        </li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Browser-based operating systems face unique supply-chain risks. Static analysis and cryptographic hash pinning guarantee that community packages remain trustworthy.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="pkg-registry">
+                <h3>29. Registry, Community Classics & Wheel Loading</h3>
+                <p><strong>Files:</strong> <code>resources/core/standard_packages.py</code>, <code>resources/bridge.js</code></p>
+                
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Provides an out-of-the-box standard library of classic Unix utilities, dynamic WebAssembly wheel loading without rebooting, and peer-to-peer package broadcasting.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Standard Library Classics:</strong> Pre-packaged community favorites including <code>fortune</code>, <code>cowsay</code>, <code>cal</code>, and <code>banner</code> can be installed instantly with <code>pkg install cowsay</code>. They fully support ANSI styling and piped composition (e.g. <code>fortune | cowsay</code>).</li>
+                        <li><strong>Dynamic Wheel Loading:</strong> When a package requires external Python libraries, <code>pkg_manifest.json</code> lists required WebAssembly wheels. Pyodide loads these dynamically at startup via <code>loadPackage()</code>.</li>
+                        <li><strong>Mesh Package Publishing:</strong> <code>pkg publish &lt;pkg&gt; --mesh</code> broadcasts new package definitions across connected nodes, allowing peers to discover and install community packages directly over WebRTC.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Creates a decentralized software distribution network that thrives completely independent of centralized cloud package registries.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK VII -->
+        <section id="book-7">
+            <h2>Book VII: The Command Codex</h2>
+
+            <div class="triad-block" id="command-architecture">
+                <h3>30. Anatomy of a FractalOS Command</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Every command in FractalOS is a modular Python file residing in <code>resources/core/commands/&lt;name&gt;.py</code>. It adheres to a strict, standardized interface audited automatically by <code>tests/structure.js</code>.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>A compliant command module implements:</p>
+                    <pre><code>def run(args: list, flags: dict, user_context: dict, stdin: str = None, **kwargs) -> dict:
+    """Core execution routine (can be synchronous or async coroutine)."""
+    # 1. Validation & logic
+    # 2. Returns output string: {"success": True, "output": "..."}
+    #    OR declarative effect: {"effect": "play_sound", "notes": [...]}
+
+def man(args=None, flags=None, user_context=None, **kwargs) -> str:
+    """Returns standard formatted manual page text (NAME, SYNOPSIS, DESCRIPTION, OPTIONS)."""
+
+def help(args=None, flags=None, user_context=None, **kwargs) -> str:
+    """Returns concise usage and synopsis text."""
+
+def define_flags() -> dict:
+    """(Optional) Declares flag parsing rules, aliases, and value requirements."""</code></pre>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Consistent function signatures allow the shell executor to dynamically load modules via Python's standard <code>importlib</code>, inject execution context seamlessly, and route return values without custom wrappers.
+                    </p>
+                </div>
+            </div>
+
+            <div class="callout success">
+                <div class="callout-title">📖 Complete 151-Command Reference Manual</div>
+                <p>
+                    All 151 commands are documented in exhaustive detail in our companion manual, featuring full <em>What It Does</em>, <em>How It Works</em>, and <em>Why It Works</em> breakdowns:
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    <a href="commands.html" target="_blank" style="display: inline-block; padding: 0.5rem 1rem; background-color: var(--accent-emerald); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">Open The Complete 151-Command Codex &rarr;</a>
+                </p>
+            </div>
+
+            <div class="triad-block" id="command-matrix">
+                <h3>31. Master Categorized Command Matrix</h3>
+                <p>Quick directory of all 151 native commands organized across 18 functional categories. Click any command to view its full reference in the Codex:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 32%;">Category</th>
+                            <th>Commands</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+        <tr>
+            <td style="white-space: nowrap;"><strong>File & Directory Management</strong> (17)</td>
+            <td><a href="commands.html#cmd-ls" style="color: var(--accent-cyan); text-decoration: none;"><code>ls</code></a>, <a href="commands.html#cmd-cd" style="color: var(--accent-cyan); text-decoration: none;"><code>cd</code></a>, <a href="commands.html#cmd-mkdir" style="color: var(--accent-cyan); text-decoration: none;"><code>mkdir</code></a>, <a href="commands.html#cmd-rmdir" style="color: var(--accent-cyan); text-decoration: none;"><code>rmdir</code></a>, <a href="commands.html#cmd-touch" style="color: var(--accent-cyan); text-decoration: none;"><code>touch</code></a>, <a href="commands.html#cmd-cp" style="color: var(--accent-cyan); text-decoration: none;"><code>cp</code></a>, <a href="commands.html#cmd-mv" style="color: var(--accent-cyan); text-decoration: none;"><code>mv</code></a>, <a href="commands.html#cmd-rename" style="color: var(--accent-cyan); text-decoration: none;"><code>rename</code></a>, <a href="commands.html#cmd-rm" style="color: var(--accent-cyan); text-decoration: none;"><code>rm</code></a>, <a href="commands.html#cmd-find" style="color: var(--accent-cyan); text-decoration: none;"><code>find</code></a>, <a href="commands.html#cmd-tree" style="color: var(--accent-cyan); text-decoration: none;"><code>tree</code></a>, <a href="commands.html#cmd-du" style="color: var(--accent-cyan); text-decoration: none;"><code>du</code></a>, <a href="commands.html#cmd-df" style="color: var(--accent-cyan); text-decoration: none;"><code>df</code></a>, <a href="commands.html#cmd-ln" style="color: var(--accent-cyan); text-decoration: none;"><code>ln</code></a>, <a href="commands.html#cmd-mount" style="color: var(--accent-cyan); text-decoration: none;"><code>mount</code></a>, <a href="commands.html#cmd-clearfs" style="color: var(--accent-cyan); text-decoration: none;"><code>clearfs</code></a>, <a href="commands.html#cmd-binder" style="color: var(--accent-cyan); text-decoration: none;"><code>binder</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Text Processing & Pipeline Filters</strong> (20)</td>
+            <td><a href="commands.html#cmd-cat" style="color: var(--accent-cyan); text-decoration: none;"><code>cat</code></a>, <a href="commands.html#cmd-head" style="color: var(--accent-cyan); text-decoration: none;"><code>head</code></a>, <a href="commands.html#cmd-tail" style="color: var(--accent-cyan); text-decoration: none;"><code>tail</code></a>, <a href="commands.html#cmd-grep" style="color: var(--accent-cyan); text-decoration: none;"><code>grep</code></a>, <a href="commands.html#cmd-sed" style="color: var(--accent-cyan); text-decoration: none;"><code>sed</code></a>, <a href="commands.html#cmd-awk" style="color: var(--accent-cyan); text-decoration: none;"><code>awk</code></a>, <a href="commands.html#cmd-cut" style="color: var(--accent-cyan); text-decoration: none;"><code>cut</code></a>, <a href="commands.html#cmd-tr" style="color: var(--accent-cyan); text-decoration: none;"><code>tr</code></a>, <a href="commands.html#cmd-sort" style="color: var(--accent-cyan); text-decoration: none;"><code>sort</code></a>, <a href="commands.html#cmd-uniq" style="color: var(--accent-cyan); text-decoration: none;"><code>uniq</code></a>, <a href="commands.html#cmd-wc" style="color: var(--accent-cyan); text-decoration: none;"><code>wc</code></a>, <a href="commands.html#cmd-nl" style="color: var(--accent-cyan); text-decoration: none;"><code>nl</code></a>, <a href="commands.html#cmd-shuf" style="color: var(--accent-cyan); text-decoration: none;"><code>shuf</code></a>, <a href="commands.html#cmd-csplit" style="color: var(--accent-cyan); text-decoration: none;"><code>csplit</code></a>, <a href="commands.html#cmd-xargs" style="color: var(--accent-cyan); text-decoration: none;"><code>xargs</code></a>, <a href="commands.html#cmd-diff" style="color: var(--accent-cyan); text-decoration: none;"><code>diff</code></a>, <a href="commands.html#cmd-patch" style="color: var(--accent-cyan); text-decoration: none;"><code>patch</code></a>, <a href="commands.html#cmd-comm" style="color: var(--accent-cyan); text-decoration: none;"><code>comm</code></a>, <a href="commands.html#cmd-more" style="color: var(--accent-cyan); text-decoration: none;"><code>more</code></a>, <a href="commands.html#cmd-less" style="color: var(--accent-cyan); text-decoration: none;"><code>less</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Living Shell & Kinetic AI</strong> (7)</td>
+            <td><a href="commands.html#cmd-samwise" style="color: var(--accent-cyan); text-decoration: none;"><code>samwise</code></a>, <a href="commands.html#cmd-forge" style="color: var(--accent-cyan); text-decoration: none;"><code>forge</code></a>, <a href="commands.html#cmd-planner" style="color: var(--accent-cyan); text-decoration: none;"><code>planner</code></a>, <a href="commands.html#cmd-storyboard" style="color: var(--accent-cyan); text-decoration: none;"><code>storyboard</code></a>, <a href="commands.html#cmd-remix" style="color: var(--accent-cyan); text-decoration: none;"><code>remix</code></a>, <a href="commands.html#cmd-chidi" style="color: var(--accent-cyan); text-decoration: none;"><code>chidi</code></a>, <a href="commands.html#cmd-character" style="color: var(--accent-cyan); text-decoration: none;"><code>character</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Distributed Mesh & Networking</strong> (11)</td>
+            <td><a href="commands.html#cmd-peers" style="color: var(--accent-cyan); text-decoration: none;"><code>peers</code></a>, <a href="commands.html#cmd-attach" style="color: var(--accent-cyan); text-decoration: none;"><code>attach</code></a>, <a href="commands.html#cmd-detach" style="color: var(--accent-cyan); text-decoration: none;"><code>detach</code></a>, <a href="commands.html#cmd-wall" style="color: var(--accent-cyan); text-decoration: none;"><code>wall</code></a>, <a href="commands.html#cmd-talk" style="color: var(--accent-cyan); text-decoration: none;"><code>talk</code></a>, <a href="commands.html#cmd-mesh_cp" style="color: var(--accent-cyan); text-decoration: none;"><code>mesh_cp</code></a>, <a href="commands.html#cmd-mesh_agent" style="color: var(--accent-cyan); text-decoration: none;"><code>mesh_agent</code></a>, <a href="commands.html#cmd-swarm" style="color: var(--accent-cyan); text-decoration: none;"><code>swarm</code></a>, <a href="commands.html#cmd-scp" style="color: var(--accent-cyan); text-decoration: none;"><code>scp</code></a>, <a href="commands.html#cmd-nc" style="color: var(--accent-cyan); text-decoration: none;"><code>nc</code></a>, <a href="commands.html#cmd-netstat" style="color: var(--accent-cyan); text-decoration: none;"><code>netstat</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Terminal Multiplexing & Window Control</strong> (9)</td>
+            <td><a href="commands.html#cmd-split_h" style="color: var(--accent-cyan); text-decoration: none;"><code>split_h</code></a>, <a href="commands.html#cmd-split_v" style="color: var(--accent-cyan); text-decoration: none;"><code>split_v</code></a>, <a href="commands.html#cmd-split" style="color: var(--accent-cyan); text-decoration: none;"><code>split</code></a>, <a href="commands.html#cmd-panes" style="color: var(--accent-cyan); text-decoration: none;"><code>panes</code></a>, <a href="commands.html#cmd-close_pane" style="color: var(--accent-cyan); text-decoration: none;"><code>close_pane</code></a>, <a href="commands.html#cmd-focus" style="color: var(--accent-cyan); text-decoration: none;"><code>focus</code></a>, <a href="commands.html#cmd-wm" style="color: var(--accent-cyan); text-decoration: none;"><code>wm</code></a>, <a href="commands.html#cmd-window" style="color: var(--accent-cyan); text-decoration: none;"><code>window</code></a>, <a href="commands.html#cmd-status" style="color: var(--accent-cyan); text-decoration: none;"><code>status</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>System Identity, Security & Access</strong> (16)</td>
+            <td><a href="commands.html#cmd-login" style="color: var(--accent-cyan); text-decoration: none;"><code>login</code></a>, <a href="commands.html#cmd-logout" style="color: var(--accent-cyan); text-decoration: none;"><code>logout</code></a>, <a href="commands.html#cmd-su" style="color: var(--accent-cyan); text-decoration: none;"><code>su</code></a>, <a href="commands.html#cmd-sudo" style="color: var(--accent-cyan); text-decoration: none;"><code>sudo</code></a>, <a href="commands.html#cmd-visudo" style="color: var(--accent-cyan); text-decoration: none;"><code>visudo</code></a>, <a href="commands.html#cmd-whoami" style="color: var(--accent-cyan); text-decoration: none;"><code>whoami</code></a>, <a href="commands.html#cmd-who" style="color: var(--accent-cyan); text-decoration: none;"><code>who</code></a>, <a href="commands.html#cmd-useradd" style="color: var(--accent-cyan); text-decoration: none;"><code>useradd</code></a>, <a href="commands.html#cmd-removeuser" style="color: var(--accent-cyan); text-decoration: none;"><code>removeuser</code></a>, <a href="commands.html#cmd-passwd" style="color: var(--accent-cyan); text-decoration: none;"><code>passwd</code></a>, <a href="commands.html#cmd-usermod" style="color: var(--accent-cyan); text-decoration: none;"><code>usermod</code></a>, <a href="commands.html#cmd-groupadd" style="color: var(--accent-cyan); text-decoration: none;"><code>groupadd</code></a>, <a href="commands.html#cmd-groupdel" style="color: var(--accent-cyan); text-decoration: none;"><code>groupdel</code></a>, <a href="commands.html#cmd-groups" style="color: var(--accent-cyan); text-decoration: none;"><code>groups</code></a>, <a href="commands.html#cmd-listusers" style="color: var(--accent-cyan); text-decoration: none;"><code>listusers</code></a>, <a href="commands.html#cmd-committee" style="color: var(--accent-cyan); text-decoration: none;"><code>committee</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>File Permissions & Metadata</strong> (3)</td>
+            <td><a href="commands.html#cmd-chmod" style="color: var(--accent-cyan); text-decoration: none;"><code>chmod</code></a>, <a href="commands.html#cmd-chown" style="color: var(--accent-cyan); text-decoration: none;"><code>chown</code></a>, <a href="commands.html#cmd-chgrp" style="color: var(--accent-cyan); text-decoration: none;"><code>chgrp</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Shell Execution & Environment</strong> (13)</td>
+            <td><a href="commands.html#cmd-run" style="color: var(--accent-cyan); text-decoration: none;"><code>run</code></a>, <a href="commands.html#cmd-check_fail" style="color: var(--accent-cyan); text-decoration: none;"><code>check_fail</code></a>, <a href="commands.html#cmd-echo" style="color: var(--accent-cyan); text-decoration: none;"><code>echo</code></a>, <a href="commands.html#cmd-printf" style="color: var(--accent-cyan); text-decoration: none;"><code>printf</code></a>, <a href="commands.html#cmd-true" style="color: var(--accent-cyan); text-decoration: none;"><code>true</code></a>, <a href="commands.html#cmd-delay" style="color: var(--accent-cyan); text-decoration: none;"><code>delay</code></a>, <a href="commands.html#cmd-agenda" style="color: var(--accent-cyan); text-decoration: none;"><code>agenda</code></a>, <a href="commands.html#cmd-alias" style="color: var(--accent-cyan); text-decoration: none;"><code>alias</code></a>, <a href="commands.html#cmd-unalias" style="color: var(--accent-cyan); text-decoration: none;"><code>unalias</code></a>, <a href="commands.html#cmd-history" style="color: var(--accent-cyan); text-decoration: none;"><code>history</code></a>, <a href="commands.html#cmd-set" style="color: var(--accent-cyan); text-decoration: none;"><code>set</code></a>, <a href="commands.html#cmd-unset" style="color: var(--accent-cyan); text-decoration: none;"><code>unset</code></a>, <a href="commands.html#cmd-clear" style="color: var(--accent-cyan); text-decoration: none;"><code>clear</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Process Management & Job Control</strong> (8)</td>
+            <td><a href="commands.html#cmd-ps" style="color: var(--accent-cyan); text-decoration: none;"><code>ps</code></a>, <a href="commands.html#cmd-top" style="color: var(--accent-cyan); text-decoration: none;"><code>top</code></a>, <a href="commands.html#cmd-kill" style="color: var(--accent-cyan); text-decoration: none;"><code>kill</code></a>, <a href="commands.html#cmd-bg" style="color: var(--accent-cyan); text-decoration: none;"><code>bg</code></a>, <a href="commands.html#cmd-fg" style="color: var(--accent-cyan); text-decoration: none;"><code>fg</code></a>, <a href="commands.html#cmd-jobs" style="color: var(--accent-cyan); text-decoration: none;"><code>jobs</code></a>, <a href="commands.html#cmd-uptime" style="color: var(--accent-cyan); text-decoration: none;"><code>uptime</code></a>, <a href="commands.html#cmd-date" style="color: var(--accent-cyan); text-decoration: none;"><code>date</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Data Integrity, Cryptography & Compression</strong> (7)</td>
+            <td><a href="commands.html#cmd-base64" style="color: var(--accent-cyan); text-decoration: none;"><code>base64</code></a>, <a href="commands.html#cmd-cksum" style="color: var(--accent-cyan); text-decoration: none;"><code>cksum</code></a>, <a href="commands.html#cmd-ocrypt" style="color: var(--accent-cyan); text-decoration: none;"><code>ocrypt</code></a>, <a href="commands.html#cmd-xor" style="color: var(--accent-cyan); text-decoration: none;"><code>xor</code></a>, <a href="commands.html#cmd-zip" style="color: var(--accent-cyan); text-decoration: none;"><code>zip</code></a>, <a href="commands.html#cmd-unzip" style="color: var(--accent-cyan); text-decoration: none;"><code>unzip</code></a>, <a href="commands.html#cmd-fsck" style="color: var(--accent-cyan); text-decoration: none;"><code>fsck</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Math & Calculation</strong> (2)</td>
+            <td><a href="commands.html#cmd-bc" style="color: var(--accent-cyan); text-decoration: none;"><code>bc</code></a>, <a href="commands.html#cmd-expr" style="color: var(--accent-cyan); text-decoration: none;"><code>expr</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Versioning & System State</strong> (6)</td>
+            <td><a href="commands.html#cmd-story" style="color: var(--accent-cyan); text-decoration: none;"><code>story</code></a>, <a href="commands.html#cmd-sync" style="color: var(--accent-cyan); text-decoration: none;"><code>sync</code></a>, <a href="commands.html#cmd-backup" style="color: var(--accent-cyan); text-decoration: none;"><code>backup</code></a>, <a href="commands.html#cmd-restore" style="color: var(--accent-cyan); text-decoration: none;"><code>restore</code></a>, <a href="commands.html#cmd-reset" style="color: var(--accent-cyan); text-decoration: none;"><code>reset</code></a>, <a href="commands.html#cmd-reboot" style="color: var(--accent-cyan); text-decoration: none;"><code>reboot</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>System Communication & Ambiance</strong> (10)</td>
+            <td><a href="commands.html#cmd-bulletin" style="color: var(--accent-cyan); text-decoration: none;"><code>bulletin</code></a>, <a href="commands.html#cmd-post_message" style="color: var(--accent-cyan); text-decoration: none;"><code>post_message</code></a>, <a href="commands.html#cmd-read_messages" style="color: var(--accent-cyan); text-decoration: none;"><code>read_messages</code></a>, <a href="commands.html#cmd-notify" style="color: var(--accent-cyan); text-decoration: none;"><code>notify</code></a>, <a href="commands.html#cmd-clip" style="color: var(--accent-cyan); text-decoration: none;"><code>clip</code></a>, <a href="commands.html#cmd-pbcopy" style="color: var(--accent-cyan); text-decoration: none;"><code>pbcopy</code></a>, <a href="commands.html#cmd-pbpaste" style="color: var(--accent-cyan); text-decoration: none;"><code>pbpaste</code></a>, <a href="commands.html#cmd-theme" style="color: var(--accent-cyan); text-decoration: none;"><code>theme</code></a>, <a href="commands.html#cmd-cinematic" style="color: var(--accent-cyan); text-decoration: none;"><code>cinematic</code></a>, <a href="commands.html#cmd-ritual" style="color: var(--accent-cyan); text-decoration: none;"><code>ritual</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Audio & Screen Capture</strong> (3)</td>
+            <td><a href="commands.html#cmd-play" style="color: var(--accent-cyan); text-decoration: none;"><code>play</code></a>, <a href="commands.html#cmd-beep" style="color: var(--accent-cyan); text-decoration: none;"><code>beep</code></a>, <a href="commands.html#cmd-printscreen" style="color: var(--accent-cyan); text-decoration: none;"><code>printscreen</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Host I/O & File Transfer</strong> (2)</td>
+            <td><a href="commands.html#cmd-upload" style="color: var(--accent-cyan); text-decoration: none;"><code>upload</code></a>, <a href="commands.html#cmd-export" style="color: var(--accent-cyan); text-decoration: none;"><code>export</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>Applications, Runtimes & Hardware</strong> (8)</td>
+            <td><a href="commands.html#cmd-edit" style="color: var(--accent-cyan); text-decoration: none;"><code>edit</code></a>, <a href="commands.html#cmd-paint" style="color: var(--accent-cyan); text-decoration: none;"><code>paint</code></a>, <a href="commands.html#cmd-adventure" style="color: var(--accent-cyan); text-decoration: none;"><code>adventure</code></a>, <a href="commands.html#cmd-basic" style="color: var(--accent-cyan); text-decoration: none;"><code>basic</code></a>, <a href="commands.html#cmd-log" style="color: var(--accent-cyan); text-decoration: none;"><code>log</code></a>, <a href="commands.html#cmd-python" style="color: var(--accent-cyan); text-decoration: none;"><code>python</code></a>, <a href="commands.html#cmd-pkg" style="color: var(--accent-cyan); text-decoration: none;"><code>pkg</code></a>, <a href="commands.html#cmd-gpio" style="color: var(--accent-cyan); text-decoration: none;"><code>gpio</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>TUI Games & Entertainment</strong> (6)</td>
+            <td><a href="commands.html#cmd-c4" style="color: var(--accent-cyan); text-decoration: none;"><code>c4</code></a>, <a href="commands.html#cmd-ttt" style="color: var(--accent-cyan); text-decoration: none;"><code>ttt</code></a>, <a href="commands.html#cmd-netgame" style="color: var(--accent-cyan); text-decoration: none;"><code>netgame</code></a>, <a href="commands.html#cmd-roll" style="color: var(--accent-cyan); text-decoration: none;"><code>roll</code></a>, <a href="commands.html#cmd-score" style="color: var(--accent-cyan); text-decoration: none;"><code>score</code></a>, <a href="commands.html#cmd-cast" style="color: var(--accent-cyan); text-decoration: none;"><code>cast</code></a></td>
+        </tr>
+    
+        <tr>
+            <td style="white-space: nowrap;"><strong>System Discovery & Navigation</strong> (3)</td>
+            <td><a href="commands.html#cmd-help" style="color: var(--accent-cyan); text-decoration: none;"><code>help</code></a>, <a href="commands.html#cmd-man" style="color: var(--accent-cyan); text-decoration: none;"><code>man</code></a>, <a href="commands.html#cmd-pwd" style="color: var(--accent-cyan); text-decoration: none;"><code>pwd</code></a></td>
+        </tr>
+    
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK VIII -->
+        <section id="book-8">
+            <h2>Book VIII: Graphical Application Suites</h2>
+            <p>
+                Beyond the terminal prompt, FractalOS provides a complete suite of graphical and text-mode applications. These are not third-party web apps embedded in iframes; they are deeply integrated system programs that extend the standard application base, interact with the kernel via system calls, and can be arranged into floating or docked viewports via the TUI Window Manager.
+            </p>
+
+            <div class="triad-block" id="app-lifecycle">
+                <h3>32. Application Lifecycle Architecture</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/app.js</code>, <code>apps.css</code>, <code>ui_components.js</code>, <code>window_manager.js</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Establishes the common contract and lifecycle for all graphical applications in FractalOS, guaranteeing consistent window geometry, focus handling, keyboard event routing, and teardown cleanup.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>The <code>App</code> Base Class:</strong> Every application extends the abstract <code>App</code> class in <code>app.js</code>. Subclasses must implement <code>enter(container, options)</code>, <code>exit()</code>, and <code>handleKeyDown(event)</code>.</li>
+                        <li><strong>Standard Chrome Factory:</strong> <code>UIComponents.createAppWindow()</code> constructs standard window chrome (header, title, minimize/maximize controls, main content viewport, and footer status bar) styled via <code>apps.css</code>.</li>
+                        <li><strong>Window Manager Coordination:</strong> The Window Manager (<code>WindowManager</code>) tracks active instances, handling mouse dragging, edge resizing, dock bar minimization, and z-index elevation.</li>
+                        <li><strong>Graceful Exit:</strong> When an app exits, <code>exit()</code> unbinds all DOM event listeners, disposes of interval timers, releases Web Audio or canvas buffers, and restores terminal keyboard focus.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Strict encapsulation prevents visual or memory leaks. Developers building new tools inherit standard window management and keyboard handling automatically.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-editor">
+                <h3>33. FractalOS Editor (edit)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/editor/editor_manager.js</code>, <code>editor_ui.js</code>, <code>editor.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A full-screen, context-aware code and document editor supporting syntax highlighting, real-time Markdown rendering, live sandboxed HTML iframe preview, and undo/redo history.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Mode Detection:</strong> Inspects file extensions (<code>.md</code>, <code>.html</code>, <code>.js</code>, <code>.py</code>, <code>.sh</code>) to enable specialized toolbars and preview viewports.</li>
+                        <li><strong>Markdown & HTML Preview:</strong> Markdown is parsed via <code>marked.min.js</code> and sanitized with <code>DOMPurify</code>. HTML files are rendered into an isolated, sandboxed <code>&lt;iframe&gt;</code> with live reloading.</li>
+                        <li><strong>State Stack:</strong> Tracks changes in debounced <code>undoStack</code> and <code>redoStack</code> arrays, tracking dirty buffer states and prompting before closing unsaved documents.</li>
+                        <li><strong>VFS Synchronization:</strong> Saving writes the buffer directly through <code>FileSystemManager.createOrUpdateFile()</code>, committing changes to persistent storage.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Separates editing state (manager) from DOM presentation (view). The live HTML sandbox allows in-OS web development with zero external dependencies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-paint">
+                <h3>34. FractalOS Paint (paint)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/paint/paint_manager.js</code>, <code>paint_ui.js</code>, <code>paint.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A retro character-based graphic studio for drawing ANSI art and terminal UI mockups on an 80&times;24 character grid, complete with geometric shapes, flood fill, and custom color palettes.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Grid Data Model:</strong> Maintains an 80&times;24 two-dimensional array of cell objects, each storing a character, foreground color, and background color.</li>
+                        <li><strong>Drawing Algorithms:</strong> Implements Bresenham's line algorithm for lines and rectangles, and a queue-based breadth-first search (BFS) for flood-filling contiguous regions.</li>
+                        <li><strong>Dual-Canvas Preview:</strong> A transparent overlay canvas previews active brush movements and geometry without altering underlying canvas data until mouse release.</li>
+                        <li><strong>File Format:</strong> Serializes artwork into <code>.oopic</code> JSON files or exports plain ANSI text strings for terminal viewing.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Provides native visual design capabilities inside an operating system that lives in the browser, perfect for designing terminal splash screens and game assets.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-adventure">
+                <h3>35. Adventure Engine & World Creator (adventure)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/adventure/adventure_manager.js</code>, <code>adventure_create.js</code>, <code>adventure_ui.js</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A dual-mode interactive fiction studio. In play mode, it runs text adventure games like the built-in <em>"The Architect's Apprentice"</em>. With <code>--create</code>, it launches a dedicated authoring shell for building custom interactive worlds.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Natural Language Parser:</strong> Understands multi-word verb-noun constructions (e.g. <em>"unlock the brass gate with the silver key"</em>), pronouns (<em>"take it"</em>), and contextual disambiguation.</li>
+                        <li><strong>World State Machine:</strong> Tracks player inventory, location rooms, locked exits, item properties, and dynamic scoring rules.</li>
+                        <li><strong>Creation Shell (<code>--create</code>):</strong> A dedicated sub-shell allowing authors to create rooms, link cardinal directions (<code>link "Crypt" north "Hall"</code>), populate items, and save the universe into a portable JSON manifest.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Decouples storytelling data from engine execution. Anyone can craft and share rich interactive fiction without writing JavaScript or Python code.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-basic">
+                <h3>36. Fractal BASIC IDE & System Interop (basic)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/basic/basic_manager.js</code>, <code>basic_interp.js</code>, <code>basic_ui.js</code>, <code>basic.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A complete, line-numbered BASIC programming environment featuring classic commands (<code>PRINT</code>, <code>INPUT</code>, <code>GOTO</code>, <code>GOSUB</code>, <code>FOR/NEXT</code>) and bridge functions (<code>SYS_</code>) to interact with the underlying OS and network.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Line Buffer & Execution:</strong> Stores program lines ordered by integer line numbers. An interpreter loop advances the program counter, evaluating expressions and loop stacks.</li>
+                        <li><strong>System Call Bridge (<code>SYS_</code>):</strong> Special functions connect BASIC programs to the operating system:
+                            <ul>
+                                <li><code>SYS_CMD("ls -la")</code>: Executes a shell command and captures output.</li>
+                                <li><code>SYS_READ("file.txt")</code> & <code>SYS_WRITE("file.txt", data$)</code>: Direct VFS file I/O.</li>
+                                <li><code>SYS_NET_SEND(peer$, msg$)</code>: Transmits messages over the WebRTC mesh network!</li>
+                            </ul>
+                        </li>
+                        <li><strong>Vintage Aesthetic:</strong> Rendered with a classic Commodore/C64-style deep blue screen and cyan monospace typography.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Elevates vintage programming into a legitimate scripting language for FractalOS automation, making computational learning accessible and nostalgic.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-log">
+                <h3>37. Captain's Log (log)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/log/log_manager.js</code>, <code>log_ui.js</code>, <code>log.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A personal journaling and note-taking environment. Supports instant command-line note appending or an interactive two-pane browsing and editing interface.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>File Organization:</strong> Entries are stored as individual Markdown files in <code>~/.journal/</code> named by ISO timestamps (<code>YYYY-MM-DDTHH-MM-SS.md</code>).</li>
+                        <li><strong>CLI Quick Add:</strong> <code>log "Fixed kernel memory leak"</code> creates and timestamps the entry without opening the GUI.</li>
+                        <li><strong>Interactive Viewer:</strong> Running bare <code>log</code> opens a two-pane viewer: reverse-chronological list on the left, full Markdown editor on the right with search filtering.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Plain text files in standard directories preserve user data sovereignty. Your notes are standard files readable by <code>cat</code>, <code>grep</code>, or exportable at any time.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-chidi">
+                <h3>38. Chidi AI Document Analyst (chidi)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/chidi/chidi_manager.js</code>, <code>chidi_ui.js</code>, <code>chidi.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        An AI research assistant specialized in deep document synthesis. Creates a "walled garden" around a collection of text files, allowing the user to query, summarize, and cross-reference them without hallucinations.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Input Ingestion:</strong> Ingests target files from directory paths or piped lists (e.g. <code>find . -name "*.md" | chidi</code>).</li>
+                        <li><strong>Context Assembly:</strong> Concatenates the contents of all selected documents into an explicit, bounded context block.</li>
+                        <li><strong>Strict Prompt Guidance:</strong> The AI is constrained by system prompts to answer exclusively using facts from the provided text, citing file sources for every claim.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Eliminates knowledge drift. Perfect for analyzing codebases, reading legal contracts, or studying technical documentation inside the virtual OS.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-samwise-chat">
+                <h3>39. Samwise Chat (samwise -c)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/samwise_chat/samwise_chat_manager.js</code>, <code>samwise_chat_ui.js</code>, <code>samwise_chat.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A dedicated floating chat application providing an ongoing, conversational copilot experience with Samwise. Features message history, model selection, and clickable "Run Command" buttons in AI responses.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Conversational Loop:</strong> Communicates with the kernel's <code>ai_manager</code> via JSON payloads transmitted over standard input, preventing shell escaping exploits.</li>
+                        <li><strong>Interactive Code Blocks:</strong> When Samwise proposes shell commands, the UI automatically appends an inline <strong>[Run]</strong> button that dispatches the command directly to the terminal when clicked.</li>
+                        <li><strong>Live Provider Switching:</strong> Allows switching between local Ollama models and cloud Gemini endpoints on the fly.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Bridges natural language conversation with active terminal execution, allowing operators to chat fluidly while selectively executing recommended actions.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-top">
+                <h3>40. Process Viewer (top)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/top/top_manager.js</code>, <code>top_ui.js</code>, <code>top.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A real-time process monitoring dashboard displaying active foreground and background jobs, Process IDs (PIDs), execution statuses, and running command lines.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Polling Loop:</strong> Runs a 1,000 ms timer interval querying <code>CommandExecutor.getActiveJobs()</code>.</li>
+                        <li><strong>Efficient Rendering:</strong> Uses a <code>DocumentFragment</code> to batch DOM updates, preventing browser reflow lag. Table headers use <code>position: sticky</code> for scrolling long job lists.</li>
+                        <li><strong>Dual-Mode Execution:</strong> In interactive terminal mode, it launches the graphical dashboard. When run in non-interactive background scripts (<code>top &</code>), it runs headlessly for system simulation.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Delivers standard Unix job observability, ensuring operators can monitor long-running background tasks and terminate runaway jobs cleanly.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-onboarding">
+                <h3>41. Onboarding & First-Boot Wizard (onboarding)</h3>
+                <p><strong>Files:</strong> <code>resources/scripts/apps/onboarding/onboarding_manager.js</code>, <code>onboarding_ui.js</code>, <code>onboarding.css</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        The initial setup experience presented to a user when booting FractalOS for the first time on a fresh storage volume.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Account Creation:</strong> Collects operator username, user password, and the root administrator password.</li>
+                        <li><strong>Cryptographic Provisioning:</strong> Calls <code>users.first_time_setup()</code> in the kernel, deriving PBKDF2 hashes and establishing home directories and sudoers records.</li>
+                        <li><strong>Mesh Node Configuration:</strong> Offers an option to automatically start the background WebSocket signaling server or mesh discovery upon boot.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Ensures every instance boots with properly configured permissions and salted credentials before any untrusted scripts can execute.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="app-netgames">
+                <h3>42. Multiplayer & Mesh Games (c4, netgame, ttt)</h3>
+                <p><strong>Files:</strong> <code>resources/core/commands/c4.py</code>, <code>netgame.py</code>, <code>ttt.py</code>, <code>resources/scripts/apps/netgame/</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        Interactive, turn-based multiplayer games playable directly across the WebRTC peer-to-peer mesh network, including Connect 4 (<code>c4</code>) and Tic-Tac-Toe (<code>ttt</code>).
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>P2P Handshake:</strong> A player hosts a game session; peer nodes discover the game via <code>netgame</code> lobby broadcasts over <code>RTCDataChannel</code>.</li>
+                        <li><strong>State Synchronization:</strong> Turn moves (e.g. dropping a chip in column 4) are transmitted as serialized JSON game packets between peer nodes.</li>
+                        <li><strong>TUI Board Drawing:</strong> Renders game boards with ANSI color codes and clean terminal borders.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Demonstrates the versatility of the distributed mesh architecture: high-speed, zero-cloud peer-to-peer communication powering real-time interactive entertainment.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK IX -->
+        <section id="book-9">
+            <h2>Book IX: The Proving Ground (Quality Assurance & Test Engineering)</h2>
+            <p>
+                A complex operating system is only as dependable as its verification suite. FractalOS incorporates a multi-tiered testing harness covering structural integrity, headless browser boots, in-OS shell execution, and autonomous LLM agent grading.
+            </p>
+
+            <div class="callout info" id="testing-philosophy">
+                <div class="callout-title">The Proving Ground Philosophy: "Verified Means Observed"</div>
+                <p>
+                    Code that reads correctly is not considered done until it has been observed executing in the live environment. No feature is merged without passing structural validation, the headless smoke test, and the in-OS diagnostic suite.
+                </p>
+            </div>
+
+            <div class="triad-block" id="tests-structure">
+                <h3>44. Structure & Manifest Checks (tests/structure.js)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A lightning-fast, zero-browser Node.js test that guarantees disk files, manifests, and registration load lists never drift.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li>Verifies that every Python file under <code>resources/core/</code> is cataloged in <code>core/manifest.json</code>.</li>
+                        <li>Audits that every command in <code>commands/*.py</code> exports both a <code>run()</code> and <code>man()</code> function.</li>
+                        <li>Checks that every JavaScript script and stylesheet is registered in <code>resources/scripts/asset_manifest.js</code> in proper load order.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Catches the silent "ghost limb" bug (Decision D-010): in a WebAssembly OS without npm bundlers, forgetting to register a Python or JS file means it never loads into Pyodide. This test catches the omission in under one second.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="tests-smoke">
+                <h3>45. Headless Browser Smoke Testing (tests/smoke.js)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        An automated headless Chromium test (driven by Playwright) that launches the operating system against a live HTTP server, verifies kernel boot, exercises cryptographic password verification, and runs foundational shell commands.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li>Boots <code>http://127.0.0.1:8000/index.html</code> in a clean, isolated browser profile.</li>
+                        <li>Waits for <code>FractalOS_Kernel.isReady</code> to resolve.</li>
+                        <li>Validates Pyodide versions and executes PBKDF2 key derivation.</li>
+                        <li>Runs first-time setup, testing correct and incorrect password verification via system calls.</li>
+                        <li>Runs 50+ assertions on shell commands (<code>echo</code>, <code>date</code>, <code>whoami</code>, <code>ls</code>, <code>mkdir</code> permissions denials, and error recovery).</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Proves that the entire hybrid stack (Pyodide WebAssembly, DOM stage manager, syscall bridge, and storage HAL) functions cohesively in a real browser engine.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="tests-diag">
+                <h3>46. The 1,400-Line In-OS Diagnostic Gauntlet (extras/diag.sh & tests/diag.js)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A massive, comprehensive shell test script written in FractalOS's own shell syntax that runs <em>inside</em> the virtual operating system as root, systematically testing over 40 distinct phases of OS functionality.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li>Injected into the virtual filesystem via <code>tests/diag.js</code>.</li>
+                        <li>Uses the assertion utility <code>check_fail</code> to verify both expected successes and expected security failures (e.g. ensuring regular users cannot read root vault files).</li>
+                        <li>Tests file manipulation, symlink traversal, octal permissions, pipes, text utilities (<code>grep</code>, <code>sed</code>, <code>awk</code>, <code>csplit</code>), job signals, archives, and environment scopes.</li>
+                        <li>Cleans up all temporary users, groups, and files, ending with a celebratory completion banner.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Validates the operating system against itself. If shell parsing, pipes, or permission checks deviate from POSIX behavior, <code>diag.sh</code> catches the regression immediately.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="tests-inflate">
+                <h3>47. Universe Generator (extras/inflate.sh)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A deterministic demo-world generator that rapidly populates an empty filesystem with complex directory hierarchies, sample documents, adventure worlds, and intentional edge cases.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>
+                        Executes shell commands creating user directories, project archives, journal logs, sample code, and deliberate filesystem anomalies (dangling symlinks and orphaned nodes) to challenge diagnostics like <code>fsck</code>.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Ensures developers and automated test harnesses can spin up an identical, reproducible baseline environment across testing sessions.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="tests-agent">
+                <h3>48. Autonomous Agent Test Harness & Graders</h3>
+                <p><strong>Files:</strong> <code>tests/agent.js</code>, <code>tests/fake_ollama.py</code>, <code>tests/agent_grading.js</code>, <code>tests/agent_unit.py</code></p>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A headless test suite that evaluates the <code>samwise</code> agent and BoneAmanita driver through real-world multi-step tasks, grading outcomes directly on filesystem facts.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <ol>
+                        <li><strong>Headless Task Execution:</strong> Runs Samwise through tasks (e.g., navigating directories, generating Python scripts, computing Fibonacci numbers, and safely handling deletions).</li>
+                        <li><strong>Stand-In & Real Models:</strong> Can be run with <code>fake_ollama.py</code> for instant offline plumbing tests, or connected to real local models (<code>gemma4:12b</code>, <code>llama3.1:8b</code>).</li>
+                        <li><strong>Objective Grading:</strong> <code>tests/agent_grading.js</code> inspects VFS node creation, file contents, and exit statuses rather than relying on LLM self-evaluation.</li>
+                        <li><strong>Transcript Logging:</strong> Complete multi-turn transcripts are written to <code>tests/out/agent-transcript.md</code> for human inspection.</li>
+                    </ol>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Guarantees agent reliability. We do not guess whether prompt adjustments work; we prove that models pass all safety brakes and accomplish their goals across deterministic grading checks.
+                    </p>
+                </div>
+            </div>
+
+            <div class="triad-block" id="tests-executor">
+                <h3>49. In-OS Python Test Suite (tests/test_executor.py)</h3>
+                <div class="triad-section">
+                    <span class="triad-label what">What It Does</span>
+                    <p>
+                        A dedicated test script designed to execute inside FractalOS via the in-OS <code>python</code> command, verifying that real Python code can import and drive the kernel.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label how">How It Works</span>
+                    <p>
+                        Copied into the virtual filesystem and executed with <code>python test_executor.py</code>. It imports <code>kernel</code>, tests VFS calls, executes inline scripts, and verifies standard stream bindings.
+                    </p>
+                </div>
+                <div class="triad-section">
+                    <span class="triad-label why">Why It Works</span>
+                    <p>
+                        Proves that Python within the OS is genuine CPython 3.14 with complete kernel integration, not a mock syntax highlighter.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- BOOK X & APPENDICES -->
+        <section id="book-10">
+            <h2 id="runtime-dependencies">Book X: Runtime Dependencies & Technical Foundations</h2>
+
+            <h3>10.1 Vendored Dependencies</h3>
+            <p>
+                FractalOS strictly avoids npm package installation and remote runtime CDNs. All required third-party libraries are audited, trimmed, and vendored directly into <code>resources/dep/</code>:
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Library</th>
+                        <th>Version</th>
+                        <th>Path</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pyodide</strong></td>
+                        <td>314.0.7 (Python 3.14.2)</td>
+                        <td><code>resources/dep/pyodide/</code></td>
+                        <td>WebAssembly CPython runtime powering the system kernel and real Python execution.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cryptography</strong></td>
+                        <td>43.0.1 (Wasm Wheel)</td>
+                        <td><code>resources/dep/pyodide/cryptography*</code></td>
+                        <td>Provides PBKDF2-HMAC-SHA256 password hashing and secure token generation.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tone.js</strong></td>
+                        <td>r14.7.77</td>
+                        <td><code>resources/dep/Tone.js</code></td>
+                        <td>Web Audio framework providing polyphonic synthesis, tone playback, and timing.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>marked.js</strong></td>
+                        <td>v4.3.0</td>
+                        <td><code>resources/dep/marked.min.js</code></td>
+                        <td>Fast, standard-compliant Markdown parser for Editor, Chidi, and terminal logs.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DOMPurify</strong></td>
+                        <td>v3.0.5</td>
+                        <td><code>resources/dep/purify.min.js</code></td>
+                        <td>Sanitizes rendered HTML, mitigating Cross-Site Scripting (XSS) vectors.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>JSZip</strong></td>
+                        <td>v3.10.1</td>
+                        <td><code>resources/dep/jszip.min.js</code></td>
+                        <td>Handles reading and extracting compressed archives and MusicXML files.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Neutralinojs</strong></td>
+                        <td>v6.2.0</td>
+                        <td><code>resources/neutralino.js</code></td>
+                        <td>Lightweight native webview bridge enabling Portable Desktop mode.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 id="system-paths-appendix">Appendix: Critical System Paths & Configurations</h3>
+            <p>The virtual file system reserves standardized paths for system state and configuration:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Path</th>
+                        <th>Owner / Mode</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/etc/ai.conf</code></td>
+                        <td><code>root:root 0o644</code></td>
+                        <td>Defines default AI provider (<code>ollama</code> vs <code>gemini</code>), model names, endpoints, and timeouts.</td>
+                    </tr>
+                    <tr>
+                        <td><code>/etc/sudoers</code></td>
+                        <td><code>root:root 0o440</code></td>
+                        <td>Specifies privilege escalation rules for users and groups; edited safely via <code>visudo</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>/etc/passwd</code></td>
+                        <td><code>root:root 0o644</code></td>
+                        <td>Stores registered usernames, user IDs, and primary group affiliations.</td>
+                    </tr>
+                    <tr>
+                        <td><code>/etc/pkg_manifest.json</code></td>
+                        <td><code>root:root 0o644</code></td>
+                        <td>Catalog of installed third-party packages, permission scopes, and cryptographic SHA256 hashes.</td>
+                    </tr>
+                    <tr>
+                        <td><code>/var/log/audit.log</code></td>
+                        <td><code>root:root 0o600</code></td>
+                        <td>Immutable chronological audit log capturing authentication, sudo, and administrative operations.</td>
+                    </tr>
+                    <tr>
+                        <td><code>/var/log/bulletin.md</code></td>
+                        <td><code>root:root 0o666</code></td>
+                        <td>System-wide public bulletin board accessible via the <code>bulletin</code> utility.</td>
+                    </tr>
+                    <tr>
+                        <td><code>.story/</code></td>
+                        <td>User-owned <code>0o700</code></td>
+                        <td>Internal snapshot repository storing atomic file versions and rollback trees.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer class="doc-footer">
+            <p>FractalOS 1.0 Architectural Codex & Manual • Andrew Edmark & The FractalOS Systems Team</p>
+            <p>Licensed under permissive MIT terms with Authorship & Contribution Acknowledgment.</p>
+        </footer>
+    </main>
+
+</body>
+</html>
