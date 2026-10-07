@@ -11,16 +11,28 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-Milestone 7.4 ("Package Ecosystem & Community Registry Tooling") is 100% COMPLETE! All four milestones of Phase 7 (7.1 Collaborative P2P & Multi-Node Mesh, 7.2 Multi-Agent Swarms & Physical IoT Autopilot, 7.3 Terminal Multiplexing & Windowing UX, 7.4 Package Ecosystem & Community Registry Tooling) are fully implemented and verified. FractalOS features end-to-end package lifecycle tooling (`pkg init`, `pkg validate`, `pkg pack`, `pkg publish`, `pkg search`, `pkg install`, `pkg deps`, `pkg remove`), local repositories (`/var/pkg/repo`, `~/.pkg/repo`), mesh package announcements, dynamic Pyodide wheel loading, a standard community library (`fortune`, `cowsay`, `cal`, `banner`), and cryptographic verification and sandboxing (`pkg verify`, `pkg audit`, integrity check on execution via `executor.py`, permission scopes and elevated permission `--trust` guardrails). All test suites pass: 85/85 smoke checks, 6/6 package security unit tests, 8/8 standard library package unit tests, 6/6 package dependency unit tests, 7/7 package publish unit tests, 4/4 clipboard JS unit tests, 9/9 clipboard command Python tests, 7/7 status bar JS unit tests, 4/4 status command tests, 7/7 window manager JS unit tests, 6/6 window command tests, 7/7 multiplexer JS unit tests, 4/4 multiplexer command tests, and all structure tests (15 core, 6 apps, 152 commands, 74 asset entries).
+FractalOS 1.0.0 ("The Living Terminal & Distributed Mesh") is officially RELEASED! All Phase 6 (Bare-Metal Appliance mode) and Phase 7 (Milestones 7.1 Collaborative P2P & Multi-Node Mesh, 7.2 Multi-Agent Swarms & Physical IoT Autopilot, 7.3 Terminal Multiplexing & Windowing UX, 7.4 Package Ecosystem & Community Registry Tooling) features are completed, tested, and documented.
+The release artifacts are generated in `dist/` (`web`, `appliance`, and `full` bundles with SHA256 checksums), git tag `v1.0.0` is tagged and pushed, `README.md` is updated with full architecture details and complete 151-command reference, `docs/CHANGELOG.md` documents the release, `docs/devlog.html` has the public dev diary entry, and the GitHub release is published on `aedmark/FractalOS`. All test suites pass: 85/85 smoke checks, structure tests, and unit tests across all subsystems.
 
 ## Next steps
 
-1. When physical Raspberry Pi hardware is accessible, perform live bare-metal appliance tests with `provision_appliance.sh` and physical GPIO sensors/LEDs.
-2. Conduct live multi-node WebRTC mesh stress trials across separate machines.
-3. Prepare a devlog entry in `docs/devlog.html` documenting the Phase 7 milestones.
-
+1. Monitor community feedback and issues for the v1.0.0 release on GitHub.
+2. When physical Raspberry Pi hardware is accessible, perform live bare-metal appliance tests with `provision_appliance.sh` and physical GPIO sensors/LEDs.
+3. Conduct multi-machine WAN WebRTC mesh stress trials across geographically dispersed nodes.
 
 ## Session log
+
+### Session 25: 2026-10-06: FractalOS 1.0.0 Official Release, Documentation & Packaging
+
+**Goal:** Package official v1.0.0 release bundles, publish devlog and release notes, update README and public-facing documentation, and publish GitHub release.
+**Done:** Bumped `OS.VERSION` to `"1.0.0"` in `resources/scripts/config.js` and `neutralino.config.json`. Authored devlog entry in `docs/devlog.html` celebrating FractalOS 1.0.0. Created packaging pipeline `tools/package_release.py` producing `fractalos-1.0.0-web.zip`, `fractalos-1.0.0-web.tar.gz`, `fractalos-1.0.0-appliance.tar.gz`, `fractalos-1.0.0-full.tar.gz`, and `SHA256SUMS` in `dist/`. Tagged git `v1.0.0` and pushed to remote. Updated `README.md` with complete hybrid architecture breakdown, three deployment modes (Browser, Portable Neutralino, Bare-metal Raspberry Pi Appliance), feature breakdown, graphical applications table, and full 151-command system reference table. Updated `docs/CHANGELOG.md` organizing all Phase 6 & Phase 7 capabilities under `[1.0.0]`. Updated `docs/CONTRIBUTING.md` with GitHub repository references and Pull Request conventions. Published GitHub release `v1.0.0` with assets via `gh release create`.
+**Changed:** `README.md`, `docs/CHANGELOG.md`, `docs/CONTRIBUTING.md`, `docs/HANDOFF.md`, `docs/devlog.html`, `resources/scripts/config.js`, `neutralino.config.json`, `tools/package_release.py`, `dist/*`.
+**Decisions:** Documented and frozen v1.0.0 architecture.
+**Problems / surprises:**
+- Command reference in `README.md` was missing over 30 commands introduced in recent phases (swarms, mesh, window manager, split panes, status, clipboard, packages). Generated a comprehensive 151-command table with accurate summaries.
+**Left undone:** Physical hardware trials on real Raspberry Pi boards.
+**Next session should start with:** Community issue triage, hardware testing, or Phase 8 planning.
+
 
 ### Session 24: 2026-10-06: P7-16 Package Security & Sandboxing (`pkg verify`, `pkg audit`, integrity checks, permission scopes)
 

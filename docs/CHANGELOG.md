@@ -1,8 +1,34 @@
 # CHANGELOG.md
 
-## [Unreleased] - BoneAmanita Integration
+## [1.0.0] - 2026-10-06: The Living Terminal & Distributed Mesh
 
-### 🚀 New Features (The Kinetic Engine)
+### 🌐 Distributed P2P Mesh & Swarms (Phase 7.1 & 7.2)
+- **Zero-Cloud Remote Shells & Attachment (`attach`, `detach`, `wall`, `talk`):** Connect across browser tabs, desktop instances, or remote Raspberry Pi nodes over WebRTC DataChannels and local BroadcastChannel. Collaborative live shell sharing and broadcast messaging (D-029).
+- **Peer-to-Peer File Transfer (`mesh-cp`):** Secure direct binary and text file transfer across connected mesh nodes without external storage relays or cloud intermediaries (D-030).
+- **Multiplayer Terminal Applications:** Shared multiplayer interactive games including Connect 4 (`c4`) and NetGame hub (`netgame`) over peer channels (D-031).
+- **Mesh Presence & Telemetry (`peers`, `netstat --mesh`):** Visual presence monitor and CLI command inspecting discovered nodes, latency, and shared capabilities (D-032).
+- **Physical IoT & GPIO Monitoring Daemon (`gpio`):** Hardware pin interaction, sensor streaming, and button event listeners with background daemon monitoring on bare-metal and simulated environments (D-033).
+- **IoT Autopilot Actions:** Samwise AI agent can observe sensor states and trigger physical hardware actions (e.g. alert LEDs on low storage) (D-034).
+- **Distributed Agent Task Delegation:** Samwise can dispatch sub-tasks to peer agents across mesh nodes and synthesize distributed outcomes (D-035).
+- **Mesh Swarm Safety & Voltage Policies:** Specific remote execution voltage budgeting and safety confirmation policies for distributed actions (D-036).
+
+### 🖥️ Terminal Multiplexing & Windowing UX (Phase 7.3)
+- **Terminal Split Panes:** Independent horizontal and vertical split panes (`split-h`, `split-v`, `panes`, `close_pane`) with isolated shell contexts and keyboard navigation (D-037).
+- **TUI Window Manager (`wm`, `window`):** Multi-window management for graphical applications (Editor, Paint, Top, Adventure, Chidi, Peers) supporting floating, docking, tiling, minimizing, and maximizing (D-038).
+- **Persistent Status Line & Notifications (`status`, `notify`):** System status tray showing active background jobs, mesh peer count, audio mute, and desktop notifications (D-039).
+- **Clipboard & Drag-and-Drop Bridge (`clip`, `pbcopy`, `pbpaste`):** Seamless host clipboard synchronization and direct file drag-and-drop into the VFS (D-040).
+
+### 📦 Package Ecosystem & Sandboxing (Phase 7.4)
+- **Package Publishing & Repository Tooling (`pkg publish`):** Validate, bundle, export, and generate metadata manifests for community packages (D-041).
+- **Recursive Dependency Resolution:** Automatic dependency checks and cycle detection for installed packages (D-042).
+- **Standard Library Expansion:** Pre-packaged utilities available for one-click installation (`fortune`, `cowsay`, `cal`, `banner`) (D-043).
+- **Cryptographic Verification & Sandboxing (`pkg verify`, `pkg audit`):** SHA-256 package signature verification and permission scoping before command execution (D-044).
+
+### 🥧 Bare-Metal Appliance Mode (Phase 6)
+- **Fractal Pi Provisioning (`extras/build_distro.sh`):** Automated build recipe for Raspberry Pi OS Lite turning physical hardware into a dedicated FractalOS boot-to-shell appliance.
+- **Hardware Integration:** Neutralinojs / WebSocket backend bridging physical Raspberry Pi GPIO pins directly into Pyodide.
+
+### 🚀 The Kinetic Engine & BoneAmanita Autopilot
 - **`samwise` is the AI command** (formerly `gemini`; `gemini` now only names the Google provider). The chat app is **Samwise Chat** (`samwise -c`).
 - **`samwise --dry-run` shows what would happen and runs nothing:** the plan, which steps would ask first, and for `--autopilot` the voltage and whether it would disengage. Works with `--force` too, which it outranks.
 - **Rejected plans get a second (and third) chance:** when the OS rejects a plan (an unknown command, a shell operator), the model is told why and asked again, up to three calls. The voltage brake is never retried.
@@ -15,7 +41,6 @@
     - **The Brain:** Created `bone_driver.py` to handle system prompting, physics injection, and safety auditing.
     - **The Conscience:** implemented "Voltage" metrics to assess the risk of AI plans (e.g., `rm` is High Voltage, `ls` is Low Voltage).
     - **The Loop:** `ai_manager.py` now supports "Stateless Memory Injection," allowing the AI to remember `cd` changes across execution steps.
-
 - **New Command: `forge`**
     - A specialized file-writing tool (`resources/core/commands/forge.py`) designed for AI use.
     - Supports atomic writes and newline expansion (`\n`) to replace the clumsy `echo` redirection for code generation.

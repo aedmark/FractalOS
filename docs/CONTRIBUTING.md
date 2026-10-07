@@ -17,7 +17,7 @@ Whether you're a Python pro, a JavaScript wizard, or just getting started, there
 
 ## Getting Started
 
-1.  **Fork the repository** on GitLab.
+1.  **Fork the repository** on GitHub (`https://github.com/aedmark/FractalOS`).
 2.  **Clone your fork** locally.
 3.  **Set up the environment** (see `README.md` for "How to Run").
 4.  **Create a branch** for your feature or fix (`git checkout -b feature/my-cool-feature`).
@@ -88,7 +88,7 @@ The frontend handles everything the user *sees* and *hears*.
 
 ## Testing & Verification
 
-Since this is a hybrid OS, testing can be tricky. The automated smoke test and the in-OS suite are described in [docs/TESTING.md](docs/TESTING.md); run the smoke test before you open a Merge Request:
+Since this is a hybrid OS, testing can be tricky. The automated smoke test and the in-OS suite are described in [docs/TESTING.md](docs/TESTING.md); run the smoke test before you open a Pull Request:
 
 ```bash
 cd resources && python3 -m http.server 8000 &
@@ -98,7 +98,7 @@ node tests/diag.js  http://127.0.0.1:8000/index.html   # after changing Python: 
 ```
 
 ### Manual Testing Checklist
-Before submitting a Merge Request, please verify:
+Before submitting a Pull Request, please verify:
 
 1.  **Browser Compatibility:** Does it work in Chrome/Firefox?
 2.  **Mode Compatibility:** Does it work in both **Browser Mode** (Python server) and **Portable Mode** (Neutralino)?
