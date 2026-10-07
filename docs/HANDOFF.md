@@ -11,18 +11,36 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-FractalOS 1.0.0 ("The Living Terminal & Distributed Mesh") is officially RELEASED! All Phase 6 (Bare-Metal Appliance mode) and Phase 7 (Milestones 7.1 Collaborative P2P & Multi-Node Mesh, 7.2 Multi-Agent Swarms & Physical IoT Autopilot, 7.3 Terminal Multiplexing & Windowing UX, 7.4 Package Ecosystem & Community Registry Tooling) features are completed, tested, and documented.
-The release artifacts are generated in `dist/` (`web`, `appliance`, and `full` bundles with SHA256 checksums), git tag `v1.0.0` is tagged and pushed, `README.md` is updated with full architecture details and complete 151-command reference, `docs/CHANGELOG.md` documents the release, `docs/devlog.html` has the public dev diary entry, and the GitHub release is published on `aedmark/FractalOS`. All test suites pass: 85/85 smoke checks, structure tests, and unit tests across all subsystems.
+FractalOS 1.0.0 ("The Living Terminal & Distributed Mesh") is fully documented with a comprehensive offline HTML Architectural Codex and User Guide in `docs/manual/` (P8-01, D-045).
+- `docs/manual/manual.css`: Thematic responsive stylesheet with dark terminal styling, custom callout components, and print media rules for browser PDF export.
+- `docs/manual/index.html`: Architectural Codex covering Book I (Philosophy & Three Runtimes), Book II (Hybrid Python/Wasm Kernel & Effect Contract), Book III (Living Shell & Voltage Safety), Book IV (Distributed P2P Mesh & Swarms), Book V (Terminal Multiplexing, WM & GPIO), Book VI (Package Ecosystem & Auditing), Book VII (Command Architecture & 18-Category Matrix), Book VIII (Graphical Application Suites), Book IX (The Proving Ground QA), Book X (Runtime Stack & Dependencies), and Appendix (System Paths & Configs). All 52 internal anchors and 151 cross-links verified.
+- `docs/manual/commands.html`: The 450 KB exhaustive Command Codex documenting all 151 native Python commands across 18 functional categories, strictly adhering to the What It Does, How It Works, and Why It Works triad. All 320 anchors verified.
+All test suites pass: `node tests/structure.js` (PASS), `python3 tests/agent_unit.py` (37/37 OK).
 
 ## Next steps
 
-1. Monitor community feedback and issues for the v1.0.0 release on GitHub.
-2. When physical Raspberry Pi hardware is accessible, perform live bare-metal appliance tests with `provision_appliance.sh` and physical GPIO sensors/LEDs.
+1. If requested by the user, author an entry in `docs/devlog.html` celebrating the publication of the comprehensive Architectural Codex and User Guide.
+2. Conduct live bare-metal appliance tests on physical Raspberry Pi hardware with physical GPIO sensors and LEDs.
 3. Conduct multi-machine WAN WebRTC mesh stress trials across geographically dispersed nodes.
 
 ## Session log
 
-### Session 25: 2026-10-06: FractalOS 1.0.0 Official Release, Documentation & Packaging
+### Session 26: 2026-10-07: P8-01 The FractalOS 1.0 Architectural Codex & Manual (`docs/manual/`)
+
+**Goal:** Overhaul and modernize the legacy 101-page OopisOS manual into the comprehensive FractalOS 1.0 Architectural Codex and User Guide in `docs/manual/`.
+**Done:** P8-01, D-045. Authored a complete offline, zero-dependency HTML documentation suite under `docs/manual/`:
+- Created `docs/manual/manual.css` with responsive layout, custom typography, callouts, and print styles.
+- Created `docs/manual/index.html` detailing Books I–VI and VIII–X with deep architectural analyses, ASCII flowcharts, the Effect Contract, the Voltage Safety Framework, WebRTC mesh protocols, and test engineering.
+- Created `docs/manual/commands.html` documenting all 151 native Python commands across 18 functional categories with exact synopsis, flags, execution tracing, and architectural patterns (What It Does, How It Works, Why It Works).
+- Verified 100% of internal and cross-file anchor links (52 in index, 320 in commands, 151 cross-links, 0 broken).
+- Verified `node tests/structure.js` and `python3 tests/agent_unit.py`.
+**Changed:** `docs/manual/manual.css`, `docs/manual/index.html`, `docs/manual/commands.html`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/HANDOFF.md`.
+**Decisions:** D-045 (Architectural Codex & HTML Manual).
+**Problems / surprises:**
+- The command set grew from ~50 JavaScript commands in OopisOS v5.0 to 151 native Python commands in FractalOS 1.0. Decoupled the exhaustive 151-command reference into `commands.html` with cross-links from `index.html` to ensure optimal performance and browsing experience.
+**Left undone:** Hardware testing on real Raspberry Pi boards.
+**Next session should start with:** Hardware trials, WAN mesh testing, or devlog update.
+
 
 **Goal:** Package official v1.0.0 release bundles, publish devlog and release notes, update README and public-facing documentation, and publish GitHub release.
 **Done:** Bumped `OS.VERSION` to `"1.0.0"` in `resources/scripts/config.js` and `neutralino.config.json`. Authored devlog entry in `docs/devlog.html` celebrating FractalOS 1.0.0. Created packaging pipeline `tools/package_release.py` producing `fractalos-1.0.0-web.zip`, `fractalos-1.0.0-web.tar.gz`, `fractalos-1.0.0-appliance.tar.gz`, `fractalos-1.0.0-full.tar.gz`, and `SHA256SUMS` in `dist/`. Tagged git `v1.0.0` and pushed to remote. Updated `README.md` with complete hybrid architecture breakdown, three deployment modes (Browser, Portable Neutralino, Bare-metal Raspberry Pi Appliance), feature breakdown, graphical applications table, and full 151-command system reference table. Updated `docs/CHANGELOG.md` organizing all Phase 6 & Phase 7 capabilities under `[1.0.0]`. Updated `docs/CONTRIBUTING.md` with GitHub repository references and Pull Request conventions. Published GitHub release `v1.0.0` with assets via `gh release create`.

@@ -262,3 +262,6 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 - [x] P7-15 **Standard Library Expansion**: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages (D-043, 2026-10-06).
 - [x] P7-16 **Package Security & Sandboxing**: Verification hashes and permission scopes for installed third-party packages before execution (D-044, 2026-10-06).
 
+## Phase 8: System Documentation & Architectural Codex
+
+- [x] P8-01 **HTML Architectural Codex & Manual**: Complete modernization of the 101-page OopisOS manual into the FractalOS 1.0 Architectural Codex in `docs/manual/index.html` (Books I–VI, VIII–X) and comprehensive 151-command reference in `docs/manual/commands.html` (Book VII) with responsive styling and print-friendly export (D-045, 2026-10-07).

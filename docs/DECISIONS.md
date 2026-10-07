@@ -532,4 +532,11 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
    - Evaluates a security risk rating (`SAFE`, `LOW RISK`, `MODERATE RISK`, `HIGH RISK`) with detailed findings in human-readable or structured JSON (`--json`) output.
 **Consequences:** End-to-end package security with cryptographic tamper protection, pre-execution integrity verification, authorization barriers for elevated permissions, and comprehensive static analysis.
 
-
+## D-045 Architectural Codex & HTML Manual (`docs/manual/`) (2026-10-07, status: accepted)
+**Context:** P8-01. The legacy documentation ("Everything You Ever Wanted to Know About OopisOS v5.0", a 101-page PDF from July 2025) described a pure JavaScript simulation. FractalOS 1.0 represents an architectural revolution: a Python/Wasm WebAssembly kernel under Pyodide, the Effect Contract, kinetic AI (`samwise` + BoneAmanita driver) with Voltage Safety, distributed P2P WebRTC mesh swarms, terminal multiplexing with a TUI window manager, bare-metal Raspberry Pi appliance capabilities, and 151 native commands. A complete, modern architectural codex and user manual was needed.
+**Decision:**
+1. Created `docs/manual/` as an offline, zero-dependency, responsive HTML guide:
+   - `manual.css`: Thematic styling matching FractalOS design tokens, responsive sidebar navigation, callout boxes, code syntax, triad layout, and print media queries for clean PDF generation directly from the browser.
+   - `index.html`: The master Architectural Codex covering Books I through VI, VIII through X, and the Appendix.
+   - `commands.html`: The complete, exhaustive 450 KB Command Codex documenting all 151 native Python commands across 18 functional categories, each providing the signature triad: What It Does, How It Works (step-by-step trace), and Why It Works (software engineering and safety rationale).
+**Consequences:** Complete, modern, beautifully styled system codex and command encyclopedia replacing the obsolete v5.0 manual with 100% codebase parity.
