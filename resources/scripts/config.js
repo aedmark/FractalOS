@@ -16,7 +16,7 @@ class ConfigManager {
 
             OS: {
                 NAME: "FractalOS",
-                VERSION: "0.0.5",
+                VERSION: "1.0.0",
                 DEFAULT_HOST_NAME: "FractalOS",
             },
             

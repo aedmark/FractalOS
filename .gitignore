@@ -23,3 +23,7 @@ tests/out/
 # Python bytecode (py_compile checks leave these behind)
 __pycache__/
 *.pyc
+
+# Distribution releases and virtual environments
+dist/
+.venv/

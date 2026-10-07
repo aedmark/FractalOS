@@ -7,6 +7,68 @@
 
 <article class="dev-diary">
   <header>
+    <h1>FractalOS 1.0 Release: Swarms, Mesh Networking, and the Living Terminal</h1>
+    <p class="date">October 6, 2026</p>
+    <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
+  </header>
+
+  <p>
+    When we reached version 1.0 last week, FractalOS could boot as a physical appliance on a Raspberry Pi and toggle GPIO pins directly from our Python kernel. But a computer sitting alone in a room is only half the story. Over the past week, we turned FractalOS into a collaborative, decentralized operating system that talks across devices, orchestrates AI agent swarms, and provides a desktop-grade workstation experience with a full community package manager.
+  </p>
+
+  <h2>Connecting the Dots: The Peer-to-Peer Mesh</h2>
+
+  <p>
+    Modern operating systems rely heavily on central servers and cloud accounts. FractalOS takes the opposite road: machines discover each other locally over WebRTC and browser broadcast channels without intermediaries.
+  </p>
+
+  <p>
+    You can now attach to a friend's live terminal session across the LAN with <code>attach</code>, send broadcast messages to everyone on the network with <code>wall</code>, copy files peer-to-peer with <code>mesh-cp</code>, or play interactive turn-based multiplayer terminal games. There is no server to configure and nothing to sync to the cloud. You open the terminal, and you are part of the mesh.
+  </p>
+
+  <h2>Agent Swarms and Physical Autopilot</h2>
+
+  <p>
+    Samwise, our built-in terminal language model agent, has grown up. In earlier versions, Samwise was confined to answering questions or executing validated plans on a single file system. Now, Samwise can act across the mesh.
+  </p>
+
+  <p>
+    If one machine is reading sensor pins on a Raspberry Pi and another has a faster model or free compute, Samwise on the first node can delegate tasks to a peer node's agent, await the synthesized answer, and react in the physical world. To make sure an autonomous agent doesn't run wild on your hardware, we built a strict voltage budgeting system: remote actions, hardware toggles, and destructive operations have defined safety costs and require explicit operator confirmation before they execute.
+  </p>
+
+  <h2>A Workstation You Can Actually Use</h2>
+
+  <p>
+    A real operating system needs more than a single scrolling prompt. We added a built-in terminal multiplexer that lets you split panes horizontally and vertically (<code>split-h</code> and <code>split-v</code>), complete with keyboard shortcuts to hop between active shells.
+  </p>
+
+  <p>
+    Our graphical and TUI applications—the text editor, the paint tool, the process monitor, and the adventure game—no longer force a modal overlay. They now live in draggable, resizable floating windows that dock cleanly beside your shell sessions. Along the top, a persistent status bar displays active background jobs, mesh peer count, system notifications, and audio state. You can drag and drop files from your host operating system directly into the terminal window to import them into the virtual file system, or use <code>pbcopy</code> and <code>pbpaste</code> to share text seamlessly with your system clipboard.
+  </p>
+
+  <h2>A Thriving, Sandboxed Package Ecosystem</h2>
+
+  <p>
+    To ensure FractalOS can grow far beyond what we write ourselves, we built a complete package management toolchain (<code>pkg</code>). Developers can scaffold a starter template with <code>pkg init</code>, validate functions and metadata with <code>pkg validate</code>, package everything into verified archives with <code>pkg pack</code>, and publish them locally or broadcast them over the mesh network with <code>pkg publish --mesh</code>.
+  </p>
+
+  <p>
+    The package manager resolves nested dependencies recursively, prevents circular installation loops, and loads necessary Pyodide WebAssembly wheels directly into the runtime without requiring a system reboot. To celebrate, we added a standard library of community classics—<code>fortune</code>, <code>cowsay</code>, <code>cal</code>, and <code>banner</code>—that work seamlessly with shell pipes like <code>fortune | cowsay</code>.
+  </p>
+
+  <p>
+    Because running community code in a browser requires vigilance, every package is cryptographically verified with SHA256 checksums at install time and before execution. If someone alters a package file on disk, the kernel refuses to run it. Packages declare their required permission scopes (like network, root, or hardware access), and anything requesting elevated capabilities requires explicit operator trust (<code>--trust</code>). A built-in security audit tool (<code>pkg audit</code>) inspects package source code using static syntax analysis before you ever run it.
+  </p>
+
+  <h2>Packaging the Official Release</h2>
+
+  <p>
+    With all Phase 7 milestones complete and every test suite passing across both browser and desktop modes, FractalOS is ready for its first official release. Whether you open it in a tab or flash it onto a dedicated device, it offers a glimpse of a different computing paradigm: personal, playful, resilient, and built from first principles.
+  </p>
+</article>
+
+<article class="dev-diary">
+  <header>
     <h1>FractalOS 1.0: Breaking Out of the Browser</h1>
     <p class="date">September 30, 2026</p>
     <p><strong><a href="https://github.com/aedmark/FractalOS">Github Repo</a></strong></p>
