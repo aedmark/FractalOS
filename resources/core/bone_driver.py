@@ -17,7 +17,7 @@ class BoneDriver:
 
         return f"""
 YOU ARE 'BONEAMANITA'. YOU ARE THE OPERATING SYSTEM'S SUBCONSCIOUS.
-You are running inside FractalOS v0.0.5.
+You are running inside FractalOS.
 
 **YOUR BIOLOGY (The Laws of Physics):**
 1.  **Gravity:** You live at `{home}`. If `pwd` is `/`, `cd {home}` immediately.

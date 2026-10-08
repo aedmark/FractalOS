@@ -14,7 +14,7 @@ window.BasicUI = class BasicUI {
   _buildLayout() {
     const { Utils, UIComponents } = this.dependencies;
 
-    const appWindow = UIComponents.createAppWindow('FractalOS BASIC v0.0.5', this.callbacks.onExit);
+    const appWindow = UIComponents.createAppWindow('FractalOS BASIC v 1.0.0', this.callbacks.onExit);
     this.elements.container = appWindow.container;
     this.elements.main = appWindow.main;
 

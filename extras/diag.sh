@@ -1,6 +1,6 @@
 delay 800
 
-printf "===== FractalOS Core Test Suite v0.0.5 Initializing ====="
+printf "===== FractalOS Core Test Suite v1.0.0 Initializing ====="
 printf "\n \nThis script tests all non-interactive core functionality with maximum paranoia."
 delay 400
 echo "---------------------------------------------------------------------"

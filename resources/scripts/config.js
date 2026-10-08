@@ -82,7 +82,7 @@ class ConfigManager {
             },
 
             MESSAGES: {
-                BASIC_WELCOME_1: "Fractal BASIC v0.0.5",
+                BASIC_WELCOME_1: "Fractal BASIC v1.0.0",
                 BASIC_WELCOME_2: "Copyright (c) 2025 Edmark & Gemini",
                 AI_LOADING_MESSAGES: [
                     "Analyzing narrative structure...",
