@@ -72,7 +72,7 @@ window.WindowManager = class WindowManager {
     /**
      * Opens an app in a managed window.
      */
-    openWindow(appInstance, options = {}) {
+    async openWindow(appInstance, options = {}) {
         const { TerminalUI, OutputManager } = this.dependencies;
         const appLayer = this.domElements.appLayer;
 
@@ -90,13 +90,11 @@ window.WindowManager = class WindowManager {
             defaultMode = options.windowMode;
         }
 
-        // Call enter on appInstance
-        appInstance.enter(appLayer, options);
+        // enter() may be async (the editor loads its file first); the container only exists once it settles.
+        await appInstance.enter(appLayer, options);
 
-        // Find the container element
         const container = appInstance.container ||
-            appInstance.ui?.elements?.container ||
-            appLayer.lastElementChild;
+            appInstance.ui?.elements?.container;
 
         if (!container) {
             console.error("WindowManager: Unable to find app container element.");

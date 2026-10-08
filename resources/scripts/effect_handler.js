@@ -364,7 +364,7 @@ async function handleEffect(result, options) {
             const App = window[result.app_name + "Manager"];
             if (App) {
                 const appInstance = new App();
-                AppLayerManager.show(appInstance, { ...options, dependencies, ...result.options });
+                await AppLayerManager.show(appInstance, { ...options, dependencies, ...result.options });
             } else {
                 console.error(`Attempted to launch unknown app: ${result.app_name}`);
             }

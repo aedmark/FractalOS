@@ -673,7 +673,7 @@ class AppLayerManager {
         }
     }
 
-    show(appInstance, options = {}) {
+    async show(appInstance, options = {}) {
         const { WindowManager, TerminalUI, OutputManager } = this.dependencies;
         if (!(appInstance instanceof App)) {
             console.error(
@@ -683,8 +683,8 @@ class AppLayerManager {
         }
 
         if (WindowManager) {
-            const win = WindowManager.openWindow(appInstance, options);
             this.activeApp = appInstance;
+            const win = await WindowManager.openWindow(appInstance, options);
             document.removeEventListener("keydown", this._boundHandleGlobalKeyDown, true);
             document.addEventListener("keydown", this._boundHandleGlobalKeyDown, true);
             return win;
