@@ -73,6 +73,11 @@ class UserManager {
         if (verifyResult.success && verifyResult.data) {
             await SessionManager.pushUserToStack(username);
             const sessionStatus = await SessionManager.loadAutomaticState(username);
+            // Like a real login, always start in the user's home, not wherever their last session ended.
+            const homePath = `/home/${username}`;
+            if (await this.dependencies.FileSystemManager.getNodeByPath(homePath)) {
+                await this.dependencies.FileSystemManager.setCurrentPath(homePath);
+            }
             if (sessionStatus.newStateCreated) {
                 await OutputManager.appendToOutput(`${Config.MESSAGES.WELCOME_PREFIX} ${username}${Config.MESSAGES.WELCOME_SUFFIX}`);
             }

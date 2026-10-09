@@ -50,7 +50,7 @@ class FileSystemManager:
                             },
                             "Guest": {
                                 "type": "directory", "children": {}, "owner": "Guest", "group": "Guest",
-                                "mode": 0o755, "mtime": now_iso
+                                "mode": 0o777, "mtime": now_iso
                             }
                         },
                         "owner": "root", "group": "root", "mode": 0o755, "mtime": now_iso
@@ -269,6 +269,8 @@ class FileSystemManager:
 
             new_file_group = parent_node.get('group') if is_collaborative else user_context.get('group', 'guest')
             new_file_mode = 0o660 if is_collaborative else 0o644
+            if parent_mode & 0o002:
+                new_file_mode = 0o666  # a world-writable directory (Guest's home) stays shared: anyone may edit what lands in it
 
             new_file = {
                 "type": "file", "content": content, "owner": str(user_context.get('name', 'guest')),
@@ -317,7 +319,8 @@ class FileSystemManager:
 
                 new_dir = {
                     "type": "directory", "children": {}, "owner": str(user_context.get('name', 'guest')),
-                    "group": str(user_context.get('group', 'guest')), "mode": 0o755, "mtime": now_iso
+                    "group": str(user_context.get('group', 'guest')),
+                    "mode": 0o777 if current_node.get('mode', 0) & 0o002 else 0o755, "mtime": now_iso
                 }
                 current_node['children'][part] = new_dir
                 current_node['mtime'] = now_iso
