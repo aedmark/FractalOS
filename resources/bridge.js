@@ -26,7 +26,7 @@ const FractalOS_Kernel = {
     },
     
     async getKernelFileManifest() {
-        const response = await fetch('./core/manifest.json');
+        const response = await fetch('./core/manifest.json', { cache: 'no-cache' });
         if (!response.ok) {
             throw new Error(`Could not load core/manifest.json (HTTP ${response.status}). Run: python3 tools/gen_manifest.py`);
         }
@@ -91,7 +91,7 @@ const FractalOS_Kernel = {
             for (const [pyPath, jsPath] of Object.entries(filesToLoad)) {
                 if (jsPath) {
                     let code;
-                    code = await (await fetch(jsPath)).text();
+                    code = await (await fetch(jsPath, { cache: 'no-cache' })).text();
                     this.pyodide.FS.writeFile(pyPath, code, { encoding: 'utf8' });
                 } else {
                     this.pyodide.FS.writeFile(pyPath, '', { encoding: 'utf8' });
