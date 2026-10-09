@@ -7,6 +7,10 @@ const BOOT_TIMEOUT_MS = 120000;
 
 const CHECKS = [
     { cmd: 'echo hello', expect: r => r.success && r.output === 'hello' },
+    // Commands that declare define_flags() as bare names or literal tokens, not dicts, must still parse.
+    { cmd: 'wm ls', expect: r => r.success },
+    { cmd: 'split --list', expect: r => r.success },
+    { cmd: 'notify -s hello', expect: r => r.success },
     { cmd: 'date', expect: r => r.success && /\d{4}/.test(r.output || '') },
     { cmd: 'whoami', expect: r => r.success && r.output === 'Guest' },
     { cmd: 'ls -la /home', expect: r => r.success && ['gordon', 'Guest', 'root'].every(n => (r.output || '').includes(n)) },

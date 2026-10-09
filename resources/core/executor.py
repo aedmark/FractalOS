@@ -84,6 +84,44 @@ class CommandExecutor:
         self._flag_def_cache[command_name] = {}
         return {}
 
+    @staticmethod
+    def _build_flag_map(raw_definitions):
+        """Maps each flag token to (key stored in `flags`, takes_value).
+
+        Canonical form is a list of {'name', 'short', 'long', 'takes_value'} dicts. Two shorthand forms are also
+        accepted, because commands in the wild declare them:
+          * bare names (["dock", "help"]) with an optional {"aliases": {"d": "dock"}}: `--dock` / `-d` set flags["dock"].
+          * literal tokens (["--list", "-l"]) with optional {"metadata": {"--focus": {"type": "string"}}}: each token
+            sets flags[token] itself, and takes a value when its metadata names a type (a short flag inherits that
+            from the long flag listed just before it).
+        """
+        if isinstance(raw_definitions, dict):
+            flag_definitions = raw_definitions.get('flags', [])
+            aliases = raw_definitions.get('aliases') or {}
+            metadata = raw_definitions.get('metadata') or {}
+        else:
+            flag_definitions, aliases, metadata = raw_definitions, {}, {}
+
+        flag_map = {}
+        previous_takes_value = False
+        for flag_def in flag_definitions:
+            if isinstance(flag_def, dict):
+                canonical_name, takes_value = flag_def['name'], flag_def.get('takes_value', False)
+                if 'short' in flag_def: flag_map[f"-{flag_def['short']}"] = (canonical_name, takes_value)
+                if 'long' in flag_def: flag_map[f"--{flag_def['long']}"] = (canonical_name, takes_value)
+            elif isinstance(flag_def, str) and flag_def.startswith('-'):
+                typed = isinstance(metadata.get(flag_def), dict) and 'type' in metadata[flag_def]
+                takes_value = typed or (not flag_def.startswith('--') and previous_takes_value)
+                flag_map[flag_def] = (flag_def, takes_value)
+                previous_takes_value = typed
+                continue
+            elif isinstance(flag_def, str):
+                flag_map[f"--{flag_def}"] = (flag_def, False)
+            previous_takes_value = False
+        for short, name in aliases.items():
+            flag_map.setdefault(f"-{short}", (name, False))
+        return flag_map
+
     def _parts_to_segment(self, segment_parts):
         if not segment_parts:
             return None
@@ -116,17 +154,8 @@ class CommandExecutor:
         parts_to_process = [command_name] + expanded_parts
         raw_definitions = self._get_command_flag_definitions(command_name)
 
-        if isinstance(raw_definitions, dict):
-            flag_definitions = raw_definitions.get('flags', [])
-        else:
-            flag_definitions = raw_definitions
-
         args, flags = [], {}
-        flag_map = {}
-        for flag_def in flag_definitions:
-            canonical_name, takes_value = flag_def['name'], flag_def.get('takes_value', False)
-            if 'short' in flag_def: flag_map[f"-{flag_def['short']}"] = (canonical_name, takes_value)
-            if 'long' in flag_def: flag_map[f"--{flag_def['long']}"] = (canonical_name, takes_value)
+        flag_map = self._build_flag_map(raw_definitions)
 
         i = 1
         while i < len(parts_to_process):
