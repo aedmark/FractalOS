@@ -83,6 +83,9 @@ window.WindowManager = class WindowManager {
             appInstance.constructor?.name === "OnboardingManager" ||
             appInstance.constructor?.name === "Pager";
 
+        // A locked window is not the user's to dismiss: no controls, no minimize/dock/float, no close except by the app.
+        const isLocked = !!options.locked || appInstance.constructor?.name === "OnboardingManager";
+
         let defaultMode = 'floating';
         if (isModalApp) {
             defaultMode = 'fullscreen';
@@ -121,6 +124,7 @@ window.WindowManager = class WindowManager {
             mode: defaultMode,
             previousMode: defaultMode === 'fullscreen' ? 'floating' : defaultMode,
             isMinimized: false,
+            locked: isLocked,
             bounds,
             zIndex: ++this.highestZIndex
         };
@@ -159,6 +163,11 @@ window.WindowManager = class WindowManager {
     _decorateWindow(win) {
         const container = win.container;
         const header = container.querySelector('.app-header, .window-header, header');
+
+        if (win.locked) {
+            container.addEventListener('mousedown', () => this.focusWindow(win.id));
+            return;
+        }
 
         if (header) {
             header.style.cursor = 'grab';
@@ -324,6 +333,9 @@ window.WindowManager = class WindowManager {
     setWindowMode(winId, mode) {
         const win = this.windows.get(winId);
         if (!win) return { success: false, error: `Window ${winId} not found` };
+        if (win.locked && mode !== 'fullscreen') {
+            return { success: false, error: `Window ${winId} is locked and cannot change layout` };
+        }
 
         const validModes = ['floating', 'docked-right', 'docked-left', 'docked-bottom', 'fullscreen'];
         if (!validModes.includes(mode)) {
@@ -436,6 +448,7 @@ window.WindowManager = class WindowManager {
     minimizeWindow(winId) {
         const win = this.windows.get(winId);
         if (!win) return { success: false, error: `Window ${winId} not found` };
+        if (win.locked) return { success: false, error: `Window ${winId} is locked and cannot be minimized` };
 
         win.isMinimized = true;
         win.container.style.display = 'none';
@@ -571,9 +584,13 @@ window.WindowManager = class WindowManager {
         }
     }
 
-    closeWindow(winId) {
+    /**
+     * Closes a window. A locked window refuses, unless the app itself is exiting (`force`, as closeApp passes).
+     */
+    closeWindow(winId, { force = false } = {}) {
         const win = this.windows.get(winId);
         if (!win) return { success: false, error: `Window ${winId} not found` };
+        if (win.locked && !force) return { success: false, error: `Window ${winId} is locked and cannot be closed` };
 
         // Clean up DOM element
         if (win.container && win.container.parentNode) {
@@ -625,14 +642,14 @@ window.WindowManager = class WindowManager {
     closeApp(appInstance) {
         for (const [id, win] of this.windows.entries()) {
             if (win.appInstance === appInstance) {
-                return this.closeWindow(id);
+                return this.closeWindow(id, { force: true });
             }
         }
         return { success: false, error: "App instance not found in window manager" };
     }
 
     tileWindows() {
-        const openWins = Array.from(this.windows.values()).filter(w => !w.isMinimized);
+        const openWins = Array.from(this.windows.values()).filter(w => !w.isMinimized && !w.locked);
         if (openWins.length === 0) return;
 
         const terminalRect = this.domElements.terminalDiv?.getBoundingClientRect() || { width: 900, height: 600 };
@@ -687,7 +704,7 @@ window.WindowManager = class WindowManager {
         const dockEl = this.domElements.windowDock;
         if (!dockEl) return;
 
-        if (this.windows.size === 0) {
+        if (![...this.windows.values()].some(w => !w.locked)) {
             dockEl.classList.add("hidden");
             dockEl.innerHTML = "";
             return;
@@ -697,6 +714,7 @@ window.WindowManager = class WindowManager {
         dockEl.innerHTML = "";
 
         for (const win of this.windows.values()) {
+            if (win.locked) continue;
             const pill = document.createElement("div");
             pill.className = "window-dock__pill";
             if (this.activeWindowId === win.id && !this.isTerminalFocused) {

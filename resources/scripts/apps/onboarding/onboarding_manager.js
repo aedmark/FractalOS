@@ -30,6 +30,10 @@ window.OnboardingManager = class OnboardingManager extends App {
         this.container.focus();
     }
 
+    handleKeyDown() {
+        // Setup is not optional: Escape does not leave onboarding.
+    }
+
     exit() {
         if (!this.isActive) return;
         if (this.ui) this.ui.hideAndReset();
