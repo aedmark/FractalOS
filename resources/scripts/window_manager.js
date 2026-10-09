@@ -29,9 +29,35 @@ window.WindowManager = class WindowManager {
         }
         this.domElements.windowDock = dockEl;
 
+        // Keep the app layer between the status bar and the dock, however tall either becomes.
+        if (typeof ResizeObserver !== "undefined") {
+            this._layerObserver = new ResizeObserver(() => this._syncLayerInsets());
+            [domElements.terminalDiv, document.getElementById("status-bar"), dockEl]
+                .filter(Boolean).forEach(el => this._layerObserver.observe(el));
+        }
+        this._syncLayerInsets();
+
         // Listen for global mouse events for dragging and resizing
         document.addEventListener("mousemove", this._boundMouseMove);
         document.addEventListener("mouseup", this._boundMouseUp);
+    }
+
+    /**
+     * Publishes the status bar and dock heights as --layer-top / --layer-bottom on the terminal,
+     * which #app-layer uses to avoid overlapping either bar.
+     */
+    _syncLayerInsets() {
+        const terminal = this.domElements.terminalDiv;
+        if (!terminal) return;
+        const statusBar = document.getElementById("status-bar");
+        const dock = this.domElements.windowDock;
+
+        const top = statusBar && statusBar.offsetParent ? statusBar.offsetTop + statusBar.offsetHeight : 0;
+        const dockShown = dock && !dock.classList.contains("hidden") && dock.offsetParent;
+        const bottom = dockShown ? Math.max(0, terminal.clientHeight - dock.offsetTop) : 0;
+
+        terminal.style.setProperty("--layer-top", `${top}px`);
+        terminal.style.setProperty("--layer-bottom", `${bottom}px`);
     }
 
     setDependencies(dependencies) {
@@ -286,7 +312,7 @@ window.WindowManager = class WindowManager {
             const dx = e.clientX - this._dragState.startX;
             const dy = e.clientY - this._dragState.startY;
 
-            const terminalRect = this.domElements.terminalDiv?.getBoundingClientRect() || { width: window.innerWidth, height: window.innerHeight };
+            const terminalRect = this.domElements.appLayer?.getBoundingClientRect() || { width: window.innerWidth, height: window.innerHeight };
             const newLeft = Math.max(0, Math.min(terminalRect.width - 100, this._dragState.origLeft + dx));
             const newTop = Math.max(0, Math.min(terminalRect.height - 60, this._dragState.origTop + dy));
 
@@ -652,7 +678,7 @@ window.WindowManager = class WindowManager {
         const openWins = Array.from(this.windows.values()).filter(w => !w.isMinimized && !w.locked);
         if (openWins.length === 0) return;
 
-        const terminalRect = this.domElements.terminalDiv?.getBoundingClientRect() || { width: 900, height: 600 };
+        const terminalRect = this.domElements.appLayer?.getBoundingClientRect() || { width: 900, height: 600 };
         const W = terminalRect.width;
         const H = terminalRect.height;
 
@@ -701,6 +727,11 @@ window.WindowManager = class WindowManager {
     }
 
     _updateDockBar() {
+        this._updateDockPills();
+        this._syncLayerInsets();
+    }
+
+    _updateDockPills() {
         const dockEl = this.domElements.windowDock;
         if (!dockEl) return;
 

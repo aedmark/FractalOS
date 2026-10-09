@@ -619,11 +619,12 @@ body {
 }
 
 #app-layer {
+    /* --layer-top / --layer-bottom are set by WindowManager so the layer sits between the status bar and the dock. */
     position: absolute;
-    top: 0;
+    top: var(--layer-top, 0px);
     left: 0;
     width: 100%;
-    height: 100%;
+    height: calc(100% - var(--layer-top, 0px) - var(--layer-bottom, 0px));
     z-index: 10;
     display: flex;
     align-items: center;
@@ -642,11 +643,11 @@ body {
 
 #app-layer.app-layer--docked-right {
     position: absolute !important;
-    top: 0 !important;
+    top: var(--layer-top, 0px) !important;
     right: 0 !important;
     left: 50% !important;
     width: 50% !important;
-    height: 100% !important;
+    height: calc(100% - var(--layer-top, 0px) - var(--layer-bottom, 0px)) !important;
     background-color: transparent !important;
     backdrop-filter: none !important;
     pointer-events: auto !important;
@@ -657,11 +658,11 @@ body {
 
 #app-layer.app-layer--docked-left {
     position: absolute !important;
-    top: 0 !important;
+    top: var(--layer-top, 0px) !important;
     left: 0 !important;
     right: auto !important;
     width: 50% !important;
-    height: 100% !important;
+    height: calc(100% - var(--layer-top, 0px) - var(--layer-bottom, 0px)) !important;
     background-color: transparent !important;
     backdrop-filter: none !important;
     pointer-events: auto !important;
@@ -672,11 +673,11 @@ body {
 
 #app-layer.app-layer--docked-bottom {
     position: absolute !important;
-    bottom: 0 !important;
+    bottom: var(--layer-bottom, 0px) !important;
     top: auto !important;
     left: 0 !important;
     width: 100% !important;
-    height: 50% !important;
+    height: calc((100% - var(--layer-top, 0px) - var(--layer-bottom, 0px)) / 2) !important;
     background-color: transparent !important;
     backdrop-filter: none !important;
     pointer-events: auto !important;
@@ -687,10 +688,10 @@ body {
 
 #app-layer.app-layer--fullscreen {
     position: absolute !important;
-    top: 0 !important;
+    top: var(--layer-top, 0px) !important;
     left: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: calc(100% - var(--layer-top, 0px) - var(--layer-bottom, 0px)) !important;
     background-color: rgba(10, 10, 10, 0.85) !important;
     backdrop-filter: blur(2px) !important;
     pointer-events: auto !important;
@@ -825,6 +826,7 @@ body {
 /* Window Dock / Taskbar (P7-10) */
 #window-dock,
 .window-dock {
+    margin-top: auto; /* stay at the bottom when a bottom-docked window halves the terminal */
     display: flex;
     align-items: center;
     gap: 6px;
