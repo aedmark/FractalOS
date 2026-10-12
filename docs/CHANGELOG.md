@@ -1,5 +1,12 @@
 # CHANGELOG.md
 
+## [Unreleased]
+
+### Any x86_64 machine as a mesh node or signal server (Phase 9)
+- **`extras/provision_x64.sh`:** roles `signal`, `node` and `kiosk` on minimal Debian/Ubuntu x86_64, using the system Chromium and systemd services (D-046).
+- **`deploy.json` runtime switch:** the mesh can now be turned on (and pointed at a signaling server) without editing `config.js`.
+- **Signaling relay fixes:** broadcasts are now relayed, works with current `websockets`, `--port`/`--bind` options; Portable-mode spawn uses the right port.
+
 ## [1.0.0] - 2026-10-06: The Living Terminal & Distributed Mesh
 
 ### 🌐 Distributed P2P Mesh & Swarms (Phase 7.1 & 7.2)

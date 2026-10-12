@@ -6,7 +6,7 @@ FractalOS is an open-source, narrative operating system where the primary interf
 
 Instead of rigid static interfaces, you converse with the system or drive it through familiar command-line paradigms. The built-in AI agent (`samwise`, powered by local Ollama or the Gemini API) understands natural language, executes shell pipelines, manages files, inspects hardware, delegates tasks across peer nodes, and writes code on your behalf under safety voltage policies.
 
-FractalOS runs entirely client-side in your browser, as a standalone native desktop application via Neutralinojs, or as a dedicated bare-metal kiosk appliance on Raspberry Pi hardware.
+FractalOS runs entirely client-side in your browser, as a standalone native desktop application via Neutralinojs, or as a dedicated bare-metal kiosk appliance on Raspberry Pi hardware or any x86_64 machine.
 
 ---
 
@@ -73,9 +73,22 @@ Run FractalOS as a standalone native desktop application with local file system 
 ### 3. Bare-Metal Appliance Mode (Fractal Pi)
 Deploy FractalOS as a dedicated boot-to-shell appliance on Raspberry Pi or ARM64 single-board computers.
 
-1. Review `extras/build_distro.sh` to configure auto-login, kiosk display server, and hardware GPIO mappings.
-2. Flash the base appliance image onto an SD card or eMMC storage.
-3. Boot directly into the FractalOS living shell with active hardware pin sensing and auto-mesh discovery.
+1. Review `extras/provision_appliance.sh`, which installs the kiosk display server and auto-start on a minimal Debian / Raspberry Pi OS Lite.
+2. Run it on the board as root.
+3. Boot directly into the FractalOS living shell with active hardware pin sensing.
+
+### 4. Any x86_64 Machine: Mesh Node or Signal Server
+An old laptop or desktop with a modern browser can serve FractalOS to your network, relay mesh signaling, or be a mesh peer itself.
+On a minimal Debian 12/13 (or other apt-based) install, from a checkout or release bundle:
+
+```bash
+sudo ./extras/provision_x64.sh --role signal   # web server + signaling relay, no screen needed
+sudo ./extras/provision_x64.sh --role node     # signal + a full-time browser peer (needs a screen for first-run setup)
+sudo ./extras/provision_x64.sh --role kiosk    # FractalOS on this machine's own screen
+```
+
+Any browser on the LAN can then open `http://<box>:8000/` and join the mesh. `--headless` runs the node's browser without
+a display once the first account exists. There is no authentication on either port: keep it on a trusted network. See D-046.
 
 ---
 

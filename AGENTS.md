@@ -55,9 +55,11 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | `resources/dep/` | Vendored third-party code: `pyodide/` (trimmed, D-004), Tone.js, marked, DOMPurify, html2canvas |
 | `resources/start_server.sh`, `stop_server.sh` | `python3 -m http.server 8000` from `resources/` |
 | `neutralino.config.json`, `resources/neutralino.js`, `neutralino/www/` | Desktop (Portable) mode. `neutralino/www/` is the untouched Neutralino template, not the app |
+| `extras/provision_x64.sh`, `extras/provision_appliance.sh`, `extras/signaling_server.py` | x86_64 node / signal / kiosk installer (D-046); the Raspberry Pi kiosk installer; the mesh signaling relay. `resources/deploy.json` (gitignored, written by the installer) switches the mesh on |
 | `extras/diag.sh`, `extras/inflate.sh` | In-OS shell scripts: a 1,400-line command test suite and a demo-world generator (see `docs/TESTING.md`) |
 | `tests/structure.js` | Node-only, instant: the manifest and `asset_manifest.js` match the files on disk (D-010) |
 | `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |
+| `tests/deploy_mesh.js` | Headless-Chromium: `deploy.json` turns the mesh on/off and aims the WebSocket; `--live` adds two browsers meeting through the real relay |
 | `tests/agent.js`, `tests/fake_ollama.py` | Headless run of the `samwise` agent (autopilot and agent mode) through seven tasks against a real Ollama, graded on the file system, transcript to `tests/out/`; and a stand-in Ollama that proves the plumbing without a model (D-014) |
 | `tests/agent_grading.js`, `tests/agent_unit.py` | No browser, no model: the agent harness's graders against canned outcomes, and unit tests of plan parsing, validation and retries, stop-on-failure, voltage and `--force`, checkpoints and `forge` escapes |
 | `tests/test_executor.py` | Runs **inside FractalOS** (`python test_executor.py` after copying it into the VFS) to exercise the `python` command; it imports the kernel, so plain `python3` on the host cannot run it |

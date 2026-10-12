@@ -42,7 +42,31 @@ class NetworkManager {
         this.dependencies = dependencies;
     }
 
+    // Deploy-time switch (D-046): an optional `deploy.json` next to index.html, written by the appliance
+    // provisioner, turns the mesh on without editing config.js. Absent or unreadable means "use the defaults".
+    async _applyDeployConfig() {
+        const net = this.dependencies.Config?.NETWORKING;
+        if (!net) return;
+        let deploy = null;
+        try {
+            const response = await fetch('deploy.json', { cache: 'no-store' });
+            if (response.ok) deploy = await response.json();
+        } catch (_) {}
+        if (!deploy || typeof deploy !== 'object') return;
+        if (deploy.networking === true) net.NETWORKING_ENABLED = true;
+        if (typeof deploy.signalingUrl === 'string' && deploy.signalingUrl) {
+            if (deploy.signalingUrl === 'auto') {
+                const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                const port = Number(deploy.signalingPort) || 8080;
+                net.SIGNALING_SERVER_URL = `${scheme}://${window.location.hostname}:${port}`;
+            } else {
+                net.SIGNALING_SERVER_URL = deploy.signalingUrl;
+            }
+        }
+    }
+
     async startNetworking() {
+        await this._applyDeployConfig();
         if (this.dependencies.Config?.NETWORKING?.NETWORKING_ENABLED) {
             this.isNetworkingEnabled = true;
             this.signalingServerUrl = this.dependencies.Config.NETWORKING.SIGNALING_SERVER_URL;
@@ -55,7 +79,7 @@ class NetworkManager {
                         if (typeof Neutralino !== 'undefined' && Neutralino.os) {
                             console.log('Starting local signaling server via Neutralino...');
                             Neutralino.os.spawnProcess('python3 extras/signaling_server.py');
-                            this.signalingServerUrl = 'ws://localhost:8765';
+                            this.signalingServerUrl = 'ws://localhost:8080';
                         } else {
                             console.warn('Cannot run signaling server: not in Portable mode.');
                         }

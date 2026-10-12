@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""FractalOS signaling relay: routes WebRTC offers/answers/presence between mesh nodes.
+
+Usage: signaling_server.py [--port 8080] [--bind 0.0.0.0]
+
+Needs the `websockets` package (Debian/Ubuntu: apt install python3-websockets). There is no authentication:
+run it on a trusted LAN only.
+"""
+import argparse
 import asyncio
 import json
 import logging
@@ -22,7 +30,8 @@ async def unregister(websocket):
         del connected_clients[instance_id]
         logging.info(f"Unregistered instance {instance_id}. Total clients: {len(connected_clients)}")
 
-async def signaling_handler(websocket, path):
+async def signaling_handler(websocket, path=None):
+    # `path` exists in websockets < 13 only; newer releases call the handler with the connection alone.
     await register(websocket)
     try:
         async for message in websocket:
@@ -41,10 +50,11 @@ async def signaling_handler(websocket, path):
                 connected_clients[source_id] = websocket
                 logging.info(f"Registered new instance: {source_id}. Total clients: {len(connected_clients)}")
                 
-            logging.info(f"Routing {msg_type} from {source_id} to {target_id if target_id else 'BROADCAST'}")
+            logging.info(f"Routing {msg_type} from {source_id} to {target_id if target_id and target_id != 'broadcast' else 'BROADCAST'}")
             
             # Route the message
-            if target_id:
+            # The client addresses a broadcast as targetId 'broadcast', not as a missing target.
+            if target_id and target_id != 'broadcast':
                 target_ws = connected_clients.get(target_id)
                 if target_ws:
                     await target_ws.send(message)
@@ -64,11 +74,14 @@ async def signaling_handler(websocket, path):
     finally:
         await unregister(websocket)
 
-async def main():
-    port = 8080
-    logging.info(f"Starting signaling server on ws://0.0.0.0:{port}")
-    async with websockets.serve(signaling_handler, "0.0.0.0", port):
+async def main(bind, port):
+    logging.info(f"Starting signaling server on ws://{bind}:{port}")
+    async with websockets.serve(signaling_handler, bind, port):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="FractalOS signaling relay")
+    parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--bind", default="0.0.0.0")
+    args = parser.parse_args()
+    asyncio.run(main(args.bind, args.port))

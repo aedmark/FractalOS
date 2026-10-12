@@ -1,5 +1,6 @@
 # Portable (Neutralino) mode writes its state here, next to the binary
 data/
+resources/deploy.json
 .tmp/
 neutralino-*
 *.log

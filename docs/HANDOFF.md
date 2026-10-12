@@ -11,19 +11,36 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-FractalOS 1.0.0 ("The Living Terminal & Distributed Mesh") is fully documented with a comprehensive offline HTML Architectural Codex and User Guide in `docs/manual/` (P8-01, D-045).
-- `docs/manual/manual.css`: Thematic responsive stylesheet with dark terminal styling, custom callout components, and print media rules for browser PDF export.
-- `docs/manual/index.html`: Architectural Codex covering Book I (Philosophy & Three Runtimes), Book II (Hybrid Python/Wasm Kernel & Effect Contract), Book III (Living Shell & Voltage Safety), Book IV (Distributed P2P Mesh & Swarms), Book V (Terminal Multiplexing, WM & GPIO), Book VI (Package Ecosystem & Auditing), Book VII (Command Architecture & 18-Category Matrix), Book VIII (Graphical Application Suites), Book IX (The Proving Ground QA), Book X (Runtime Stack & Dependencies), and Appendix (System Paths & Configs). All 52 internal anchors and 151 cross-links verified.
-- `docs/manual/commands.html`: The 450 KB exhaustive Command Codex documenting all 151 native Python commands across 18 functional categories, strictly adhering to the What It Does, How It Works, and Why It Works triad. All 320 anchors verified.
-All test suites pass: `node tests/structure.js` (PASS), `python3 tests/agent_unit.py` (37/37 OK).
+FractalOS 1.0.0 plus Phase 9 work in progress (uncommitted as of 2026-10-12): any x86_64 machine that runs a modern
+browser can be provisioned as a mesh `node`, `signal` server or `kiosk` with `extras/provision_x64.sh` (D-046).
+- **Works and tested:** the `signal` role in Debian 12 and 13 containers (web server and relay, two clients exchange broadcast and direct messages); `deploy.json` turning the mesh on in the browser (`tests/deploy_mesh.js`, including `--live` through the real relay); a headless Chromium launching under the `node` role in Debian 13; smoke 88/88, structure test PASS.
+- **Not tested:** anything on real hardware or under real systemd; the kiosk X session (`xinit` on tty7); a headless `node` that has completed onboarding and then joins a mesh; WebRTC data channels across the LAN between two machines.
+- **Known limits:** a `node` needs a screen once for first-run account setup (P9-05); the web server and relay are unauthenticated (P9-06); Ubuntu's `chromium` is a snap (P9-07); 32-bit x86 is out of scope.
+- **Fixed along the way:** the Python signaling relay never relayed broadcasts; `NETWORKING_ENABLED` was hard-coded false so no appliance could join a mesh; Portable-mode spawn used the wrong port; the README named a non-existent `build_distro.sh`.
+- The Raspberry Pi path (`extras/provision_appliance.sh`) is unchanged and still untested on hardware.
+- FractalOS 1.0 documentation (Architectural Codex, `docs/manual/`) is complete (P8-01, D-045).
 
 ## Next steps
 
-1. If requested by the user, author an entry in `docs/devlog.html` celebrating the publication of the comprehensive Architectural Codex and User Guide.
-2. Conduct live bare-metal appliance tests on physical Raspberry Pi hardware with physical GPIO sensors and LEDs.
-3. Conduct multi-machine WAN WebRTC mesh stress trials across geographically dispersed nodes.
+1. Commit the Phase 9 work (P9-01..03) if the owner agrees; nothing is committed yet.
+2. P9-04: try `provision_x64.sh` on a real old laptop or desktop: `--role node` with a screen, then `--headless`.
+3. P9-05: let a headless box create its first account.
+4. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
 
 ## Session log
+
+### Session 27: 2026-10-12: P9-01..P9-03 x86_64 mesh node / signal server
+
+**Goal:** Give ordinary x86_64 hardware (any machine that runs a modern browser) an install path as a mesh node or signal server, like the Pi had.
+**Done:** P9-01, P9-02, P9-03, D-046. New `extras/provision_x64.sh` (roles `signal`, `node`, `kiosk`; `--headless`, `--no-start`, `--uninstall`; systemd units under an unprivileged `fractal` user; system Chromium, no Neutralino). New runtime switch `resources/deploy.json` read by `NetworkManager._applyDeployConfig`. Repaired `extras/signaling_server.py`. New `tests/deploy_mesh.js` (mutation-checked: 7 checks fail with the change reverted).
+**Changed:** `extras/provision_x64.sh`, `extras/signaling_server.py`, `resources/scripts/network_manager.js`, `tests/deploy_mesh.js`, `tools/package_release.py` (skips `deploy.json`), `.gitignore`, `README.md`, `AGENTS.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/TESTING.md`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
+**Decisions:** D-046.
+**Problems / surprises:**
+- `NETWORKING_ENABLED` was a hard-coded `false` and `/etc/network.conf` only controls a Neutralino-spawned relay, so P6-04 ("peer discovery on boot") could not have worked on any appliance. `deploy.json` is the fix.
+- The Python relay treated `targetId: "broadcast"` as a direct target and silently dropped every broadcast; only the unused Node relay worked. Found by the container test, not by reading.
+- First run shows onboarding, which returns before `startNetworking()`, so a freshly provisioned headless node never joins. Hence the "screen once" limit.
+**Left undone:** P9-04..P9-07. Nothing committed. Real-hardware and real-systemd testing.
+**Next session should start with:** committing this work if approved, then P9-04 on a physical machine.
 
 ### Session 26: 2026-10-07: P8-01 The FractalOS 1.0 Architectural Codex & Manual (`docs/manual/`)
 

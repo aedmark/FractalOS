@@ -204,6 +204,26 @@ run is 7/7 in about a minute, which proves the harness, the CORS preflight, the 
 field. It proves nothing about a model. Its first run found the two bugs in D-014, so it earns its keep as a
 regression check for the agent loop.
 
+## The deploy-mesh test (`tests/deploy_mesh.js`)
+
+```bash
+NODE_PATH=$(npm root -g) node tests/deploy_mesh.js http://127.0.0.1:8000/index.html
+# with `python3 extras/signaling_server.py` running on the same host:
+node tests/deploy_mesh.js http://127.0.0.1:8000/index.html --live
+```
+
+About two minutes. Fakes `deploy.json` with `page.route` and checks `NETWORKING_ENABLED` and the WebSocket URL for
+six cases (absent, off, `auto`, `auto` with a port, explicit, malformed). `--live` opens two separate browser
+contexts through the real Python relay and requires each to discover the other (separate contexts share no
+BroadcastChannel, so only the relay can explain it). Mutation-checked 2026-10-12: with `network_manager.js`
+reverted, 7 checks fail. A new profile shows onboarding, which returns before networking starts, so the test
+marks onboarding complete and reloads first.
+
+`extras/provision_x64.sh` itself is checked in containers: `docker run --rm -v "$PWD":/src:ro debian:13 bash -c
+'cd /src && ./extras/provision_x64.sh --role signal'` (also `debian:12`), then start the two services as the `fractal`
+user by hand, since containers have no systemd. A headless `node` also needs `--no-sandbox` in
+`FRACTAL_BROWSER_ARGS` inside Docker. Real hardware is P9-04.
+
 ## Manual checks (before a release)
 
 The CONTRIBUTING.md checklist, made concrete:

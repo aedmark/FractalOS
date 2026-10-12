@@ -265,3 +265,16 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 ## Phase 8: System Documentation & Architectural Codex
 
 - [x] P8-01 **HTML Architectural Codex & Manual**: Complete modernization of the 101-page OopisOS manual into the FractalOS 1.0 Architectural Codex in `docs/manual/index.html` (Books I–VI, VIII–X) and comprehensive 151-command reference in `docs/manual/commands.html` (Book VII) with responsive styling and print-friendly export (D-045, 2026-10-07).
+
+## Phase 9: Any x86_64 Machine (Mesh Node / Signal Server)
+
+Turn old x86_64 laptops and desktops into mesh nodes or signal servers. Scope: any x64 machine that runs a modern
+(Chromium-based) browser. 32-bit x86 is out of scope (D-046).
+
+- [x] P9-01 `extras/provision_x64.sh`: roles `signal` (web + signaling relay, no browser), `node` (signal + browser peer, optionally headless) and `kiosk` (local screen), systemd units, `--uninstall`. Tested role `signal` in Debian 12 and 13 containers; `node` browser launch in a Debian 13 container; kiosk X session not yet tried on real hardware (D-046, 2026-10-12)
+- [x] P9-02 Runtime mesh switch: optional `resources/deploy.json` turns networking on and points it at a signaling server (`"auto"` = the page's own host), because `NETWORKING_ENABLED` was a hard-coded `false` and the appliance could not join a mesh at all. `tests/deploy_mesh.js` (D-046, 2026-10-12)
+- [x] P9-03 `extras/signaling_server.py` repaired: broadcasts never relayed (client sends `targetId: "broadcast"`), handler signature broke on `websockets` 13+, `--port`/`--bind` added; Portable-mode spawn expected port 8765 while the server listened on 8080 (2026-10-12)
+- [ ] P9-04 Live trial on real x64 hardware: the kiosk X session (`xinit` under systemd on tty7), headless `node` after first-run setup, two boxes plus a browser on the LAN, WebRTC across the LAN (mDNS ICE candidates)
+- [ ] P9-05 Headless first-run: the first account is created by the onboarding window, so a `node` box needs a screen once. Seed an account non-interactively (or an onboarding bypass for appliances)
+- [ ] P9-06 Optional auth for the signaling relay and web server (both are open on the LAN today)
+- [ ] P9-07 Ubuntu: `chromium` there is a snap shim; decide between a Firefox path and a documented `FRACTAL_BROWSER` override

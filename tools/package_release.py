@@ -3,7 +3,7 @@
 FractalOS Official Release Packaging Tool
 Builds clean, self-contained distribution bundles in dist/ with SHA256 checksums:
 1. fractalos-1.0.0-web.zip & .tar.gz (Deployable web edition for any HTTP server)
-2. fractalos-1.0.0-appliance.tar.gz (Bare-metal Raspberry Pi / Kiosk appliance)
+2. fractalos-1.0.0-appliance.tar.gz (Bare-metal appliance: Raspberry Pi kiosk, x86_64 node / signal / kiosk)
 3. fractalos-1.0.0-full.tar.gz (Full release distribution including docs, tests, and tools)
 """
 
@@ -64,7 +64,7 @@ def main():
     web_stage = DIST / f"fractalos-{VERSION}-web"
     web_stage.mkdir(parents=True)
     
-    shutil.copytree(ROOT / "resources", web_stage / "resources", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copytree(ROOT / "resources", web_stage / "resources", ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "deploy.json"))
     shutil.copy(ROOT / "README.md", web_stage / "README.md")
     if (ROOT / "LICENSE").exists():
         shutil.copy(ROOT / "LICENSE", web_stage / "LICENSE")
@@ -87,8 +87,8 @@ def main():
     app_stage = DIST / f"fractalos-{VERSION}-appliance"
     app_stage.mkdir(parents=True)
 
-    shutil.copytree(ROOT / "resources", app_stage / "resources", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-    shutil.copytree(ROOT / "extras", app_stage / "extras", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copytree(ROOT / "resources", app_stage / "resources", ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "deploy.json"))
+    shutil.copytree(ROOT / "extras", app_stage / "extras", ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "deploy.json"))
     shutil.copy(ROOT / "neutralino.config.json", app_stage / "neutralino.config.json")
     shutil.copy(ROOT / "README.md", app_stage / "README.md")
     
@@ -104,7 +104,7 @@ def main():
 
     for item in ("resources", "extras", "docs", "tests", "tools"):
         if (ROOT / item).exists():
-            shutil.copytree(ROOT / item, full_stage / item, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "out"))
+            shutil.copytree(ROOT / item, full_stage / item, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "out", "deploy.json"))
 
     for f in ("README.md", "AGENTS.md", "neutralino.config.json"):
         if (ROOT / f).exists():
