@@ -58,7 +58,8 @@ Instant start on any device with a modern browser. No build steps or npm install
    python3 -m http.server 8000 --directory resources
    ```
 3. **Open in your browser:**
-   Navigate to [http://localhost:8000](http://localhost:8000).
+   Navigate to [http://localhost:8000](http://localhost:8000). The public product page is beside it at
+   [http://localhost:8000/landing.html](http://localhost:8000/landing.html).
 
 > **Note:** The trimmed Pyodide runtime (v314.0.7, Python 3.14.2) and core cryptography dependencies are pre-vendored in `resources/dep/pyodide/`. Everything loads locally without external CDN fetches.
 

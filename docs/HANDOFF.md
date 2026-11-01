@@ -11,9 +11,18 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-FractalOS 1.0.0 plus Phase 9 work in progress (uncommitted as of 2026-10-12): any x86_64 machine that runs a modern
-browser can be provisioned as a mesh `node`, `signal` server or `kiosk` with `extras/provision_x64.sh` (D-046).
-- **Works and tested:** the `signal` role in Debian 12 and 13 containers (web server and relay, two clients exchange broadcast and direct messages); `deploy.json` turning the mesh on in the browser (`tests/deploy_mesh.js`, including `--live` through the real relay); a headless Chromium launching under the `node` role in Debian 13; smoke 88/88, structure test PASS.
+FractalOS 1.0.0 plus the uncommitted rebuilt public landing page (2026-11-01, D-047). Phase 9 x86_64 provisioning
+is committed (`a9f66bc`, D-046).
+- **Public landing page (2026-11-01, uncommitted):** `resources/landing.html` is now an EGA product sheet with a
+  plain-English explanation, real captured shell and Python output, an abridged Samwise run, capabilities, an
+  honest who-it-is-for section, three boot paths, the architecture and an FAQ. New `landing.css` and `landing.js`
+  beside it; no web fonts or network assets. Verified at 1440, 1200, 1024, 960, 768, 390 and 320 with no horizontal
+  overflow; tabs work by click and keyboard, copy returns the install commands, and there are no page console errors.
+- **Works and tested:** any x86_64 machine that runs a modern browser can be provisioned as a mesh `node`, `signal`
+  server or `kiosk` with `extras/provision_x64.sh` (D-046); the `signal` role in Debian 12 and 13 containers (web
+  server and relay, two clients exchange broadcast and direct messages); `deploy.json` turning the mesh on in the
+  browser (`tests/deploy_mesh.js`, including `--live` through the real relay); a headless Chromium launching under
+  the `node` role in Debian 13; smoke 88/88, structure test PASS.
 - **Not tested:** anything on real hardware or under real systemd; the kiosk X session (`xinit` on tty7); a headless `node` that has completed onboarding and then joins a mesh; WebRTC data channels across the LAN between two machines.
 - **Known limits:** a `node` needs a screen once for first-run account setup (P9-05); the web server and relay are unauthenticated (P9-06); Ubuntu's `chromium` is a snap (P9-07); 32-bit x86 is out of scope.
 - **Fixed along the way:** the Python signaling relay never relayed broadcasts; `NETWORKING_ENABLED` was hard-coded false so no appliance could join a mesh; Portable-mode spawn used the wrong port; the README named a non-existent `build_distro.sh`.
@@ -22,12 +31,26 @@ browser can be provisioned as a mesh `node`, `signal` server or `kiosk` with `ex
 
 ## Next steps
 
-1. Commit the Phase 9 work (P9-01..03) if the owner agrees; nothing is committed yet.
+1. Commit the landing page if the owner agrees; it is the only uncommitted work.
 2. P9-04: try `provision_x64.sh` on a real old laptop or desktop: `--role node` with a screen, then `--headless`.
 3. P9-05: let a headless box create its first account.
-4. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
+4. Update the landing transcripts and version strings with the next release; they are tied to v1.0.0.
+5. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
 
 ## Session log
+
+### Session 28: 2026-11-01: Public landing page rebuild
+
+**Goal:** Replace the generic green-on-black landing page with a front door that sells FractalOS to people already looking for a local-first, Python-in-the-browser, AI-and-mesh machine, while still being understandable to someone who has never opened a terminal.
+**Done:** D-047. Rebuilt `resources/landing.html` as an EGA product sheet: plain-English explanation and a first-five-minutes card; a tabbed tour with real `whoami`, `ls`, `df -h`, `help python` and CPython 3.14.2 output, an abridged real Samwise autopilot run, and a clearly labelled illustrative mesh transcript; seven capabilities; who-it-is-for and not-for lists; browser, Neutralino and x86_64 appliance paths on a printed quick-start card; an architecture diagram, effect contract, spec table and glossary; ten FAQ answers; and a final boot panel. Added `landing.css` and `landing.js` (no dependencies, no web fonts). Fixed stale claims: v1.0 to v1.0.0, Ollama as well as Gemini, the opt-in mesh, and the non-existent `uname` example.
+**Changed:** `resources/landing.html`, `resources/landing.css`, `resources/landing.js`, `README.md`, `AGENTS.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
+**Decisions:** D-047.
+**Problems / surprises:**
+- The old page's `uname -a` transcript was fiction; `uname` is not a command. Replaced it with captured output from the running v1.0.0 build (`whoami`, `ls /`, `df -h`, `help python`).
+- At 1200px the hero terminal's Python line was two characters too wide and showed a scrollbar; a 961–1280px font step fixed it. Mobile code blocks now wrap instead of showing scrollbars.
+- The boot button has two layouts to serve: `landing.html` beside `index.html` in a checkout, and the published root page with the OS under `os/`. `landing.js` picks `./index.html` for the former and `./os/index.html` for the latter.
+**Left undone:** The landing page is not committed. Firefox, Safari, a physical phone and a screen reader were not exercised.
+**Next session should start with:** committing the landing page if approved, then P9-04 on real hardware.
 
 ### Session 27: 2026-10-12: P9-01..P9-03 x86_64 mesh node / signal server
 

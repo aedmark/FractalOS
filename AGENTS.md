@@ -36,6 +36,7 @@ Sessions are short-lived and context resets between them, so the repo carries th
 | Path | Purpose |
 | --- | --- |
 | `resources/index.html` | The page. Loads `scripts/asset_manifest.js`, then every CSS and JS file it lists, in order |
+| `resources/landing.html`, `resources/landing.css`, `resources/landing.js` | The public product page: an EGA sheet with a plain-English explanation, a real-shell tour, capabilities, deployment paths, architecture and FAQ. It is not part of the OS and is not in `asset_manifest.js`; `landing.js` points the boot buttons at `index.html` in a checkout and `os/index.html` once published (D-047) |
 | `resources/scripts/asset_manifest.js` | The ordered load list. A new script file must be added here or it never loads |
 | `resources/main.js` | `window.onload`: builds every manager, wires dependencies, boots the kernel, runs onboarding or restores the session |
 | `resources/bridge.js` | `FractalOS_Kernel`: loads Pyodide, copies the files named in `core/manifest.json` into the Pyodide FS, exposes `syscall()` and `execute_command()` |

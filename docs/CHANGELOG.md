@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### The public landing page (2026-11-01)
+- **`resources/landing.html` rebuilt as a product sheet:** plain-English explanation, a real terminal tour, capabilities, honest fit, three boot paths, architecture and FAQ, in the same EGA hardware language as the other project fronts (D-047).
+- **New `resources/landing.css` and `resources/landing.js`:** no web fonts or network assets; accessible tabs, copy buttons, scrollspy, and boot links that work both in a checkout and on the published site.
+- **Stale claims removed:** the page now says v1.0.0 (not v1.0), names Ollama as well as Gemini, explains the opt-in mesh, covers the desktop and x86_64 appliance paths, and uses real captured output instead of a non-existent `uname` example.
+
 ### Any x86_64 machine as a mesh node or signal server (Phase 9)
 - **`extras/provision_x64.sh`:** roles `signal`, `node` and `kiosk` on minimal Debian/Ubuntu x86_64, using the system Chromium and systemd services (D-046).
 - **`deploy.json` runtime switch:** the mesh can now be turned on (and pointed at a signaling server) without editing `config.js`.

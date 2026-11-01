@@ -3,180 +3,609 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FractalOS 1.0</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
-        
-        :root {
-            --bg-color: #0d0d0d;
-            --text-color: #33ff33;
-            --accent-color: #ff3366;
-            --muted-color: #00aa00;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Fira Code', monospace;
-            line-height: 1.6;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-            padding: 40px 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 50px;
-            border-bottom: 2px dashed var(--muted-color);
-            padding-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 3rem;
-            margin: 0;
-            text-shadow: 0 0 10px var(--text-color);
-        }
-
-        h2 {
-            color: var(--accent-color);
-            margin-top: 40px;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: var(--muted-color);
-        }
-
-        .btn-launch {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 15px 40px;
-            background-color: var(--text-color);
-            color: var(--bg-color);
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.5rem;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px var(--text-color);
-        }
-
-        .btn-launch:hover {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            border: 2px solid var(--text-color);
-            box-shadow: 0 0 25px var(--text-color);
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 40px;
-        }
-
-        .feature-box {
-            border: 1px solid var(--muted-color);
-            padding: 20px;
-            border-radius: 5px;
-            background: rgba(0, 255, 0, 0.05);
-        }
-
-        .feature-box h3 {
-            margin-top: 0;
-            color: var(--accent-color);
-        }
-
-        .terminal-mockup {
-            background: #000;
-            border: 1px solid var(--muted-color);
-            border-radius: 5px;
-            padding: 20px;
-            margin: 40px 0;
-            font-size: 0.9rem;
-        }
-
-        .prompt { color: var(--accent-color); }
-        .command { color: var(--text-color); }
-        
-        footer {
-            margin-top: 60px;
-            text-align: center;
-            border-top: 1px dashed var(--muted-color);
-            padding-top: 20px;
-            color: var(--muted-color);
-            font-size: 0.9rem;
-        }
-
-        a { color: var(--accent-color); }
-    </style>
+    <title>FractalOS — A whole computer in a browser tab</title>
+    <meta name="description" content="FractalOS is a free, open-source virtual operating system in a browser tab: a Unix shell, real Python, an AI agent that can use it, and a private mesh between machines.">
+    <meta name="theme-color" content="#000000">
+    <meta property="og:title" content="FractalOS — A whole computer in a browser tab">
+    <meta property="og:description" content="A Unix shell, real Python, an AI agent with brakes, and a private mesh. No install. No cloud account. MIT licensed.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="landing.css">
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>FractalOS v1.0</h1>
-        <div class="subtitle">A browser-based, Unix-flavored virtual operating system.</div>
-        <a href="./os/index.html" class="btn-launch">> BOOT KERNEL</a>
-    </header>
+<a class="skip" href="#main">Skip to the main content</a>
 
-    <div class="terminal-mockup">
-        <div><span class="prompt">root@fractal:~#</span> <span class="command">uname -a</span></div>
-        <div style="color: #aaa;">FractalOS 1.0 (Pyodide/WebAssembly) Browser-Native</div><br>
-        <div><span class="prompt">root@fractal:~#</span> <span class="command">cat features.txt</span></div>
-        <div style="color: #aaa;">
-            - Zero server backend required<br>
-            - Pure Python kernel via Pyodide<br>
-            - Persistent Virtual File System (VFS)<br>
-            - Dynamic Package Manager (pkg)<br>
-            - Built-in Samwise AI Agent
+<header class="site-head">
+    <div class="wrap head-inner">
+        <a class="brand" href="#top" aria-label="FractalOS home">
+            <span class="brand-mark" aria-hidden="true">F</span>
+            <span class="brand-name">Fractal<span>OS</span></span>
+            <span class="brand-ver">1.0.0</span>
+        </a>
+        <nav class="nav" aria-label="Primary navigation">
+            <a href="#what">What it is</a>
+            <a href="#tour">Tour</a>
+            <a href="#capabilities">Capabilities</a>
+            <a href="#run">Run it</a>
+            <a href="#inside">Inside</a>
+            <a href="#faq">FAQ</a>
+        </nav>
+        <a class="btn primary head-cta" href="./os/index.html" data-boot>Boot <span aria-hidden="true">&gt;</span></a>
+    </div>
+</header>
+
+<main id="main" class="page">
+    <div class="page-grid">
+
+        <nav class="contents" aria-label="On this page">
+            <p class="contents-label">INDEX / 08</p>
+            <a href="#top"><span>00</span> Start</a>
+            <a href="#what"><span>01</span> What it is</a>
+            <a href="#tour"><span>02</span> The tour</a>
+            <a href="#capabilities"><span>03</span> Capabilities</a>
+            <a href="#who"><span>04</span> Who it is for</a>
+            <a href="#run"><span>05</span> Run it</a>
+            <a href="#inside"><span>06</span> Inside</a>
+            <a href="#faq"><span>07</span> FAQ</a>
+            <a href="#boot"><span>08</span> Boot</a>
+            <p class="contents-status"><span aria-hidden="true"></span> SYSTEM READY</p>
+        </nav>
+
+        <div class="stream">
+
+            <section class="panel hero" id="top" aria-labelledby="hero-title">
+                <div class="win-bar">
+                    <span>C:\FRACTALOS\README.TXT</span>
+                    <span>SYS / PUBLIC RELEASE</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body hero-grid">
+                    <div class="hero-copy">
+                        <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span> FRACTAL SYSTEMS <span class="slash">/</span> RELEASE 1.0.0</p>
+                        <h1 id="hero-title">A whole computer,<br><span class="accent">in a browser tab.</span></h1>
+                        <p class="lede">FractalOS is a free, open-source virtual operating system with a familiar Unix shell, real Python, an AI agent that can actually use it, and a private mesh between machines. Open it like a website. Nothing to install, and no server holding your files.</p>
+                        <div class="actions">
+                            <a class="btn primary" href="./os/index.html" data-boot>Boot FractalOS <span aria-hidden="true">&gt;</span></a>
+                            <a class="btn" href="#tour">See it work</a>
+                        </div>
+                        <p class="meta">NO INSTALL <span>·</span> NO CLOUD ACCOUNT <span>·</span> MIT LICENCE</p>
+                        <p class="callout"><b>New to the shell?</b> Start with <code>help</code>, or ask Samwise in plain English. The terminal is a place, not a test.</p>
+                    </div>
+
+                    <div class="hero-side">
+                        <div class="terminal">
+                            <div class="term-bar">
+                                <span>FRACTALOS.SHELL</span>
+                                <span>SESSION 001</span>
+                            </div>
+                            <div class="term-body">
+<pre><span class="t-dim">FRACTAL SYSTEMS BIOS 1.0</span>
+MEMORY CHECK ......... OK
+PYTHON KERNEL ........ ONLINE
+VIRTUAL FS ........... MOUNTED
+MESH ................. OPT-IN
+
+<span class="t-ok">&gt; boot</span>
+
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">whoami</span>
+<span class="t-out">gordon</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">python -c "print(2**10)"</span>
+<span class="t-out">1024</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">ls /</span>
+<span class="t-out">etc  home  var</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cursor" aria-hidden="true"></span></pre>
+                            </div>
+                            <div class="term-foot">
+                                <span>REAL SESSION / v1.0.0</span>
+                                <span>NO CDN</span>
+                            </div>
+                        </div>
+                        <p class="term-caption">A real session from the release. The shell, the file system and the Python are the same ones you get.</p>
+                    </div>
+                </div>
+
+                <dl class="spec-strip" aria-label="FractalOS at a glance">
+                    <div><dt>Kernel</dt><dd>CPython 3.14.2</dd></div>
+                    <div><dt>Shell</dt><dd>150+ Unix commands</dd></div>
+                    <div><dt>Agent</dt><dd>Ollama or Gemini</dd></div>
+                    <div><dt>Mesh</dt><dd>WebRTC / opt-in</dd></div>
+                    <div><dt>Storage</dt><dd>IndexedDB / local</dd></div>
+                    <div><dt>Licence</dt><dd>MIT / free</dd></div>
+                </dl>
+            </section>
+
+            <section class="panel" id="what" aria-labelledby="what-title">
+                <div class="win-bar">
+                    <span>WHAT.TXT</span>
+                    <span>01 / PLAIN ENGLISH</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body">
+                    <p class="sec-kicker"><span>01</span> What it is</p>
+                    <h2 id="what-title">A small computer that happens to be a web page.</h2>
+
+                    <div class="split">
+                        <div class="prose">
+                            <p>FractalOS boots a real Python kernel inside WebAssembly, mounts a virtual file system, and hands you a Unix-shaped shell. The terminal is not a simulation of a terminal. The Python is not a simulation of Python. The browser is the hardware.</p>
+                            <p>That means you can open it on a machine where you cannot install anything, in a tab, and still have files, users, permissions, pipes, scripts and a package manager. Close the tab and the machine stops. Open it again and your work is still there, because the browser remembers it.</p>
+                            <p>The AI is not bolted on. Samwise lives in the shell, sees the file system, proposes a plan and runs it through the kernel. You can watch, approve or stop it. If you prefer to type, it stays out of the way.</p>
+                        </div>
+                        <aside class="side-note" aria-labelledby="first-five">
+                            <p class="side-label" id="first-five">FIRST FIVE MINUTES</p>
+                            <ol class="steps">
+                                <li><span>01</span><div><b>Open it.</b> Make a local account. The username and password never leave this browser.</div></li>
+                                <li><span>02</span><div><b>Type <code>help</code>.</b> Or ask Samwise for a folder, a script or a summary.</div></li>
+                                <li><span>03</span><div><b>Run some Python.</b> <code>python -c "print('hello')"</code> is a whole program.</div></li>
+                                <li><span>04</span><div><b>Take it with you.</b> Download a file or export the VFS before you clear site data.</div></li>
+                            </ol>
+                        </aside>
+                    </div>
+
+                    <p class="mini-title">WHAT IT ISN'T</p>
+                    <div class="not-grid">
+                        <div class="not"><b>Not a Linux distro.</b> It runs inside the browser; it is not booting your hardware.</div>
+                        <div class="not"><b>Not a cloud service.</b> There is no FractalOS account and no file server in the middle.</div>
+                        <div class="not"><b>Not a hardened sandbox.</b> The kernel is powerful on purpose. Treat it like a shell.</div>
+                        <div class="not"><b>Not a daily driver.</b> It is a playground, an appliance, a second computer.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" id="tour" aria-labelledby="tour-title">
+                <div class="win-bar">
+                    <span>TOUR.SH</span>
+                    <span>02 / TRANSCRIPTS</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body">
+                    <p class="sec-kicker"><span>02</span> The tour</p>
+                    <h2 id="tour-title">Four things it actually does.</h2>
+                    <p class="lede">No video, no mock-up. The first three are real output from a v1.0.0 session; the mesh is an example because it is off by default.</p>
+
+                    <noscript><p class="noscript-note">JavaScript is off, so all four transcripts are shown below.</p></noscript>
+
+                    <div class="tour-tabs" role="tablist" aria-label="Pick a transcript">
+                        <button class="tour-tab" role="tab" id="tab-shell" aria-controls="panel-shell" aria-selected="true"><span>01</span> Shell</button>
+                        <button class="tour-tab" role="tab" id="tab-python" aria-controls="panel-python" aria-selected="false" tabindex="-1"><span>02</span> Python</button>
+                        <button class="tour-tab" role="tab" id="tab-agent" aria-controls="panel-agent" aria-selected="false" tabindex="-1"><span>03</span> Agent</button>
+                        <button class="tour-tab" role="tab" id="tab-mesh" aria-controls="panel-mesh" aria-selected="false" tabindex="-1"><span>04</span> Mesh</button>
+                    </div>
+
+                    <div class="tour-panels">
+                        <div class="tour-panel" role="tabpanel" id="panel-shell" aria-labelledby="tab-shell" tabindex="0">
+                            <div class="tour-meta"><span class="badge real">REAL OUTPUT</span><span>CAPTURED 2026-11-01</span></div>
+<pre class="terminal-pre"><span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">whoami</span>
+<span class="t-out">gordon</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">ls /</span>
+<span class="t-out">etc  home  var</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">df -h</span>
+<span class="t-out">Filesystem      Size      Used     Avail Use% Mounted on</span>
+<span class="t-out">FractalOSVFS      640M       76B      640M   0% /</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">help python</span>
+<span class="t-out">Usage: python SCRIPT [ARGS...]  |  python -c "CODE"  |  ... | python</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cursor" aria-hidden="true"></span></pre>
+                            <p class="tour-copy">A real shell with a real file system behind it. <code>ls</code>, <code>grep</code>, <code>awk</code>, <code>sed</code>, pipes, redirects, users, groups and permissions are all there, and the whole thing is Python objects rather than browser tricks.</p>
+                        </div>
+
+                        <div class="tour-panel" role="tabpanel" id="panel-python" aria-labelledby="tab-python" tabindex="0">
+                            <div class="tour-meta"><span class="badge real">REAL OUTPUT</span><span>CPYTHON 3.14.2</span></div>
+<pre class="terminal-pre"><span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">python -c "print(2**10)"</span>
+<span class="t-out">1024</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">python -c "import sys; print(sys.version.split()[0])"</span>
+<span class="t-out">3.14.2</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">python -c "from math import tau; print(f'{tau:.6f}')"</span>
+<span class="t-out">6.283185</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cursor" aria-hidden="true"></span></pre>
+                            <p class="tour-copy">CPython 3.14.2 compiled to WebAssembly. A script can open files from the virtual file system, read the pipe on stdin, print to stdout and exit with a status code. A step budget stops a runaway loop before it freezes the page.</p>
+                        </div>
+
+                        <div class="tour-panel" role="tabpanel" id="panel-agent" aria-labelledby="tab-agent" tabindex="0">
+                            <div class="tour-meta"><span class="badge real">ABRIDGED REAL RUN</span><span>SAMWISE / OLLAMA</span></div>
+<pre class="terminal-pre"><span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">samwise --autopilot "Create ~/garden/seeds.txt with three plant names."</span>
+<span class="t-ok">BONEAMANITA AUTOPILOT REPORT</span>
+<span class="t-warn">Status: MEDIUM VOLTAGE (Caution) (Voltage: 5.0)</span>
+
+<span class="t-dim">Execution Log:</span>
+Home checkpoint saved: dab405feed
+<span class="t-cmd">► mkdir /home/gordon/garden</span>
+<span class="t-cmd">► forge /home/gordon/garden/seeds.txt "Rose\nTulip\nDaisy"</span>
+<span class="t-out">Forged '/home/gordon/garden/seeds.txt' (16 bytes).</span></pre>
+                            <p class="tour-copy">Abridged from a real Ollama run. The agent plans, the kernel validates every command, and the voltage score decides whether a step needs you. <code>--dry-run</code> shows the whole plan without touching a file.</p>
+                        </div>
+
+                        <div class="tour-panel" role="tabpanel" id="panel-mesh" aria-labelledby="tab-mesh" tabindex="0">
+                            <div class="tour-meta"><span class="badge example">ILLUSTRATIVE</span><span>MESH / OPT-IN</span></div>
+<pre class="terminal-pre"><span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">cat deploy.json</span>
+<span class="t-out">{"networking": true, "signalingUrl": "auto"}</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">peers</span>
+<span class="t-out">  NODE            TRANSPORT        LATENCY</span>
+<span class="t-out">  oos-7f2a        WebRTC             8 ms</span>
+<span class="t-out">  oos-c19b        BroadcastChannel   0 ms</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cmd">mesh-cp field-notes.md oos-7f2a:/home/Guest/</span>
+<span class="t-ok">  2.4 KB  [################] 100%</span>
+<span class="t-prompt">gordon@FractalOS:~$</span> <span class="t-cursor" aria-hidden="true"></span></pre>
+                            <p class="tour-copy">The mesh is off by default. One line in <code>deploy.json</code> (or a provisioned node) turns it on. Peers talk directly over WebRTC data channels; a signaling relay only introduces them. <code>attach</code> shares a shell, <code>mesh-cp</code> moves files, <code>mesh-agent</code> hands a task to a peer's agent.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" id="capabilities" aria-labelledby="cap-title">
+                <div class="win-bar">
+                    <span>CAPABILITIES.DOC</span>
+                    <span>03 / THE WHOLE BOX</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body">
+                    <p class="sec-kicker"><span>03</span> Capabilities</p>
+                    <h2 id="cap-title">What is actually in there.</h2>
+                    <p class="lede">Not a feature list for a pitch deck. These are the parts you can use on the first day.</p>
+
+                    <div class="cap-list">
+                        <article class="cap">
+                            <span class="cap-num">01</span>
+                            <div class="cap-text">
+                                <div class="cap-head"><h3>Unix, without the install</h3><span class="tag">150+ COMMANDS</span></div>
+                                <p><code>ls</code>, <code>grep</code>, <code>awk</code>, <code>sed</code>, <code>find</code>, pipes, redirects, background jobs, <code>sudo</code>, users and groups. The vocabulary is familiar; the machine is a tab. Story snapshots and <code>/var/log/audit.log</code> are part of the furniture.</p>
+                            </div>
+                            <pre class="cap-code"><code><span class="t-prompt">$</span> ls /
+<span class="t-out">etc  home  var</span>
+<span class="t-prompt">$</span> df -h
+<span class="t-out">FractalOSVFS  640M  76B  640M  0% /</span></code></pre>
+                        </article>
+
+                        <article class="cap">
+                            <span class="cap-num">02</span>
+                            <div class="cap-text">
+                                <div class="cap-head"><h3>Real Python, not a demo</h3><span class="tag">CPYTHON 3.14</span></div>
+                                <p>Run a script, a one-liner or a pipeline. <code>open()</code> reads and writes the virtual file system with its permissions. The kernel's own CPython does the work, not a JavaScript approximation.</p>
+                            </div>
+                            <pre class="cap-code"><code><span class="t-prompt">$</span> python -c "print(2**10)"
+<span class="t-out">1024</span>
+<span class="t-prompt">$</span> python -c "import sys; print(sys.version[:6])"
+<span class="t-out">3.14.2</span></code></pre>
+                        </article>
+
+                        <article class="cap">
+                            <span class="cap-num">03</span>
+                            <div class="cap-text">
+                                <div class="cap-head"><h3>An agent with brakes</h3><span class="tag">SAMWISE</span></div>
+                                <p>Samwise sees the files, plans in commands and executes through the kernel. Every step has a voltage. Destructive steps ask first; <code>--force</code> is explicit; <code>--dry-run</code> runs nothing at all.</p>
+                            </div>
+                            <pre class="cap-code"><code><span class="t-prompt">$</span> samwise --dry-run "tidy ~/notes"
+<span class="t-out"># prints the plan and voltage.</span>
+<span class="t-out"># touches nothing. that is the point.</span></code></pre>
+                        </article>
+
+                        <article class="cap">
+                            <span class="cap-num">04</span>
+                            <div class="cap-text">
+                                <div class="cap-head"><h3>A mesh, not a cloud</h3><span class="tag">P2P / OPT-IN</span></div>
+                                <p>Two tabs, two laptops or two Pi's can find each other and share a shell, copy files, or hand a task to a peer's agent. The signaling server introduces them; the data goes direct.</p>
+                            </div>
+                            <pre class="cap-code"><code><span class="t-prompt">$</span> peers
+<span class="t-prompt">$</span> attach oos-7f2a
+<span class="t-prompt">$</span> mesh-cp notes.md oos-7f2a:/home/Guest/
+<span class="t-prompt">$</span> mesh-agent oos-7f2a "summarize notes.md"</code></pre>
+                        </article>
+
+                        <article class="cap">
+                            <span class="cap-num">05</span>
+                            <div class="cap-text">
+                                <div class="cap-head"><h3>An OS, not a prompt</h3><span class="tag">WINDOWS / PANES</span></div>
+                                <p>Split the terminal, dock the process monitor, open the editor, the ASCII paint studio, the journal, BASIC, the text adventure, the document analyst or the chat. Windows, panes, clipboard and sound are part of the shell.</p>
+                            </div>
+                            <pre class="cap-code"><code><span class="t-prompt">$</span> split-h
+<span class="t-prompt">$</span> top --dock
+<span class="t-prompt">$</span> edit notes.md
+<span class="t-prompt">$</span> paint
+<span class="t-prompt">$</span> basic
+<span class="t-prompt">$</span> adventure</code></pre>
+                        </article>
+
+                        <article class="cap">
+                            <span class="cap-num">06</span>
+                            <div class="cap-text">
+                                <div class="cap-head"><h3>A package manager with a spine</h3><span class="tag">SHA-256 / AUDIT</span></div>
+                                <p>Install from a local repo or the community standard library. Packages carry hashes, dependencies and permission scopes. <code>pkg audit</code> reads the AST before you trust one; execution re-checks the hash.</p>
+                            </div>
+                            <pre class="cap-code"><code><span class="t-prompt">$</span> pkg search cowsay
+<span class="t-out">cowsay (v1.0.0 by FractalOS Community)</span>
+<span class="t-prompt">$</span> pkg verify cowsay
+<span class="t-prompt">$</span> pkg audit cowsay</code></pre>
+                        </article>
+
+                        <article class="cap">
+                            <span class="cap-num">07</span>
+                            <div class="cap-text">
+                                <div class="cap-head"><h3>Hardware, when you ask</h3><span class="tag">GPIO / PI</span></div>
+                                <p>On a Raspberry Pi or a provisioned x86 box, the same shell can read pins, watch a button, stream a sensor and trigger an LED. The appliance build boots straight into the OS.</p>
+                            </div>
+                            <pre class="cap-code"><code><span class="t-prompt">$</span> gpio read 17
+<span class="t-out">0</span>
+<span class="t-prompt">$</span> gpio monitor 17 --trigger rising
+<span class="t-prompt">$</span> gpio write 17 1</code></pre>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" id="who" aria-labelledby="who-title">
+                <div class="win-bar">
+                    <span>AUDIENCE.TXT</span>
+                    <span>04 / HONEST FIT</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body">
+                    <p class="sec-kicker"><span>04</span> Who it is for</p>
+                    <h2 id="who-title">Built for the curious. Not for everything.</h2>
+                    <p class="lede">FractalOS is a sharp tool with a narrow shape. It is better to know that before you boot it.</p>
+
+                    <div class="audience">
+                        <div class="aud for">
+                            <p class="aud-label">THIS IS FOR YOU IF...</p>
+                            <ul>
+                                <li>You have ever wanted a Linux-shaped playground that starts with a URL.</li>
+                                <li>You keep a home lab, an old laptop or a Raspberry Pi with nothing to do.</li>
+                                <li>You want a local model to touch real files, not just talk about them.</li>
+                                <li>You are teaching someone what a shell is and do not want a setup ritual first.</li>
+                                <li>You like small, weird, self-contained software that does not phone home.</li>
+                            </ul>
+                        </div>
+                        <div class="aud not-for">
+                            <p class="aud-label">DON'T USE IT FOR...</p>
+                            <ul>
+                                <li>A production server, or the only copy of something you cannot lose.</li>
+                                <li>A hardened security boundary. The kernel is powerful by design.</li>
+                                <li>A replacement for Linux, Windows or macOS on your main machine.</li>
+                                <li>An AI that works with zero setup. You bring a model or an API key.</li>
+                                <li>A public-facing shell on an untrusted network. There is no auth on the mesh.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p class="pullquote">It is for the person who reads <code>man</code> pages for fun, and for the person who would rather ask a question than read one.</p>
+                </div>
+            </section>
+
+            <section class="run" id="run" aria-labelledby="run-title">
+                <p class="sec-kicker"><span>05</span> Run it</p>
+                <h2 id="run-title">Three ways to boot.</h2>
+                <p class="lede">The browser build is the fastest. The desktop build is the double-click one. The appliance build is the one that stays on.</p>
+
+                <div class="quick-card">
+                    <div class="quick-head">
+                        <span>FRACTAL SYSTEMS / QUICK START CARD</span>
+                        <span>FORM 1.0 / KEEP NEAR TERMINAL</span>
+                    </div>
+
+                    <div class="quick-grid">
+                        <article class="way">
+                            <p class="way-label">A / BROWSER</p>
+                            <h3>Fastest.</h3>
+                            <p>Serve the folder over HTTP and open the page. There is no build step and no package install.</p>
+                            <div class="copy-block">
+<pre><code>git clone https://github.com/aedmark/FractalOS.git
+cd FractalOS/resources
+python3 -m http.server 8000</code></pre>
+                                <button class="copy-btn" type="button" data-copy="git clone https://github.com/aedmark/FractalOS.git
+cd FractalOS/resources
+python3 -m http.server 8000">Copy</button>
+                            </div>
+                            <p class="way-note">Open <code>http://localhost:8000</code>. It needs HTTP, not <code>file://</code>, because the kernel fetches its Python files.</p>
+                        </article>
+
+                        <article class="way">
+                            <p class="way-label">B / DESKTOP</p>
+                            <h3>Offline-native.</h3>
+                            <p>Run it as a standalone Neutralinojs window with a real local <code>data/</code> folder.</p>
+                            <div class="copy-block">
+<pre><code># put the Neutralinojs binary in the repo root
+./neutralino-linux_x64
+# or neutralino-mac_x64 / neutralino-win_x64.exe</code></pre>
+                                <button class="copy-btn" type="button" data-copy="./neutralino-linux_x64">Copy</button>
+                            </div>
+                            <p class="way-note">The data lives beside the binary. No browser chrome, no tab to lose.</p>
+                        </article>
+
+                        <article class="way">
+                            <p class="way-label">C / MESH + APPLIANCE</p>
+                            <h3>Always on.</h3>
+                            <p>Turn an old x86_64 box into a signal server, a full-time peer or a kiosk.</p>
+                            <div class="copy-block">
+<pre><code>sudo ./extras/provision_x64.sh --role signal
+sudo ./extras/provision_x64.sh --role node
+sudo ./extras/provision_x64.sh --role kiosk</code></pre>
+                                <button class="copy-btn" type="button" data-copy="sudo ./extras/provision_x64.sh --role signal
+sudo ./extras/provision_x64.sh --role node
+sudo ./extras/provision_x64.sh --role kiosk">Copy</button>
+                            </div>
+                            <p class="way-note">A node needs a screen once for first-run setup. The web server and relay have no auth: keep them on a trusted LAN. The Pi script is in <code>extras/provision_appliance.sh</code>.</p>
+                        </article>
+                    </div>
+
+                    <div class="quick-foot">
+                        <div>
+                            <p class="quick-foot-label">WHAT YOU NEED</p>
+                            <p>A modern browser (Firefox or Chromium), a little patience on first boot, and no account. For Samwise: a local Ollama model or a Gemini key. For the mesh: a trusted network.</p>
+                        </div>
+                        <a class="btn primary" href="./os/index.html" data-boot>Open the hosted build <span aria-hidden="true">&gt;</span></a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" id="inside" aria-labelledby="inside-title">
+                <div class="win-bar">
+                    <span>ARCH.TXT</span>
+                    <span>06 / UNDER THE HOOD</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body">
+                    <p class="sec-kicker"><span>06</span> Inside</p>
+                    <h2 id="inside-title">Two runtimes, one contract.</h2>
+                    <p class="lede">The trick is not that it runs Python in a browser. The trick is that Python and the browser agree on a small, strict border.</p>
+
+                    <div class="arch" role="img" aria-label="JavaScript stage and Python kernel exchange syscall JSON and effects; the virtual file system persists in IndexedDB.">
+                        <div class="arch-box">
+                            <p class="arch-label">STAGE / JAVASCRIPT</p>
+                            <p class="arch-name">The visible machine</p>
+                            <p class="arch-list">terminal · windows · apps<br>audio · clipboard · mesh UI</p>
+                        </div>
+                        <div class="arch-link" aria-hidden="true">
+                            <span>syscall()</span>
+                            <span>&lt; JSON &gt;</span>
+                            <span>effects</span>
+                        </div>
+                        <div class="arch-box">
+                            <p class="arch-label">KERNEL / PYTHON</p>
+                            <p class="arch-name">The source of truth</p>
+                            <p class="arch-list">VFS · users · commands<br>executor · audit · AI</p>
+                        </div>
+                        <div class="arch-storage"><span>INDEXEDDB</span> the file system persists here <span>JSON</span></div>
+                    </div>
+
+                    <div class="inside-grid">
+                        <div>
+                            <h3>The effect contract</h3>
+                            <p>Python never touches the DOM. When it needs the browser to play a sound, open a window, split a pane or copy to the host clipboard, it returns a structured effect. JavaScript performs it.</p>
+                        </div>
+                        <pre class="code-block"><code>{
+  "effect": "play_sound",
+  "notes": ["C4", "E4", "G4"],
+  "duration": "4n"
+}</code></pre>
+                    </div>
+
+                    <dl class="spec-table">
+                        <div><dt>Kernel</dt><dd>CPython 3.14.2, Pyodide 314.0.7</dd></div>
+                        <div><dt>Runtime</dt><dd>WebAssembly; no build step, no npm</dd></div>
+                        <div><dt>Shell</dt><dd>150+ Python commands; pipes, redirects, jobs</dd></div>
+                        <div><dt>Storage</dt><dd>IndexedDB; export and import the VFS</dd></div>
+                        <div><dt>Mesh</dt><dd>WebRTC data channels + BroadcastChannel; optional signaling</dd></div>
+                        <div><dt>AI</dt><dd>Ollama locally or Gemini; configured in <code>/etc/ai.conf</code></dd></div>
+                        <div><dt>Safety</dt><dd>voltage scoring, confirmations, package hashes and audits</dd></div>
+                        <div><dt>Platforms</dt><dd>Browser, Neutralino desktop, Raspberry Pi / x86_64</dd></div>
+                    </dl>
+
+                    <p class="mini-title">JARGON, TRANSLATED</p>
+                    <dl class="glossary">
+                        <div><dt>Kernel</dt><dd>The part that actually does the work: files, users, commands.</dd></div>
+                        <div><dt>Shell</dt><dd>The place where you type. It is a program, not a metaphor.</dd></div>
+                        <div><dt>WASM</dt><dd>A compact, sandboxed way to run compiled code in a browser.</dd></div>
+                        <div><dt>Mesh</dt><dd>Computers talking directly to each other, with no cloud in the middle.</dd></div>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="panel" id="faq" aria-labelledby="faq-title">
+                <div class="win-bar">
+                    <span>QUESTIONS.TXT</span>
+                    <span>07 / THE HONEST ANSWERS</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body">
+                    <p class="sec-kicker"><span>07</span> FAQ</p>
+                    <h2 id="faq-title">Questions, answered.</h2>
+
+                    <div class="faq-grid">
+                        <details>
+                            <summary>Is this a real operating system?</summary>
+                            <div class="faq-body"><p>It is a virtual one. It has a kernel, a shell, a file system, users and permissions. It is not a Linux distribution and it does not boot your hardware; it runs inside the browser or inside a desktop wrapper.</p></div>
+                        </details>
+                        <details>
+                            <summary>Do I need to know Linux?</summary>
+                            <div class="faq-body"><p>No. <code>help</code> lists every command, and Samwise accepts plain English. If you already know Unix, the shape will feel familiar; if you don't, you can still make a folder, run Python and keep notes.</p></div>
+                        </details>
+                        <details>
+                            <summary>Do I need an API key?</summary>
+                            <div class="faq-body"><p>Not for the shell, files, Python, apps or mesh. Samwise needs a local Ollama model or a Gemini key; Chidi uses the same provider. The key is stored in <code>/etc/ai.conf</code> inside the OS.</p></div>
+                        </details>
+                        <details>
+                            <summary>Where do my files go?</summary>
+                            <div class="faq-body"><p>Into IndexedDB in this browser. Nothing is uploaded by default. Export a snapshot or download files before you clear site data. Mesh transfers and cloud AI prompts are the exceptions you choose.</p></div>
+                        </details>
+                        <details>
+                            <summary>Does it work offline?</summary>
+                            <div class="faq-body"><p>Yes, once the files are served, because everything is vendored: no CDN and no backend. A local Ollama model keeps Samwise offline; Gemini needs a connection.</p></div>
+                        </details>
+                        <details>
+                            <summary>Can it break my computer?</summary>
+                            <div class="faq-body"><p>The browser build is sandboxed by the browser, and file operations stay in the virtual file system. A provisioned appliance or GPIO actions can touch hardware, so treat those with the same care as any shell.</p></div>
+                        </details>
+                        <details>
+                            <summary>Is it safe to expose to the internet?</summary>
+                            <div class="faq-body"><p>No. The mesh and its signaling relay have no authentication. Run it on a trusted LAN, or put an authenticated proxy in front. Do not put secrets in a public instance.</p></div>
+                        </details>
+                        <details>
+                            <summary>Why not just use ChatGPT?</summary>
+                            <div class="faq-body"><p>A chat window gives you text. FractalOS gives the model a file system, a shell, apps and a mesh, with a voltage brake and a dry-run. It is a place to do work, not just talk about it.</p></div>
+                        </details>
+                        <details>
+                            <summary>Why not just use Linux?</summary>
+                            <div class="faq-body"><p>You can open this in a tab on a machine where you cannot install Linux. It is a playground and an appliance, not a replacement for your daily driver.</p></div>
+                        </details>
+                        <details>
+                            <summary>What does it cost?</summary>
+                            <div class="faq-body"><p>Nothing. FractalOS is MIT licensed. You pay only for a cloud model if you choose Gemini, and nothing if you run Ollama locally.</p></div>
+                        </details>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel boot" id="boot" aria-labelledby="boot-title">
+                <div class="win-bar">
+                    <span>BOOT.SYS</span>
+                    <span>08 / READY</span>
+                    <span aria-hidden="true">[ □ ]</span>
+                </div>
+                <div class="panel-body boot-grid">
+                    <div>
+                        <p class="sec-kicker"><span>08</span> Ready</p>
+                        <h2 id="boot-title">READY<span class="boot-cursor" aria-hidden="true">_</span></h2>
+                        <p class="lede">The tab is the computer. The rest is yours.</p>
+                        <div class="actions">
+                            <a class="btn primary" href="./os/index.html" data-boot>Boot FractalOS <span aria-hidden="true">&gt;</span></a>
+                            <a class="btn" href="https://github.com/aedmark/FractalOS">View source</a>
+                        </div>
+                        <p class="meta">NO SIGN-UP <span>·</span> NO TELEMETRY <span>·</span> MIT</p>
+                    </div>
+                    <pre class="boot-log" aria-label="FractalOS boot sequence"><span class="t-dim">C:\&gt;</span> <span class="t-cmd">boot fractalos</span>
+<span class="t-ok">[ OK ]</span> kernel .......... CPython 3.14.2
+<span class="t-ok">[ OK ]</span> filesystem ...... mounted
+<span class="t-ok">[ OK ]</span> shell ........... 150+ commands
+<span class="t-ok">[ OK ]</span> samwise ......... standing by
+<span class="t-ok">[ OK ]</span> mesh ............ optional
+<span class="t-prompt">C:\&gt;</span> <span class="t-cursor" aria-hidden="true"></span></pre>
+                </div>
+            </section>
+
         </div>
     </div>
+</main>
 
-    <h2>Features</h2>
-    <div class="feature-grid">
-        <div class="feature-box">
-            <h3>🌐 100% Client-Side</h3>
-            <p>Runs entirely in your browser using WebAssembly. Host it statically on Neocities, GitHub Pages, or anywhere else. No backend required.</p>
+<footer class="site-foot">
+    <div class="wrap foot-grid">
+        <div>
+            <p class="foot-brand">FRACTAL<span>OS</span> <small>1.0.0</small></p>
+            <p class="foot-line">A small computer that happens to be a web page. Built by Edmark with unreasonable optimism.</p>
         </div>
-        <div class="feature-box">
-            <h3>🐍 Python Kernel</h3>
-            <p>FractalOS uses a true Python execution environment. Commands are pure Python scripts. Run your own scripts directly inside the OS.</p>
-        </div>
-        <div class="feature-box">
-            <h3>🧠 AI Agent Built-In</h3>
-            <p>Samwise is an intelligent agent living inside the OS. Hook up your Gemini or Ollama API key to chat, dredge memory, and automate tasks.</p>
-        </div>
-        <div class="feature-box">
-            <h3>📦 Package Manager</h3>
-            <p>Extend the OS on the fly. Use the <code>pkg</code> command to download and install custom commands directly from the community registry.</p>
-        </div>
-        <div class="feature-box">
-            <h3>💾 Persistent VFS</h3>
-            <p>Your files, aliases, history, and users are saved securely in your browser's IndexedDB. Export and import snapshots anytime.</p>
-        </div>
-        <div class="feature-box">
-            <h3>💻 Portable Mode</h3>
-            <p>Wrap it in Neutralinojs for a native desktop experience with true host filesystem access and WebRTC signaling capabilities.</p>
+        <div class="foot-links">
+            <a href="https://github.com/aedmark/FractalOS">GitHub</a>
+            <a href="https://github.com/aedmark/FractalOS/releases">Releases</a>
+            <a href="https://github.com/aedmark/FractalOS/tree/main/docs">Documentation</a>
+            <a href="https://github.com/aedmark/FractalOS/blob/main/LICENSE">MIT licence</a>
+            <a href="mailto:oopismcgoopis@gmail.com">Contact</a>
         </div>
     </div>
+    <div class="wrap foot-bottom">
+        <span>© 2026 Edmark</span>
+        <span>No cookies. No trackers on this page.</span>
+        <span>Published for the small web.</span>
+    </div>
+</footer>
 
-    <h2>Getting Started</h2>
-    <p>FractalOS requires no installation. Just click the Boot button above. To learn the ropes, type <code>help</code> or run the interactive <code>adventure</code> game!</p>
-
-    <footer>
-        &copy; 2026 Edmark & Gemini | <a href="https://github.com/aedmark/FractalOS" target="_blank">View Source on GitHub</a><br>
-        Published for the Neocities community.
-    </footer>
-</div>
-
+<script src="landing.js"></script>
 </body>
 </html>
-
