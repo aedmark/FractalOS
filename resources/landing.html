@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FractalOS — A whole computer in a browser tab</title>
+    <title>FractalOS: A whole system in a browser tab</title>
     <meta name="description" content="FractalOS is a free, open-source virtual operating system in a browser tab: a Unix shell, real Python, an AI agent that can use it, and a private mesh between machines.">
     <meta name="theme-color" content="#000000">
-    <meta property="og:title" content="FractalOS — A whole computer in a browser tab">
+    <meta property="og:title" content="FractalOS: A whole system in a browser tab">
     <meta property="og:description" content="A Unix shell, real Python, an AI agent with brakes, and a private mesh. No install. No cloud account. MIT licensed.">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary">
@@ -128,9 +128,9 @@ MESH ................. OPT-IN
 
                     <div class="split">
                         <div class="prose">
-                            <p>FractalOS boots a real Python kernel inside WebAssembly, mounts a virtual file system, and hands you a Unix-shaped shell. The terminal is not a simulation of a terminal. The Python is not a simulation of Python. The browser is the hardware.</p>
-                            <p>That means you can open it on a machine where you cannot install anything, in a tab, and still have files, users, permissions, pipes, scripts and a package manager. Close the tab and the machine stops. Open it again and your work is still there, because the browser remembers it.</p>
-                            <p>The AI is not bolted on. Samwise lives in the shell, sees the file system, proposes a plan and runs it through the kernel. You can watch, approve or stop it. If you prefer to type, it stays out of the way.</p>
+                            <p>FractalOS began as a late-night curiosity: <em>Can I recreate the iconic green-phosphor CRT terminal experience from the Fallout games using Python and a browser?</em></p>
+                            <p>That aesthetic challenge quickly spiraled into a fully realized virtual operating system. By compiling CPython into WebAssembly and mounting an in-memory virtual file system, FractalOS turns any browser tab into an isolated, zero-install computing environment with files, users, permissions, pipes, scripts, and a package manager. Close the tab and the machine stops; open it again and your work is right where you left it.</p>
+                            <p>Today, it is evolving into something even more meaningful: an offline-first, unhackable peer-to-peer mesh network designed for community-resilient communication and local collaboration. Samwise lives directly in the shell as an agent with strict voltage brakes, giving you an assistant that touches real files without running wild.</p>
                         </div>
                         <aside class="side-note" aria-labelledby="first-five">
                             <p class="side-label" id="first-five">FIRST FIVE MINUTES</p>
@@ -247,7 +247,7 @@ Home checkpoint saved: dab405feed
                         <article class="cap">
                             <span class="cap-num">01</span>
                             <div class="cap-text">
-                                <div class="cap-head"><h3>Unix, without the install</h3><span class="tag">150+ COMMANDS</span></div>
+                                <div class="cap-head"><h3>Full Unix Shell Environment</h3><span class="tag">150+ COMMANDS</span></div>
                                 <p><code>ls</code>, <code>grep</code>, <code>awk</code>, <code>sed</code>, <code>find</code>, pipes, redirects, background jobs, <code>sudo</code>, users and groups. The vocabulary is familiar; the machine is a tab. Story snapshots and <code>/var/log/audit.log</code> are part of the furniture.</p>
                             </div>
                             <pre class="cap-code"><code><span class="t-prompt">$</span> ls /
@@ -259,7 +259,7 @@ Home checkpoint saved: dab405feed
                         <article class="cap">
                             <span class="cap-num">02</span>
                             <div class="cap-text">
-                                <div class="cap-head"><h3>Real Python, not a demo</h3><span class="tag">CPYTHON 3.14</span></div>
+                                <div class="cap-head"><h3>CPython 3.14 via WebAssembly</h3><span class="tag">CPYTHON 3.14</span></div>
                                 <p>Run a script, a one-liner or a pipeline. <code>open()</code> reads and writes the virtual file system with its permissions. The kernel's own CPython does the work, not a JavaScript approximation.</p>
                             </div>
                             <pre class="cap-code"><code><span class="t-prompt">$</span> python -c "print(2**10)"
@@ -271,7 +271,7 @@ Home checkpoint saved: dab405feed
                         <article class="cap">
                             <span class="cap-num">03</span>
                             <div class="cap-text">
-                                <div class="cap-head"><h3>An agent with brakes</h3><span class="tag">SAMWISE</span></div>
+                                <div class="cap-head"><h3>Guarded Agentic Execution (Samwise)</h3><span class="tag">SAMWISE</span></div>
                                 <p>Samwise sees the files, plans in commands and executes through the kernel. Every step has a voltage. Destructive steps ask first; <code>--force</code> is explicit; <code>--dry-run</code> runs nothing at all.</p>
                             </div>
                             <pre class="cap-code"><code><span class="t-prompt">$</span> samwise --dry-run "tidy ~/notes"
@@ -282,7 +282,7 @@ Home checkpoint saved: dab405feed
                         <article class="cap">
                             <span class="cap-num">04</span>
                             <div class="cap-text">
-                                <div class="cap-head"><h3>A mesh, not a cloud</h3><span class="tag">P2P / OPT-IN</span></div>
+                                <div class="cap-head"><h3>Peer-to-Peer Mesh Networking</h3><span class="tag">P2P / OPT-IN</span></div>
                                 <p>Two tabs, two laptops or two Pi's can find each other and share a shell, copy files, or hand a task to a peer's agent. The signaling server introduces them; the data goes direct.</p>
                             </div>
                             <pre class="cap-code"><code><span class="t-prompt">$</span> peers
@@ -294,7 +294,7 @@ Home checkpoint saved: dab405feed
                         <article class="cap">
                             <span class="cap-num">05</span>
                             <div class="cap-text">
-                                <div class="cap-head"><h3>An OS, not a prompt</h3><span class="tag">WINDOWS / PANES</span></div>
+                                <div class="cap-head"><h3>Window Manager & Workspace Apps</h3><span class="tag">WINDOWS / PANES</span></div>
                                 <p>Split the terminal, dock the process monitor, open the editor, the ASCII paint studio, the journal, BASIC, the text adventure, the document analyst or the chat. Windows, panes, clipboard and sound are part of the shell.</p>
                             </div>
                             <pre class="cap-code"><code><span class="t-prompt">$</span> split-h
@@ -308,7 +308,7 @@ Home checkpoint saved: dab405feed
                         <article class="cap">
                             <span class="cap-num">06</span>
                             <div class="cap-text">
-                                <div class="cap-head"><h3>A package manager with a spine</h3><span class="tag">SHA-256 / AUDIT</span></div>
+                                <div class="cap-head"><h3>Cryptographic Package Manager</h3><span class="tag">SHA-256 / AUDIT</span></div>
                                 <p>Install from a local repo or the community standard library. Packages carry hashes, dependencies and permission scopes. <code>pkg audit</code> reads the AST before you trust one; execution re-checks the hash.</p>
                             </div>
                             <pre class="cap-code"><code><span class="t-prompt">$</span> pkg search cowsay
@@ -320,7 +320,7 @@ Home checkpoint saved: dab405feed
                         <article class="cap">
                             <span class="cap-num">07</span>
                             <div class="cap-text">
-                                <div class="cap-head"><h3>Hardware, when you ask</h3><span class="tag">GPIO / PI</span></div>
+                                <div class="cap-head"><h3>Hardware & Appliance Integration</h3><span class="tag">GPIO / PI</span></div>
                                 <p>On a Raspberry Pi or a provisioned x86 box, the same shell can read pins, watch a button, stream a sensor and trigger an LED. The appliance build boots straight into the OS.</p>
                             </div>
                             <pre class="cap-code"><code><span class="t-prompt">$</span> gpio read 17
@@ -352,6 +352,7 @@ Home checkpoint saved: dab405feed
                                 <li>You want a local model to touch real files, not just talk about them.</li>
                                 <li>You are teaching someone what a shell is and do not want a setup ritual first.</li>
                                 <li>You like small, weird, self-contained software that does not phone home.</li>
+                                <li>You want an offline-first, unhackable mesh network for your local community or neighborhood group.</li>
                             </ul>
                         </div>
                         <div class="aud not-for">
@@ -445,7 +446,7 @@ sudo ./extras/provision_x64.sh --role kiosk">Copy</button>
                 <div class="panel-body">
                     <p class="sec-kicker"><span>06</span> Inside</p>
                     <h2 id="inside-title">Two runtimes, one contract.</h2>
-                    <p class="lede">The trick is not that it runs Python in a browser. The trick is that Python and the browser agree on a small, strict border.</p>
+                    <p class="lede">Python and the browser meet at a strict, predictable boundary. Python manages the virtual file system, users, and logic; the browser renders the stage.</p>
 
                     <div class="arch" role="img" aria-label="JavaScript stage and Python kernel exchange syscall JSON and effects; the virtual file system persists in IndexedDB.">
                         <div class="arch-box">
@@ -589,7 +590,7 @@ sudo ./extras/provision_x64.sh --role kiosk">Copy</button>
     <div class="wrap foot-grid">
         <div>
             <p class="foot-brand">FRACTAL<span>OS</span> <small>1.0.0</small></p>
-            <p class="foot-line">A small computer that happens to be a web page. Built by Edmark with unreasonable optimism.</p>
+            <p class="foot-line">A small computer that happens to be a web page. Built by Andrew Edmark with unreasonable optimism.</p>
         </div>
         <div class="foot-links">
             <a href="https://github.com/aedmark/FractalOS">GitHub</a>
@@ -600,7 +601,7 @@ sudo ./extras/provision_x64.sh --role kiosk">Copy</button>
         </div>
     </div>
     <div class="wrap foot-bottom">
-        <span>© 2026 Edmark</span>
+        <span>© 2026 Andrew Edmark</span>
         <span>No cookies. No trackers on this page.</span>
         <span>Published for the small web.</span>
     </div>

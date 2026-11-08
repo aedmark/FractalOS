@@ -34,6 +34,7 @@
     --paper-ink: #141810;
     --paper-muted: #5f6358;
     --paper-line: #cfc7b3;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --mono: ui-monospace, "Cascadia Mono", "DejaVu Sans Mono", "Liberation Mono", "Courier New", monospace;
     --wrap: 80rem;
     --gutter: clamp(1rem, 3vw, 2rem);
@@ -55,9 +56,47 @@ body {
     background-size: 4px 4px;
     background-attachment: fixed;
     color: var(--ink);
-    font-family: var(--mono);
+    font-family: var(--sans);
     font-size: .95rem;
     line-height: 1.6;
+}
+
+/* Monospace retro UI chrome */
+h1, h2, h3, h4,
+.brand,
+.brand-name,
+.brand-ver,
+.brand-mark,
+.nav,
+.contents,
+.win-bar,
+.kicker,
+.sec-kicker,
+.meta,
+.btn,
+.copy-btn,
+.spec-strip,
+.spec-table,
+.term-bar,
+.term-foot,
+.tag,
+.badge,
+.cap-num,
+.quick-head,
+.way-label,
+.quick-foot-label,
+.arch-label,
+.arch-name,
+.arch-link,
+.arch-storage,
+.glossary dt,
+.foot-brand,
+.foot-links,
+.foot-bottom,
+code,
+kbd,
+pre {
+    font-family: var(--mono);
 }
 
 ::selection { background: var(--green); color: var(--ega-black); }
