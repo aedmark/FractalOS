@@ -20,10 +20,13 @@ own. They are not a boundary against someone with the browser's developer tools,
 
 ## Report a vulnerability
 
-Report privately, not in a public issue: use GitHub's private vulnerability reporting on
-`aedmark/FractalOS` if it is enabled, otherwise the Contact link on the landing page. Include the version or
+Report privately, not in a public issue, through GitHub's private vulnerability reporting on
+`aedmark/FractalOS` (the repository's Security tab, "Report a vulnerability"; D-050). Include the version or
 commit, the mode (browser, Portable, appliance), reproduction steps and impact. Do not include real secrets.
-The reporting route, acknowledgement time and disclosure policy are for the owner to confirm (Q-005).
+No acknowledgement time or disclosure policy is promised.
+
+On 2026-11-08 the setting was not yet enabled on the repository, so the button does not appear until the owner
+turns it on (Settings, Security, "Private vulnerability reporting").
 
 ## Assets and boundaries
 

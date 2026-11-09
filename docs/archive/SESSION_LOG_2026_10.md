@@ -1,8 +1,19 @@
-# Session log, October 2026 (sessions 24 to 38)
+# Session log, October 2026 (sessions 24 to 39)
 
 Moved whole from `docs/HANDOFF.md` on 2026-11-08, when the live log passed ten entries. Newest first, as in
 HANDOFF. Historical, not current: what these entries call "Next steps" or "Current state" was true when they
 were written.
+
+### Session 39: 2026-10-06: FractalOS 1.0.0 Official Release, Documentation & Packaging
+
+**Goal:** Package official v1.0.0 release bundles, publish devlog and release notes, update README and public-facing documentation, and publish GitHub release.
+**Done:** Bumped `OS.VERSION` to `"1.0.0"` in `resources/scripts/config.js` and `neutralino.config.json`. Authored devlog entry in `docs/devlog.html` celebrating FractalOS 1.0.0. Created packaging pipeline `tools/package_release.py` producing `fractalos-1.0.0-web.zip`, `fractalos-1.0.0-web.tar.gz`, `fractalos-1.0.0-appliance.tar.gz`, `fractalos-1.0.0-full.tar.gz`, and `SHA256SUMS` in `dist/`. Tagged git `v1.0.0` and pushed to remote. Updated `README.md` with complete hybrid architecture breakdown, three deployment modes (Browser, Portable Neutralino, Bare-metal Raspberry Pi Appliance), feature breakdown, graphical applications table, and full 151-command system reference table. Updated `docs/CHANGELOG.md` organizing all Phase 6 & Phase 7 capabilities under `[1.0.0]`. Updated `docs/CONTRIBUTING.md` with GitHub repository references and Pull Request conventions. Published GitHub release `v1.0.0` with assets via `gh release create`.
+**Changed:** `README.md`, `docs/CHANGELOG.md`, `docs/CONTRIBUTING.md`, `docs/HANDOFF.md`, `docs/devlog.html`, `resources/scripts/config.js`, `neutralino.config.json`, `tools/package_release.py`, `dist/*`.
+**Decisions:** Documented and frozen v1.0.0 architecture.
+**Problems / surprises:**
+- Command reference in `README.md` was missing over 30 commands introduced in recent phases (swarms, mesh, window manager, split panes, status, clipboard, packages). Generated a comprehensive 151-command table with accurate summaries.
+**Left undone:** Physical hardware trials on real Raspberry Pi boards.
+**Next session should start with:** Community issue triage, hardware testing, or Phase 8 planning.
 
 ### Session 38: 2026-10-06: P7-16 Package Security & Sandboxing (`pkg verify`, `pkg audit`, integrity checks, permission scopes)
 

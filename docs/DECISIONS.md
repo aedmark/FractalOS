@@ -578,6 +578,33 @@ cited a decision that did not exist.
 `resources/` outside `dep/` mentions `oopis` except the owner's contact links, so there is no migration path; a
 browser that ran a pre-rename build starts as a first run.
 
+## D-049 Working agreement: direct to `main`; agents commit and push only when asked (2026-11-08, status: accepted)
+**Context:** Q-004. AGENTS.md had an interim rule written from history; the owner answered on 2026-11-08.
+**Decision:**
+1. The workflow is direct commits to `main`. No branches or pull requests are required.
+2. Agents commit only when the owner asks, and push only when the owner asks. One approval covers that one
+   commit or push, not later ones.
+3. Adding a dependency (a vendored file, a Pyodide wheel, a Neutralino permission or a new network endpoint) and
+   deleting user data each need the owner's explicit OK every time.
+4. Docs and commit messages follow the Manifold's writing rules, recorded under "Maintainer preferences" in
+   AGENTS.md.
+**Alternatives:** agents commit tested work freely and push on request (rejected: the owner reviews each commit);
+branch plus pull request (rejected: one maintainer, no CI, so a PR adds a step and no check).
+**Consequences:** nothing reaches `main` without the owner's word, so a session that ends with uncommitted work
+must say so in the handoff. Force-pushing and rewriting history stay forbidden (D-005).
+**Review trigger:** a second regular contributor, or CI.
+
+## D-050 Security problems are reported through GitHub private vulnerability reporting (2026-11-08, status: accepted)
+**Context:** Q-005. `docs/SECURITY.md` named two possible routes and left the choice to the owner.
+**Decision:** the one reporting route is GitHub's private vulnerability reporting on `aedmark/FractalOS`. No
+acknowledgement time or disclosure policy is promised.
+**Alternatives:** the landing page's contact address (rejected: email gives no private tracker or advisory);
+both (rejected: one route is easier to keep true).
+**Consequences:** the setting was off on 2026-11-08 (`gh api repos/aedmark/FractalOS/private-vulnerability-reporting`
+returned `{"enabled":false}`); until the owner turns it on, the documented route does not work, and SECURITY.md
+says so.
+**Review trigger:** the setting is enabled (remove the caveat), or a first report arrives.
+
 ---
 
 ## Held tensions
@@ -620,10 +647,10 @@ an answered question stays, with the answer and its date.
   17 read-only commands vs. `COMMAND_WHITELIST` with `rm`, `mv`, `forge`, `run`, `chmod`) currently disagree.
 - **Q-002** ~~Should `main` be replaced with the rewritten history now or later?~~ Done the same day (D-005).
 - **Q-003** Milestone 1 (AI Town Manager): what "long-term memory" means concretely. See P3-01.
-- **Q-004** The working agreement and maintainer preferences for `AGENTS.md`: who may commit, push, merge,
-  publish, add dependencies and delete data; branch and commit conventions; writing and reporting style. History
-  shows direct commits to `main` and pushes by the owner. (asked 2026-11-08, session 44; blocks part of P10-06;
-  recommendation: record direct-to-main, agents commit only when asked and never push.)
-- **Q-005** How should security problems be reported: GitHub private vulnerability reporting, the landing page's
-  contact address, or something else; and what acknowledgement time and disclosure policy apply? (asked
-  2026-11-08, session 44; blocks finishing `docs/SECURITY.md`; recommendation: enable GitHub private reporting)
+- **Q-004** ~~The working agreement and maintainer preferences for `AGENTS.md`: who may commit, push, merge,
+  publish, add dependencies and delete data; branch and commit conventions; writing and reporting style.~~
+  Answered 2026-11-08: direct to `main`; agents commit and push only when asked; dependencies and data deletion
+  always need the owner's OK; the Manifold's writing rules. D-049.
+- **Q-005** ~~How should security problems be reported: GitHub private vulnerability reporting, the landing
+  page's contact address, or something else?~~ Answered 2026-11-08: GitHub private vulnerability reporting, with no
+  promised acknowledgement time or disclosure policy. D-050.

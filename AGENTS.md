@@ -102,11 +102,24 @@ Do not change these without the owner's explicit permission.
 
 ## Working agreement
 
-Partly open (Q-004). What history shows, 2026-11-08: the owner commits directly to `main` and pushes; commit
-messages are `type(area): summary (P7-14)` or `docs: ...`; the version lives in `OS.VERSION` in
-`resources/scripts/config.js` and in `neutralino.config.json`, with a `vX.Y.Z` tag per release. Until Q-004 is
-answered, agents commit only when asked, never push, publish, add dependencies or delete user data, and never
-force anything.
+The owner's answers, 2026-11-08 (D-049):
+
+- **Workflow:** direct commits to `main`; no branches or pull requests required.
+- **Commit and push:** only when the owner asks. One approval covers that one commit or push, not later ones.
+- **Dependencies and data:** adding a vendored file, a Pyodide wheel, a Neutralino permission or a network
+  endpoint, and deleting user data, each need the owner's explicit OK every time.
+- **Never:** force-push, rewrite history, delete branches or publish a release without being asked (D-005).
+- **Commit messages:** `type(area): summary (P7-14)` or `docs: ...`, with the roadmap IDs the change closes.
+- **Versions:** `OS.VERSION` in `resources/scripts/config.js` and `neutralino.config.json`, with a `vX.Y.Z` tag
+  per release.
+
+## Maintainer preferences
+
+- **Writing** (docs and commit messages): declarative present tense. No validating openers, no "it's not X, it's
+  Y" constructions, no blended emotional plateaus, no em dashes. Use commas, semicolons and parentheses. Name the
+  thing; do not dress it as a lesson.
+- **Asking vs. doing:** ask whenever intent, scope or edge cases are ambiguous; never guess silently.
+- **Reporting:** say what changed, what was run and its result, and what was not checked.
 
 ## Layout
 

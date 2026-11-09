@@ -14,11 +14,10 @@ Architecture: [ARCHITECTURE.md](ARCHITECTURE.md). Tests: [TESTING.md](TESTING.md
 
 ## Current state
 
-_Last updated: 2026-11-08, session 48, on `main` after `d0277e0`: P10-07 (template formats, session 47) and
-P7-17 (the window manager test, and `tests/units.js` to run every feature suite). Check `git status` for anything
-not yet committed. Nothing is pushed._
+_Last updated: 2026-11-08, session 49, on `main`, pushed to `origin/main` at `54c2750`: the owner answered Q-004
+and Q-005 (D-049, D-050). Check `git status` for anything not yet committed._
 
-**Session owner:** none. Session 48 has ended; the next session owns nothing until it says so here.
+**Session owner:** none. Session 49 has ended; the next session owns nothing until it says so here.
 
 **Where things stand, in one paragraph:** FractalOS 1.0.0 is released and Phases 1 to 8 are done. Phase 9
 (x86_64 nodes) works in containers but not yet on real hardware (P9-04 to P9-07). Phase 10 brought the project
@@ -69,10 +68,11 @@ unauthenticated (P9-06), which the landing page's "unhackable mesh" does not ref
 - The Python feature suites end with a `CRITICAL: Filesystem save function not provided` line; read `OK` and the
   exit code instead (TESTING.md).
 - Add a session-log entry; never overwrite the one above. Past ten entries, archive the oldest (AGENTS.md).
+- Commit and push only when the owner asks, one approval per commit or push (D-049).
 
 ## Next steps
 
-1. Q-004 and Q-005 (the owner): the working agreement, and how security problems are reported.
+1. The owner: turn on private vulnerability reporting (Settings, Security) so SECURITY.md's route works (D-050).
 2. Try `gpio` in a real Portable build, ideally on a Pi, and one Gemini embedding with a real key. Then P9-04:
    `provision_x64.sh` on a real old laptop or desktop, `--role node` with a screen, then `--headless`.
 3. P9-05: let a headless box create its first account.
@@ -84,11 +84,32 @@ unauthenticated (P9-06), which the landing page's "unhackable mesh" does not ref
 
 The ones that block the next steps; the questions live in DECISIONS.md, "Open questions".
 
-- Q-004 Who may commit, push, merge and add dependencies; writing and reporting preferences (blocks the rest of
-  `AGENTS.md`'s working agreement).
-- Q-005 How security problems are reported (blocks finishing `docs/SECURITY.md`).
+None blocks the next steps. Q-001 (how far the agent's whitelist should grow) and Q-003 (what "long-term
+memory" means for P3-01) are older and still open.
 
 ## Session log
+
+### Session 49: 2026-11-08: Push, and the owner's answers to Q-004 and Q-005
+
+**Contributor:** Claude Code (Opus 5.5), with the owner's answers
+**Goal:** Push the four Phase 10 commits, then record the working agreement and the security reporting route.
+**Done:** pushed `f006692..54c2750` to `origin/main` (`eed8d5c..54c2750`, fast-forward; nothing to pull). Q-004 and
+Q-005 answered. D-049, D-050.
+**Changed:** AGENTS.md ("Working agreement" rewritten from the answers; new "Maintainer preferences" with the
+Manifold's writing rules); `docs/SECURITY.md` (one reporting route, no promised timelines, and the caveat that the
+setting is off); `docs/DECISIONS.md` (D-049, D-050; Q-004 and Q-005 marked answered); ROADMAP notes on P10-05 and
+P10-06.
+**Decisions:** D-049 direct to `main`, agents commit and push only when asked, dependencies and data deletion
+always need the owner's OK, the Manifold's writing rules. D-050 GitHub private vulnerability reporting is the
+only route.
+**Verified:** `gh api repos/aedmark/FractalOS/private-vulnerability-reporting` returned `{"enabled":false}`;
+`tools/check_docs.py` 0 errors, 0 warnings; `node tests/structure.js` PASS. No code changed.
+**Not verified:** nothing else to run.
+**Problems / surprises:** the reporting route the owner chose is switched off on the repository. Turning it on is
+a repository setting, so it was left to the owner (Next steps 1).
+**Corrections:** none.
+**Left undone:** enabling private vulnerability reporting (the owner).
+**Next session should start with:** Next steps 2, the real-hardware trials.
 
 ### Session 48: 2026-11-08: P7-17 the window manager test runs again, and every feature suite has a runner
 
@@ -113,6 +134,7 @@ exit code is the pattern the other `*_unit.js` files (for example `hardware_unit
 **Corrections:** none.
 **Left undone:** Q-004, Q-005.
 **Next session should start with:** Q-004 and Q-005 with the owner, then real-hardware trials (Next steps 2).
+Q-004 and Q-005 were answered in session 49.
 
 ### Session 47: 2026-11-08: P10-07 the living docs follow the template's formats
 
@@ -273,19 +295,7 @@ and code; the owner's full name in the footer.
 **Next session should start with:** Hardware trials, WAN mesh testing, or devlog update.
 
 
-### Session 39: 2026-10-06: FractalOS 1.0.0 Official Release, Documentation & Packaging
-
-**Goal:** Package official v1.0.0 release bundles, publish devlog and release notes, update README and public-facing documentation, and publish GitHub release.
-**Done:** Bumped `OS.VERSION` to `"1.0.0"` in `resources/scripts/config.js` and `neutralino.config.json`. Authored devlog entry in `docs/devlog.html` celebrating FractalOS 1.0.0. Created packaging pipeline `tools/package_release.py` producing `fractalos-1.0.0-web.zip`, `fractalos-1.0.0-web.tar.gz`, `fractalos-1.0.0-appliance.tar.gz`, `fractalos-1.0.0-full.tar.gz`, and `SHA256SUMS` in `dist/`. Tagged git `v1.0.0` and pushed to remote. Updated `README.md` with complete hybrid architecture breakdown, three deployment modes (Browser, Portable Neutralino, Bare-metal Raspberry Pi Appliance), feature breakdown, graphical applications table, and full 151-command system reference table. Updated `docs/CHANGELOG.md` organizing all Phase 6 & Phase 7 capabilities under `[1.0.0]`. Updated `docs/CONTRIBUTING.md` with GitHub repository references and Pull Request conventions. Published GitHub release `v1.0.0` with assets via `gh release create`.
-**Changed:** `README.md`, `docs/CHANGELOG.md`, `docs/CONTRIBUTING.md`, `docs/HANDOFF.md`, `docs/devlog.html`, `resources/scripts/config.js`, `neutralino.config.json`, `tools/package_release.py`, `dist/*`.
-**Decisions:** Documented and frozen v1.0.0 architecture.
-**Problems / surprises:**
-- Command reference in `README.md` was missing over 30 commands introduced in recent phases (swarms, mesh, window manager, split panes, status, clipboard, packages). Generated a comprehensive 151-command table with accurate summaries.
-**Left undone:** Physical hardware trials on real Raspberry Pi boards.
-**Next session should start with:** Community issue triage, hardware testing, or Phase 8 planning.
-
-
-Older sessions, moved whole: sessions 24 to 38 in
+Older sessions, moved whole: sessions 24 to 39 in
 [archive/SESSION_LOG_2026_10.md](archive/SESSION_LOG_2026_10.md), sessions 1 to 23 in
 [archive/SESSION_LOG_2026_09.md](archive/SESSION_LOG_2026_09.md).
 

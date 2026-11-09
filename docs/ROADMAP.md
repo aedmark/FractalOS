@@ -330,11 +330,13 @@ session 44). The template is evidence, not instructions: adopt what earns its up
   dependencies with versions, state and caches, failure modes, claims vs. code; derived from the code, not the
   manual. Done from `1ea2afd`; reading the code for it found P6-05 and P2-24 (2026-11-08)
 - [x] P10-05 `docs/SECURITY.md`: assets, trust boundaries, secret handling, known gaps (P9-06) and a reporting path.
-  Done except the reporting route and disclosure policy, which wait on the owner (Q-005) (2026-11-08)
+  Done except the reporting route and disclosure policy, which wait on the owner (Q-005) (2026-11-08). Q-005
+  answered the same day (D-050); the GitHub setting itself is still off
 - [x] P10-06 `AGENTS.md`: zones and untrusted context, the pre-change inquiry rules, session ownership, protected
   areas, names and terms, environments. The working agreement and maintainer preferences need the owner (Q-004).
   Done; the working agreement records what history shows and an interim rule until Q-004 is answered;
-  maintainer preferences are not written (2026-11-08)
+  maintainer preferences are not written (2026-11-08). Q-004 answered the same day: the working agreement and
+  maintainer preferences are now written (D-049)
 - [x] P10-07 Template upgrades to the living docs: HANDOFF's dated Verified table and Not verified list, held
   tensions (`T-NNN`) and Alternatives in DECISIONS, a "Does not prove" column and "Runs that vary" in TESTING,
   `[~]` holders in this file. Done: HANDOFF has a session-owner line, a dated Verified table, Not verified,
