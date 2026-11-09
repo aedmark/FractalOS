@@ -114,6 +114,16 @@ upgrade was accepted.
 (onboarding dialog, editor, paint). The in-OS suite is not wired in (P1-06). `file://` is never used: the app
 cannot run from it (D-003), and the OS would share storage with the real profile if it could.
 
+## D-009 The internal name stays OopisOS  (2026-09-24, status: superseded by D-048)
+**Context:** The product was renamed FractalOS ("Update README to reflect new WebOS branding", 2025-11-23) but
+the code, storage keys, the kernel object and the BroadcastChannel name still say OopisOS.
+**Decision:** Leave them. Renaming `OopisOS_Kernel` is a large diff for nothing; renaming the `oopisOs*` keys
+and `oopisos-network` would break existing users' saved state (D-006).
+**Consequences:** Two names in the codebase. `CLAUDE.md` says so up front so a new session does not "fix" it.
+
+(Restored 2026-11-08. Commit `7080c94` deleted this entry on 2026-09-25 when the rename went ahead; D-048 records
+that reversal.)
+
 ## D-010 The kernel file list is generated into `core/manifest.json`, and a structure test guards both registration lists  (2026-09-24, status: accepted; amends D-003)
 **Context:** `bridge.js` carried three hand-typed arrays (`coreFiles`, `appFiles`, `commandFiles`, 140 names)
 naming every Python file to copy into Pyodide. A file missing from the list fails silently ("command not
@@ -555,3 +565,13 @@ a valid plan that does something else wrong still runs. Users hit the `rm` refus
 **Context:** The old `resources/landing.html` was a single-file, green-on-black page with a Google Fonts import and six emoji feature cards. Its copy had drifted: it advertised v1.0, implied a `uname` command that does not exist, omitted the mesh, Ollama, the desktop build and the x86_64 roles, and read like a generic AI landing page. The project's other fronts use the sixteen-colour EGA hardware language.
 **Decision:** Rebuild `resources/landing.html` as a product sheet in that same language, with `landing.css` and `landing.js` beside it. Lead with plain English ("a small computer that happens to be a web page"), then real captured shell output, capabilities, an honest who-it-is-for section, three boot paths, the architecture and an FAQ. Label every transcript as real, abridged or illustrative. Keep the page network-free (system mono, no web fonts). Keep the boot buttons working in both layouts: a checkout where `landing.html` sits beside `index.html`, and a published site where the landing page is the root page and the OS is under `os/`.
 **Consequences:** `landing.css` and `landing.js` must be deployed with the page. It is not in `asset_manifest.js` because it is not part of the OS. The boot-link heuristic assumes the published landing page is the root page, not `/landing.html`; a different deployment needs the `data-boot` href changed. The transcripts and version strings are tied to v1.0.0 and must move with the next release.
+
+## D-048 The internal OopisOS names were renamed to FractalOS after all (2026-09-25, status: accepted, recorded 2026-11-08)
+**Context:** D-009 kept the OopisOS names in the code to protect saved state. The owner's commit `7080c94`
+("oopis cleanse", 2026-09-25) renamed them anyway and deleted D-009 instead of superseding it, so the handoff
+cited a decision that did not exist.
+**Decision:** The code, storage keys and kernel object use FractalOS names (`FractalOS_Kernel`, the
+`FractalOS*` keys in `config.js` `STORAGE_KEYS`). D-009 is restored with its original text and marked superseded.
+**Consequences:** State saved under the old `oopisOs*` localStorage keys is not read. On 2026-11-08 no file under
+`resources/` outside `dep/` mentions `oopis` except the owner's contact links, so there is no migration path; a
+browser that ran a pre-rename build starts as a first run.

@@ -11,35 +11,87 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-FractalOS 1.0.0 plus the uncommitted rebuilt public landing page (2026-11-01, D-047). Phase 9 x86_64 provisioning
-is committed (`a9f66bc`, D-046).
-- **Public landing page (2026-11-01, uncommitted):** `resources/landing.html` is now an EGA product sheet with a
-  plain-English explanation, real captured shell and Python output, an abridged Samwise run, capabilities, an
-  honest who-it-is-for section, three boot paths, the architecture and an FAQ. New `landing.css` and `landing.js`
-  beside it; no web fonts or network assets. Verified at 1440, 1200, 1024, 960, 768, 390 and 320 with no horizontal
-  overflow; tabs work by click and keyboard, copy returns the install commands, and there are no page console errors.
+_Last updated: 2026-11-08, session 44, on `main` after `eed8d5c`: documentation repairs only (session numbering,
+D-009, links), uncommitted. All code is committed._
+
+FractalOS 1.0.0, with the rebuilt public landing page (D-047) and Phase 9 x86_64 provisioning (D-046) committed.
+- **Public landing page (committed in `97ace3d`, copy revised by the owner in `eed8d5c`):** `resources/landing.html`
+  is an EGA product sheet with a plain-English explanation, real captured shell and Python output, an abridged
+  Samwise run, capabilities, a who-it-is-for section, three boot paths, the architecture and an FAQ, with
+  `landing.css` and `landing.js` beside it; no web fonts or network assets. The `97ace3d` version was checked at
+  1440, 1200, 1024, 960, 768, 390 and 320 px with no horizontal overflow, working tabs and copy buttons, and no
+  console errors (2026-11-01). The `eed8d5c` revision (new title and intro, capability headings, sans-serif body
+  text, the owner's full name) has not been viewed at those widths.
 - **Works and tested:** any x86_64 machine that runs a modern browser can be provisioned as a mesh `node`, `signal`
   server or `kiosk` with `extras/provision_x64.sh` (D-046); the `signal` role in Debian 12 and 13 containers (web
   server and relay, two clients exchange broadcast and direct messages); `deploy.json` turning the mesh on in the
   browser (`tests/deploy_mesh.js`, including `--live` through the real relay); a headless Chromium launching under
-  the `node` role in Debian 13; smoke 88/88, structure test PASS.
-- **Not tested:** anything on real hardware or under real systemd; the kiosk X session (`xinit` on tty7); a headless `node` that has completed onboarding and then joins a mesh; WebRTC data channels across the LAN between two machines.
-- **Known limits:** a `node` needs a screen once for first-run account setup (P9-05); the web server and relay are unauthenticated (P9-06); Ubuntu's `chromium` is a snap (P9-07); 32-bit x86 is out of scope.
-- **Fixed along the way:** the Python signaling relay never relayed broadcasts; `NETWORKING_ENABLED` was hard-coded false so no appliance could join a mesh; Portable-mode spawn used the wrong port; the README named a non-existent `build_distro.sh`.
+  the `node` role in Debian 13; smoke 88/88, structure test PASS (both 2026-10-12, carried over).
+- **Not tested:** anything on real hardware or under real systemd; the kiosk X session (`xinit` on tty7); a
+  headless `node` that has completed onboarding and then joins a mesh; WebRTC data channels across the LAN
+  between two machines; the landing page in Firefox, Safari, a physical phone or a screen reader.
+- **Known limits:** a `node` needs a screen once for first-run account setup (P9-05); the web server and relay are
+  unauthenticated (P9-06), which the landing page's new "unhackable mesh" wording does not reflect; Ubuntu's
+  `chromium` is a snap (P9-07); 32-bit x86 is out of scope.
 - The Raspberry Pi path (`extras/provision_appliance.sh`) is unchanged and still untested on hardware.
 - FractalOS 1.0 documentation (Architectural Codex, `docs/manual/`) is complete (P8-01, D-045).
+- **Docs vs. the Manifold template:** session 44 compared these docs with the updated template in
+  `../the-manifold/` and fixed the checker's real errors. Still missing: `docs/ARCHITECTURE.md`,
+  `docs/SECURITY.md`, `docs/README.md`, `docs/archive/` (the session log is over 10 entries) and a docs checker.
 
 ## Next steps
 
-1. Commit the landing page if the owner agrees; it is the only uncommitted work.
-2. P9-04: try `provision_x64.sh` on a real old laptop or desktop: `--role node` with a screen, then `--headless`.
-3. P9-05: let a headless box create its first account.
-4. Update the landing transcripts and version strings with the next release; they are tied to v1.0.0.
-5. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
+1. Commit session 44's documentation repairs if the owner agrees.
+2. Decide which of the Manifold's missing documents and rules to adopt, and file them as roadmap items.
+3. P9-04: try `provision_x64.sh` on a real old laptop or desktop: `--role node` with a screen, then `--headless`.
+4. P9-05: let a headless box create its first account.
+5. Recheck the landing page at the seven widths after `eed8d5c`, and decide whether "unhackable" stays while
+   P9-06 is open. Update its transcripts and version strings with the next release; they are tied to v1.0.0.
+6. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
 
 ## Session log
 
-### Session 28: 2026-11-01: Public landing page rebuild
+### Session 44: 2026-11-08: Documentation repairs against the updated Manifold template
+
+**Contributor:** Claude Code (Opus 5.5)
+**Goal:** Compare FractalOS's docs with the expanded Manifold template in `../the-manifold/`, then fix the real
+errors its checker found and the stale handoff.
+**Done:** No roadmap item; documentation upkeep. D-048.
+**Changed:** `docs/HANDOFF.md` (Current state, Next steps, session numbering, three restored entries),
+`docs/DECISIONS.md` (D-009 restored, D-048 added), `docs/ROADMAP.md`, `docs/CONTRIBUTING.md` and `README.md`
+(broken relative links).
+**Decisions:** D-048 records the 2026-09-25 rename that D-009 had argued against.
+**Verified:** the Manifold's `tools/check_docs.py`, run from a scratch copy pointed at this repo, before and after
+(results in the problems below); `node tests/structure.js`.
+**Not verified:** no code changed, so smoke and diag were not run.
+**Problems / surprises:**
+- The 2026-10-06 sessions restarted their numbering at 10, so 12 to 22 were used twice. Each of them had also
+  replaced the entry above it instead of adding one, so three entries vanished from the log: the 2026-09-30
+  Phase 6 session (logged as "Session 7"), P7-01/P7-02 ("Session 10") and P7-03 ("Session 11"). Later edits
+  stripped the headings of seven more (P7-08 to P7-13 and the v1.0.0 release). Recovered the three entries
+  whole from `c9be644`, `a68afb8` and `06e0d14`, restored the seven original headings, and renumbered in date
+  order: Phase 6 is 23, the 2026-10-06 sessions 24 to 39, and the later ones 40 to 42. Every cross-reference to
+  a session number in the docs points at a session numbered 22 or lower, so none needed changing.
+- D-009 ("the internal name stays OopisOS") was deleted in `7080c94` when the rename went ahead, leaving two
+  citations dangling. Restored and marked superseded by D-048.
+- The checker also reports the `AGENTS.md` Layout table's `*` paths and the open questions written without bold
+  IDs. Those are differences in convention, not errors, and were left alone.
+**Corrections:** Current state said the landing page was uncommitted; it was committed in `97ace3d` on 2026-11-01.
+The September session 10 (the real-model 7/7 rerun, 2026-09-25) has no entry, although session 11 and P2-01
+in the roadmap cite it; no commit ever had one.
+**Left undone:** the missing Manifold documents and rules (Next steps 2).
+**Next session should start with:** Next steps 1 and 2.
+
+### Session 43: 2026-11-08: Landing page copy revision (the owner, between sessions)
+
+**Contributor:** the owner (`eed8d5c`, "1.0 Documentation"), logged by session 44
+**Changed:** `resources/landing.html`, `resources/landing.css`: page title "A whole system in a browser tab";
+a new origin-story introduction (the Fallout-style terminal); plainer capability headings; an "offline-first,
+unhackable" mesh line in the who-it-is-for list; sans-serif body text with monospace kept for headings, chrome
+and code; the owner's full name in the footer.
+**Not verified:** not viewed at the D-047 widths after the change.
+
+### Session 42: 2026-11-01: Public landing page rebuild
 
 **Goal:** Replace the generic green-on-black landing page with a front door that sells FractalOS to people already looking for a local-first, Python-in-the-browser, AI-and-mesh machine, while still being understandable to someone who has never opened a terminal.
 **Done:** D-047. Rebuilt `resources/landing.html` as an EGA product sheet: plain-English explanation and a first-five-minutes card; a tabbed tour with real `whoami`, `ls`, `df -h`, `help python` and CPython 3.14.2 output, an abridged real Samwise autopilot run, and a clearly labelled illustrative mesh transcript; seven capabilities; who-it-is-for and not-for lists; browser, Neutralino and x86_64 appliance paths on a printed quick-start card; an architecture diagram, effect contract, spec table and glossary; ten FAQ answers; and a final boot panel. Added `landing.css` and `landing.js` (no dependencies, no web fonts). Fixed stale claims: v1.0 to v1.0.0, Ollama as well as Gemini, the opt-in mesh, and the non-existent `uname` example.
@@ -52,7 +104,7 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** The landing page is not committed. Firefox, Safari, a physical phone and a screen reader were not exercised.
 **Next session should start with:** committing the landing page if approved, then P9-04 on real hardware.
 
-### Session 27: 2026-10-12: P9-01..P9-03 x86_64 mesh node / signal server
+### Session 41: 2026-10-12: P9-01..P9-03 x86_64 mesh node / signal server
 
 **Goal:** Give ordinary x86_64 hardware (any machine that runs a modern browser) an install path as a mesh node or signal server, like the Pi had.
 **Done:** P9-01, P9-02, P9-03, D-046. New `extras/provision_x64.sh` (roles `signal`, `node`, `kiosk`; `--headless`, `--no-start`, `--uninstall`; systemd units under an unprivileged `fractal` user; system Chromium, no Neutralino). New runtime switch `resources/deploy.json` read by `NetworkManager._applyDeployConfig`. Repaired `extras/signaling_server.py`. New `tests/deploy_mesh.js` (mutation-checked: 7 checks fail with the change reverted).
@@ -65,7 +117,7 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** P9-04..P9-07. Nothing committed. Real-hardware and real-systemd testing.
 **Next session should start with:** committing this work if approved, then P9-04 on a physical machine.
 
-### Session 26: 2026-10-07: P8-01 The FractalOS 1.0 Architectural Codex & Manual (`docs/manual/`)
+### Session 40: 2026-10-07: P8-01 The FractalOS 1.0 Architectural Codex & Manual (`docs/manual/`)
 
 **Goal:** Overhaul and modernize the legacy 101-page OopisOS manual into the comprehensive FractalOS 1.0 Architectural Codex and User Guide in `docs/manual/`.
 **Done:** P8-01, D-045. Authored a complete offline, zero-dependency HTML documentation suite under `docs/manual/`:
@@ -82,6 +134,8 @@ is committed (`a9f66bc`, D-046).
 **Next session should start with:** Hardware trials, WAN mesh testing, or devlog update.
 
 
+### Session 39: 2026-10-06: FractalOS 1.0.0 Official Release, Documentation & Packaging
+
 **Goal:** Package official v1.0.0 release bundles, publish devlog and release notes, update README and public-facing documentation, and publish GitHub release.
 **Done:** Bumped `OS.VERSION` to `"1.0.0"` in `resources/scripts/config.js` and `neutralino.config.json`. Authored devlog entry in `docs/devlog.html` celebrating FractalOS 1.0.0. Created packaging pipeline `tools/package_release.py` producing `fractalos-1.0.0-web.zip`, `fractalos-1.0.0-web.tar.gz`, `fractalos-1.0.0-appliance.tar.gz`, `fractalos-1.0.0-full.tar.gz`, and `SHA256SUMS` in `dist/`. Tagged git `v1.0.0` and pushed to remote. Updated `README.md` with complete hybrid architecture breakdown, three deployment modes (Browser, Portable Neutralino, Bare-metal Raspberry Pi Appliance), feature breakdown, graphical applications table, and full 151-command system reference table. Updated `docs/CHANGELOG.md` organizing all Phase 6 & Phase 7 capabilities under `[1.0.0]`. Updated `docs/CONTRIBUTING.md` with GitHub repository references and Pull Request conventions. Published GitHub release `v1.0.0` with assets via `gh release create`.
 **Changed:** `README.md`, `docs/CHANGELOG.md`, `docs/CONTRIBUTING.md`, `docs/HANDOFF.md`, `docs/devlog.html`, `resources/scripts/config.js`, `neutralino.config.json`, `tools/package_release.py`, `dist/*`.
@@ -92,7 +146,7 @@ is committed (`a9f66bc`, D-046).
 **Next session should start with:** Community issue triage, hardware testing, or Phase 8 planning.
 
 
-### Session 24: 2026-10-06: P7-16 Package Security & Sandboxing (`pkg verify`, `pkg audit`, integrity checks, permission scopes)
+### Session 38: 2026-10-06: P7-16 Package Security & Sandboxing (`pkg verify`, `pkg audit`, integrity checks, permission scopes)
 
 **Goal:** Implement P7-16: Verification hashes and permission scopes for installed third-party packages before execution.
 **Done:** P7-16, D-044. Milestone 7.4 is 100% complete! Upgraded `resources/core/commands/pkg.py` with cryptographic SHA256 checksum tracking across `.fpkg` archives, repository indexes (`index.json`), and `/etc/pkg_manifest.json`. Added checksum verification at installation time (rejecting corrupted or tampered bundles unless overridden with `--skip-verify` or `--force`). Implemented `pkg verify [name]` (`pkg check`, `pkg integrity`) to inspect installed packages on disk in `/etc/packages/commands/{name}.py` against recorded manifest hashes, outputting verified vs tampered diagnostics in text or JSON (`--json`). Updated `resources/core/executor.py` so `_load_command_module` prioritizes VFS package nodes directly, recalculates their SHA256 checksums before execution against `/etc/pkg_manifest.json`, and raises `SecurityError` to block execution of altered or corrupted files. Added permission scope modeling (`metadata()["permissions"]`) with elevated scopes (`root`, `fs:system`, `hardware`) requiring explicit operator authorization via `--trust` (`-t`) or `--force`. Created `pkg audit [name|file]` (`pkg sec`, `pkg security`) using Python standard `ast` to perform static security analysis, detecting dynamic code evaluation (`eval`, `exec`, `compile`, `__import__`), OS process calls (`.system()`, `.popen()`), sensitive filesystem paths (`/etc/`, `/proc/`, `/dev/`), and calculating risk levels (`SAFE`, `LOW RISK`, `MODERATE RISK`, `HIGH RISK`). Created unit test suite `tests/pkg_security_test.py` (6/6 passing in 0.010s). Verified 85/85 smoke checks, structure tests, and all unit test suites.
@@ -104,7 +158,7 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** Bare-metal Raspberry Pi testing once hardware is accessible.
 **Next session should start with:** Multi-node mesh trials, hardware appliance tests, or devlog update.
 
-### Session 23: 2026-10-06: P7-15 Standard Library Expansion (`fortune`, `cowsay`, `cal`, `banner`)
+### Session 37: 2026-10-06: P7-15 Standard Library Expansion (`fortune`, `cowsay`, `cal`, `banner`)
 
 **Goal:** Implement P7-15: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages with documentation and examples.
 **Done:** P7-15, D-043. Authored four standard library community packages in `extras/packages/`: `fortune.py`, `cowsay.py`, `cal.py`, and `banner.py`. Each package includes full metadata, flags definition, async `run`, `man`, and `help`. Handled ANSI rendering conventions (D-023) with plain text by default and `-C` / `--color` flags, plus ANSI escape code stripping in `cowsay.py`'s speech bubble width calculations to prevent border distortion when receiving colored piped input. Packaged the community standard library into `resources/core/standard_packages.py`, integrated resolution fallbacks into `resources/core/commands/pkg.py` (`_find_package_source_content` and `pkg search`), and added default VFS paths `/var/pkg/repo` and `/etc/packages/commands` in `resources/core/filesystem.py`. Created test suite `tests/stdlib_packages_test.py` covering searching, installing, executing, flag options, ANSI handling, piped composition (`fortune | cowsay`), and dependency listing/removal (8/8 passing in 0.013s). Regenerated `core/manifest.json` (15 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
@@ -116,7 +170,7 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** P7-16 (Package Security & Sandboxing).
 **Next session should start with:** P7-16: Package Security & Sandboxing.
 
-### Session 22: 2026-10-06: P7-14 Package Dependency Resolution & Dynamic Wheels (`pkg deps`, cycle protection, `--force`, `--no-deps`)
+### Session 36: 2026-10-06: P7-14 Package Dependency Resolution & Dynamic Wheels (`pkg deps`, cycle protection, `--force`, `--no-deps`)
 
 **Goal:** Implement P7-14: Support dependencies in `/etc/pkg_manifest.json` (specifying required Pyodide wheels or dependent command packages).
 **Done:** P7-14, D-042. Upgraded `resources/core/commands/pkg.py` to support full dependency graph management: recursive dependency resolution and installation during `pkg install`, circular dependency detection halting infinite loops (e.g. `A -> B -> A`), `--no-deps` flag to bypass dependency resolution, `pkg deps <name>` (or `pkg tree <name>`) displaying direct/nested dependencies, reverse dependents, and required Pyodide wheels in plain-text ASCII branch trees or structured JSON (`--json`), and removal guardrails in `pkg remove <name>` rejecting uninstallations when dependent packages exist unless overridden with `--force` (`-f`). Upgraded `resources/scripts/effect_handler.js` to support dynamic runtime Pyodide wheel loading (`case 'load_pyodide_wheels'` and in `update_commands_manifest`), invoking `FractalOS_Kernel.pyodide.loadPackage(wheels)` directly without requiring page refresh or OS reboot. Created unit test battery `tests/pkg_dependency_test.py` (6/6 passing in 0.006s). Regenerated `manifest.json` (14 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
@@ -127,6 +181,8 @@ is committed (`a9f66bc`, D-046).
 - In `pkg remove`, reverse dependency analysis checks all installed packages for declared dependencies, providing safe uninstall semantics.
 **Left undone:** P7-15 (Standard Library Expansion).
 **Next session should start with:** P7-15: Standard Library Expansion.
+
+### Session 35: 2026-10-06: P7-13 Package Publishing Tool & Community Repositories (`pkg publish`, `pkg pack`, `pkg validate`, `pkg init`, `pkg search`)
 
 **Goal:** Implement P7-13: Command to validate, package, generate manifest metadata, and export/publish packages for community repositories.
 **Done:** P7-13, D-041. Upgraded `resources/core/commands/pkg.py` to support comprehensive package lifecycle operations: `pkg init <name> [file]` (scaffolding starter package templates), `pkg validate <file|name>` (compilation check, `run` and `man` function inspection, metadata schema validation, core command collision checks), `pkg pack <file>` (packaging into `.fpkg` archives with SHA256 checksums and ISO timestamps), `pkg publish <file|name>` (updating local community repositories at `/var/pkg/repo` or `~/.pkg/repo` with `index.json` catalog entries, `--export` custom directories, `--registry` remote endpoints, and `--dry-run` simulation), `pkg publish --mesh` (announcing packages to peer nodes across the local mesh network), `pkg search [query]` (catalog searching), and local repository package resolution in `pkg install <name>`. Added `case 'pkg_mesh_publish':` to `resources/scripts/effect_handler.js`. Created unit test battery `tests/pkg_publish_test.py` (7/7 passing in 0.005s). Regenerated `manifest.json` (14 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
@@ -139,6 +195,8 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** P7-14 (Package Dependency Resolution).
 **Next session should start with:** P7-14: Package Dependency Resolution.
 
+### Session 34: 2026-10-06: P7-12 Clipboard & Drag-and-Drop Bridge (`ClipboardManager`, `clip`, `pbcopy`, `pbpaste`, dropzone overlay)
+
 **Goal:** Implement P7-12: Seamless clipboard sharing and drag-and-drop file import into the VFS from the browser / host environment.
 **Done:** P7-12, D-040. Milestone 7.3 is 100% complete. Created `resources/scripts/clipboard_manager.js` with `ClipboardManager` managing cross-platform clipboard interactions (Neutralino OS clipboard -> Browser Clipboard API -> memory buffer fallback), `Ctrl+Shift+C` selection copying, `Ctrl+Shift+V` pasting, and HTML5 drag-and-drop file import with animated destination card overlay (`#drag-drop-overlay`). Implemented file reading via `FileReader` and synchronous VFS injection via `FileSystemManager.createOrUpdateFile` at active `cwd` with status notifications and audio feedback. Created Python CLI commands `clip.py` (`clip copy <text>`, `clip paste`, `clip clear`, `clip status`, plus piped stdin `echo "foo" | clip`), `pbcopy.py` (silent copy from args/stdin), and `pbpaste.py` (paste clipboard to stdout). Handled `clipboard_action` effect in `resources/scripts/effect_handler.js`. Wired `ClipboardManager` into `main.js`, registered in `asset_manifest.js`, added overlay styling in `resources/main.css`, and regenerated `core/manifest.json` (14 core, 6 apps, 152 commands). Created unit tests `tests/clipboard_unit.js` (4/4 passing) and `tests/clipboard_command_test.py` (9/9 passing). Verified 85/85 smoke checks, structure tests, and all unit test suites.
 **Changed:** `resources/scripts/clipboard_manager.js`, `resources/core/commands/clip.py`, `resources/core/commands/pbcopy.py`, `resources/core/commands/pbpaste.py`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/main.css`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/clipboard_unit.js`, `tests/clipboard_command_test.py`.
@@ -148,6 +206,8 @@ is committed (`a9f66bc`, D-046).
 - Styled `.drag-drop-overlay` with `pointer-events: none` and dynamic `cwd` resolution so dragging anywhere over the terminal gives instantaneous, clear feedback of the target destination path.
 **Left undone:** Advance to Milestone 7.4 (`P7-13`).
 **Next session should start with:** P7-13: Package Publishing Tool (`pkg publish`).
+
+### Session 33: 2026-10-06: P7-11 Persistent Status & Notification Bar (`StatusBarManager`, `status`, `notify`, tray & drawer)
 
 **Goal:** Implement P7-11: System tray / status line displaying active background jobs, mesh peer count, audio mute, and agent status.
 **Done:** P7-11, D-039. Created `resources/scripts/status_bar_manager.js` implementing `StatusBarManager` coordinating the top status bar, system tray pills, real-time alert ticker, and dropdown notification history drawer (`#notification-drawer`). Extended `SoundManager` in `resources/scripts/sound_manager.js` with `isMuted`, `toggleMute()`, and `setMute()`, suppressing tone synthesis when muted and syncing with the status bar tray icon. Created Python commands `status.py` (`status`, `status bar [on|off]`, `status mute [on|off]`, `status notifications`, `status clear`) and `notify.py` (`notify <message> [--success|--warn|--error|--silent]`, `notify list`, `notify clear`). Handled `notify` and `status_action` effects in `resources/scripts/effect_handler.js`. Updated `.terminal` layout and added comprehensive status bar and drawer styles in `resources/main.css`. Created unit test batteries `tests/status_bar_unit.js` (7/7 passing) and `tests/status_command_test.py` (4/4 passing). Regenerated `manifest.json` (14 core, 6 apps, 149 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
@@ -159,6 +219,8 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** P7-12 (Clipboard & Drag-and-Drop Bridge).
 **Next session should start with:** P7-12: Clipboard & Drag-and-Drop Bridge.
 
+### Session 32: 2026-10-06: P7-10 TUI Window Management (`WindowManager`, `wm`, `window`, docking & tiling)
+
 **Goal:** Implement P7-10: Move overlay apps (editor, paint, top, adventure, peers, netgame) into floating/docked panels or tiled viewports alongside the terminal.
 **Done:** P7-10, D-038. Created `resources/scripts/window_manager.js` implementing `WindowManager` supporting 5 layout modes (`floating`, `docked-right`, `docked-left`, `docked-bottom`, `fullscreen`), window dragging, bottom-right resizing, minimization, and window tiling. Created `#window-dock` taskbar strip at bottom of screen displaying interactive window pills. Updated `AppLayerManager` in `resources/scripts/terminal_ui.js` to delegate to `WindowManager`. Added `resources/core/commands/wm.py` and `window.py` supporting `wm list`, `wm focus <id>`, `wm mode <id> <mode>`, `wm dock <id>`, `wm float <id>`, `wm min <id>`, `wm restore <id>`, `wm close <id>`, `wm tile`. Added `--dock` (`-d`), `--float` (`-f`), and `--full` flags to `top.py`, `edit.py`, `paint.py`, and `peers.py`. Handled `window_action` in `resources/scripts/effect_handler.js`. Updated `resources/scripts/boot.js` with global window hotkeys (`Alt+D`, `Alt+F`, `Alt+M`, `Alt+Tab`) and click-outside terminal focus yielding. Styled layouts in `resources/main.css`. Created unit test batteries `tests/window_manager_unit.js` (7/7 passing) and `tests/window_command_test.py` (6/6 passing). Regenerated `manifest.json` (14 core, 6 apps, 147 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
 **Changed:** `resources/scripts/window_manager.js`, `resources/core/commands/wm.py`, `resources/core/commands/window.py`, `resources/core/commands/top.py`, `resources/core/commands/edit.py`, `resources/core/commands/paint.py`, `resources/core/commands/peers.py`, `resources/scripts/terminal_ui.js`, `resources/scripts/boot.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/main.css`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/window_manager_unit.js`, `tests/window_command_test.py`.
@@ -169,6 +231,8 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** P7-11 (Persistent Status & Notification Bar).
 **Next session should start with:** P7-11: Persistent Status & Notification Bar.
 
+### Session 31: 2026-10-06: P7-09 Terminal Multiplexer & Split Panes (`MultiplexerManager`, `split`, `split-v`, `split-h`, `panes`, `focus`, `close-pane`)
+
 **Goal:** Implement P7-09: Support horizontal and vertical pane splits in the terminal interface (`split-v`, `split-h`, keyboard shortcuts) with independent shell contexts.
 **Done:** P7-09, D-037. Created `resources/scripts/multiplexer_manager.js` with `MultiplexerManager` coordinating pane lifecycles, DOM tree wrapping inside `#multiplexer-container`, independent per-pane `cwd`, command histories, and zoom states. Added Python commands: `split.py`, `split_v.py`, `split_h.py`, `panes.py`, `focus.py`, `close_pane.py`. Handled `multiplexer_action` effects in `resources/scripts/effect_handler.js`. Updated `resources/scripts/boot.js` with directory synchronization on command execution and global keyboard shortcuts (`Alt+V`, `Alt+H`, `Alt+W`, `Alt+Z`, `Alt+Left`/`Alt+Right`). Added CSS styling in `resources/main.css` for flex layouts, active pane borders, header tags, and zoomed state. Added unit tests in `tests/multiplexer_test.py` (4/4 passing) and `tests/multiplexer_unit.js` (7/7 passing). Regenerated `manifest.json` (14 core, 6 apps, 145 commands). Verified 85/85 smoke checks, structure tests, and all test suites.
 **Changed:** `resources/scripts/multiplexer_manager.js`, `resources/core/commands/split.py`, `resources/core/commands/split_v.py`, `resources/core/commands/split_h.py`, `resources/core/commands/panes.py`, `resources/core/commands/focus.py`, `resources/core/commands/close_pane.py`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/main.css`, `resources/scripts/boot.js`, `resources/scripts/effect_handler.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/multiplexer_test.py`, `tests/multiplexer_unit.js`.
@@ -178,6 +242,8 @@ is committed (`a9f66bc`, D-046).
 - Synchronized `FileSystemManager.setCurrentPath(pane.cwd)` on focus changes so commands immediately reflect the target pane's directory.
 **Left undone:** P7-10 (TUI Window Management).
 **Next session should start with:** P7-10: TUI Window Management.
+
+### Session 30: 2026-10-06: P7-08 Swarm Safety & Voltage Policies for Mesh (`SwarmManager`, `/etc/swarm.conf`, `swarm`, `audit.py`)
 
 **Goal:** Implement P7-08: Swarm Safety & Voltage Policies for Mesh (voltage budgeting and confirmation rules specifically tailored for remote commands and physical hardware actions across nodes).
 **Done:** P7-08, D-036. Created `resources/core/swarm_manager.py` with `SwarmManager` managing `/etc/swarm.conf` policies (`max_remote_voltage`, `allow_remote_autopilot`, `allow_remote_gpio`, `allow_remote_force`, `audit_remote_tasks`). Extended `resources/core/audit.py` with `log_swarm` and `get_swarm_entries` for cryptographically verifiable peer provenance logging in `/var/log/audit.log`. Updated `resources/core/ai_manager.py` (`perform_autopilot`) to enforce `max_voltage_budget`, GPIO actuation prohibitions under `swarm_context`, and `--dry-run` plan generation. Added `resources/core/commands/swarm.py` providing unified CLI commands (`swarm status`, `swarm policy [set|reset]`, `swarm log`, `swarm run`). Enhanced `resources/core/commands/mesh_agent.py` and `resources/core/commands/samwise.py` with `--max-voltage` (`-v`), `--dry-run`, and policy subcommands. Updated `NetworkManager.delegateAgentTask` and `_handleMeshAgentRequest` to coordinate voltage budgets and kernel-level swarm safety syscalls. Created unit tests in `tests/swarm_safety_test.py` (6/6 passing) and `tests/swarm_safety_unit.js` (3/3 passing). Regenerated `manifest.json` (14 core, 6 apps, 139 commands). Verified 85/85 smoke checks, structure tests, and all test suites.
@@ -190,7 +256,7 @@ is committed (`a9f66bc`, D-046).
 **Next session should start with:** P7-09: Terminal Split Panes (Multiplexer) for Milestone 7.3.
 
 
-### Session 15: 2026-10-06: P7-07 Distributed Agent Task Delegation (`mesh-agent`, `samwise --node`, `NetworkManager`)
+### Session 29: 2026-10-06: P7-07 Distributed Agent Task Delegation (`mesh-agent`, `samwise --node`, `NetworkManager`)
 
 **Goal:** Implement P7-07: Allow `samwise` on one node to dispatch sub-tasks or queries to a peer node's agent over the mesh network and await synthesized results.
 **Done:** P7-07, D-035. Extended `NetworkManager` with `mesh_agent_request` and `mesh_agent_response` handling, request tracking via `reqId`, `resolvePeerId`, and `delegateAgentTask(targetPeerId, prompt, options)`. Created `resources/core/commands/mesh_agent.py` supporting `mesh-agent <nodeId> <prompt> [--autopilot] [--timeout <sec>] [--json]` and wired `--node` / `-n` flag support into `resources/core/commands/samwise.py`. Added `mesh_agent_delegate` effect handling in `resources/scripts/effect_handler.js` with styled ANSI swarm border formatting. Updated `AIManager` with `mesh-agent` / `mesh_agent` whitelisting and confirmation checks for remote autopilot, updated `BoneDriver` with swarm courier tool prompt, voltage pricing (1.0 V inquiry, 5.0 V autopilot), and checkpoint bypass. Created unit tests in `tests/mesh_agent_test.py` (4/4 passing), `tests/mesh_agent_unit.js` (5/5 passing), and `tests/agent_unit.py` (37/37 passing). Verified 85/85 smoke checks, structure tests, and all test suites.
@@ -203,7 +269,7 @@ is committed (`a9f66bc`, D-046).
 
 
 
-### Session 14: 2026-10-06: P7-06 IoT Autopilot Actions (`samwise`, `BoneDriver`, `AIManager`, `gpio`)
+### Session 28: 2026-10-06: P7-06 IoT Autopilot Actions (`samwise`, `BoneDriver`, `AIManager`, `gpio`)
 
 **Goal:** Implement P7-06: Teach `samwise` to interact with hardware sensors and actuators, configure monitoring daemons, and enforce hardware voltage safety policies.
 **Done:** P7-06, D-034. Extended `BoneDriver` in `resources/core/bone_driver.py` with IoT biology laws and tool manifest examples (`gpio mode`, `read`, `write`, `monitor`, `stop`, `monitors`), operation-based voltage pricing for GPIO subcommands (0.1 V for reads, 2.0 V for modes, 5.0 V for writes/monitors, plus recursive voltage scoring of `--action` commands), and checkpoint bypass for non-filesystem GPIO actions. Updated `AIManager` in `resources/core/ai_manager.py` with `gpio` whitelisting, prompt guidance, `is_dangerous` checks requiring confirmation for kinetic writes in agent mode, and `ALLOWED_PLAN_EFFECTS` support in `_execute_plan_step` and `perform_autopilot` for non-interactive background/hardware effects (`gpio_monitor_start`, `gpio_monitor_stop`, `gpio_simulate`, `play_sound`, `mesh_broadcast`). Updated `samwise.py` to deliver collected effects alongside prose reports. Added 6 new unit tests to `tests/agent_unit.py` (32/32 passing). Verified 85/85 smoke checks, structure tests, and all test batteries.
@@ -216,7 +282,7 @@ is committed (`a9f66bc`, D-046).
 
 
 
-### Session 13: 2026-10-06: P7-05 Hardware Sensor Monitoring Daemon (`gpio`, `HardwareManager`)
+### Session 27: 2026-10-06: P7-05 Hardware Sensor Monitoring Daemon (`gpio`, `HardwareManager`)
 
 **Goal:** Implement P7-05: Hardware Sensor Monitoring Daemon supporting background interval polling, trigger conditions, action callbacks, and virtual GPIO simulation.
 **Done:** P7-05, D-033. Extended `resources/core/commands/gpio.py` with `mode`, `read`, `write`, `monitor <pin>`, `stop <pin>`, `monitors`, `simulate <pin> <val>`, and `stream <pin> [count]`. Implemented `HardwareManager` in `resources/scripts/hardware_manager.js` to manage background polling intervals, edge trigger detection, automatic shell action execution via `CommandExecutor`, mesh broadcast forwarding, and event logging. Added `gpio_monitor_start`, `gpio_monitor_stop`, `gpio_monitor_list`, and `gpio_simulate` effect handlers in `effect_handler.js`. Wired `HardwareManager` into `main.js` and registered in `asset_manifest.js`. Created unit tests in `tests/gpio_command_test.py` and `tests/hardware_unit.js`. Verified 85/85 smoke checks, structure tests, and all test suites.
@@ -230,7 +296,7 @@ is committed (`a9f66bc`, D-046).
 
 
 
-### Session 12: 2026-10-06: P7-04 Mesh Node Presence & Discovery UI (`peers`, `netstat --mesh`)
+### Session 26: 2026-10-06: P7-04 Mesh Node Presence & Discovery UI (`peers`, `netstat --mesh`)
 
 **Goal:** Implement P7-04: Live network status app and shell command (`peers` / `netstat --mesh`) displaying discovered nodes, latency, and shared capabilities.
 **Done:** P7-04, D-032. Milestone 7.1 complete! Created `resources/core/commands/peers.py` and enhanced `netstat.py` with `--mesh` and `--gui` flags. Extended `NetworkManager` to broadcast and cache rich peer metadata (user, host, transport, capabilities, uptime) in `peerMetadata`, with `getLocalNodeInfo()`, `getPeersDetailed({ doPing })`, and `getPeerInfo(peerId)`. Added `peers_display` and `peers_info` handlers in `effect_handler.js` for ANSI table formatting, ping measurements, and JSON export. Built `PeersManager` and `PeersUI` with `peers.css` for a live auto-polling Mesh Network Monitor app with status cards, latency badges, and action buttons. Created unit tests in `tests/peers_command_test.py` and `tests/peers_unit.js`. Verified 85/85 smoke checks, structure tests, and all test suites.
@@ -241,6 +307,43 @@ is committed (`a9f66bc`, D-046).
 **Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
 **Next session should start with:** Milestone 7.2 (P7-05: Hardware Sensor Monitoring Daemon).
 
+
+### Session 25: 2026-10-06: P7-03 Multiplayer Terminal Applications (`netgame`, `c4`, `ttt`)
+
+**Goal:** Implement P7-03: Shared turn-based multiplayer terminal applications over the mesh network.
+**Done:** P7-03, D-031. Created `netgame.py`, `c4.py`, and `ttt.py` supporting Connect 4 and Tic-Tac-Toe over the mesh. Implemented full game mechanics, board verification, win/draw detection, minimax/heuristic bot opponents, and ANSI board rendering. Created `NetgameManager` and `NetgameUI` with `netgame.css` for a rich fullscreen arcade TUI with drop animations, hotkeys, move log, and Tone.js audio cues. Added `mesh_game` messaging in `NetworkManager` for peer invite, accept, move, and resign events. Wrote comprehensive Python tests (`tests/netgame_test.py`) and JS unit tests (`tests/netgame_unit.js`). Verified all test suites (85/85 smoke, 40/40 in-OS diag, 26/26 agent unit, structure, and mesh).
+**Changed:** `resources/core/commands/netgame.py`, `resources/core/commands/c4.py`, `resources/core/commands/ttt.py`, `resources/scripts/apps/netgame/netgame_ui.js`, `resources/scripts/apps/netgame/netgame_manager.js`, `resources/scripts/apps/netgame/netgame.css`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/netgame_test.py`, `tests/netgame_unit.js`, `tests/mesh_unit.js`.
+**Decisions:** D-031 (Multiplayer terminal games & network coordination).
+**Problems / surprises:**
+- In Node unit testing of `tests/mesh_unit.js`, active WebRTC/socket polling references in Node's event loop kept the process running without an explicit `process.exit(0)`. Updated both `mesh_unit.js` and `netgame_unit.js` to explicitly exit on completion, ensuring automated CI suites terminate immediately.
+**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
+**Next session should start with:** P7-04 (Mesh Node Presence & Discovery UI).
+
+### Session 24: 2026-10-06: P7-02 Peer-to-Peer File Transfer (`mesh-cp` / `scp`)
+
+**Goal:** Implement P7-02: Peer-to-peer file transfers across mesh nodes without third-party cloud storage.
+**Done:** P7-02, D-030. Created `mesh_cp.py` and `scp.py` in `resources/core/commands/` supporting standard scp syntax (`node:path`) and `send` / `pull` subcommands. Updated `resources/core/executor.py` to allow hyphenated commands (mapping `mesh-cp` to `mesh_cp`). Added effects `mesh_file_send` and `mesh_file_pull` in `effect_handler.js`. Extended `NetworkManager` with `sendFile` / `pullFile`, payload routing (`mesh_file_push`, `mesh_file_push_ack`, `mesh_file_pull`, `mesh_file_pull_reply`), and target VFS persistence via `FileSystemManager.createOrUpdateFile()`. Created and verified Python tests in `tests/mesh_command_test.py` and JS unit tests in `tests/mesh_unit.js`. Verified 85/85 smoke checks and all test suites.
+**Changed:** `resources/core/commands/mesh_cp.py`, `resources/core/commands/scp.py`, `resources/core/executor.py`, `resources/core/manifest.json`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/mesh_command_test.py`, `tests/mesh_unit.js`.
+**Decisions:** D-030 (Peer-to-Peer file transfer protocol, scp syntax, and hyphenated command mapping).
+**Problems / surprises:**
+- Hyphenated command names like `mesh-cp` could not be directly imported as Python modules (`import_module("commands.mesh-cp")`). Updated `executor._load_command_module` to fall back to replacing hyphens with underscores, allowing `mesh-cp` to seamlessly map to `commands.mesh_cp`.
+- Fixed a safe check for `UserManager.getPrimaryGroupForUser` in `_handleMeshFilePush` and `_handleMeshFilePullReply` to gracefully fall back if the method is omitted in lightweight contexts.
+**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
+**Next session should start with:** P7-03 (Multiplayer Terminal Applications).
+
+### Session 23: 2026-09-30: Phase 6 Appliance, GPIO Bridge, and Auto-Signaling Server
+
+**Goal:** Execute the vision for P6: a bare-metal Fractal Pi appliance, hardware integration, and mesh peer discovery on boot.
+**Done:** P6-01, P6-02, P6-03, P6-04. Wrote `extras/provision_appliance.sh` for universal kiosk provisioning. Extended the Phase 5 async kernel bridge to pass `Neutralino.os.execCommand` down to the Python OS, and wrapped it in `commands/gpio.py` to allow native control of physical hardware. Added a "Mesh Network Setup" step to the Onboarding UI that saves a config to `/etc/network.conf`, which `network_manager.js` reads on boot to optionally spawn the Python signaling server directly from the appliance. Fixed `tests/smoke.js` args and ran the full 85-assertion suite and 40-assertion diag suite successfully. Also wrote and published the first community package (`tetris.py` turn-based game) to the user's public registry!
+**Changed:** `docs/ROADMAP.md`, `extras/provision_appliance.sh`, `resources/bridge.js`, `resources/core/host_api.py`, `resources/core/kernel.py`, `resources/core/commands/gpio.py`, `resources/scripts/apps/onboarding/onboarding_ui.js`, `resources/scripts/apps/onboarding/onboarding_manager.js`, `resources/scripts/network_manager.js`, `resources/main.js`, `resources/core/users.py`, `tests/smoke.js`.
+**Decisions:** Extended Neutralino async bridge pattern for arbitrary native execution on the host (`execHostCommand`) when running in appliance mode. Onboarding now determines the root node for peer discovery.
+**Problems / surprises:**
+- A simple Pyodide exception (Permission denied) in `pkg` was too noisy for standard users; patched `pkg.py` to gracefully suggest `sudo`.
+- Discovered that `first_time_setup` never actually created an `/etc/sudoers` file, leaving the first user without sudo access! Patched `users.py` to add `username ALL` on creation.
+- A typo in Phase 5 (`FileSystemManager.getNode` instead of `getNodeByPath` in `bridge.js`) caused the package manager to silently fail parsing manifests on boot. Fixed it before running smoke tests.
+- Had to debug a JavaScript optional chaining error when inserting the `startNetworking` method dynamically because I didn't slice the source text right. Replaced the whole method instead.
+**Left undone:** Have not tested the GPIO script on physical hardware yet.
+**Next session should start with:** "Next steps" above.
 
 ### Session 22: 2026-09-30: Phase 5 (Networking and Portable Mode)
 

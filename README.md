@@ -342,7 +342,7 @@ See [docs/TESTING.md](docs/TESTING.md) for full testing workflows and configurat
 
 We welcome contributions from developers, designers, and terminal enthusiasts!
 
-Please review [CONTRIBUTING.md](CONTRIBUTING.md) for architectural guidelines, coding conventions, and pull request procedures.
+Please review [CONTRIBUTING.md](docs/CONTRIBUTING.md) for architectural guidelines, coding conventions, and pull request procedures.
 
 Working on FractalOS with an AI agent? Review [AGENTS.md](AGENTS.md), [docs/HANDOFF.md](docs/HANDOFF.md), [docs/ROADMAP.md](docs/ROADMAP.md), and [docs/DECISIONS.md](docs/DECISIONS.md) to understand current state and project memory.
 

@@ -3,8 +3,8 @@
 A browser-based virtual operating system: a Python kernel under Pyodide, a JavaScript terminal and app layer,
 and an LLM inside the shell. Runs as a static site or as a Neutralinojs desktop app.
 
-This file is the **plan**. For *where we are right now* read [docs/HANDOFF.md](docs/HANDOFF.md). For *why we chose
-things* read [docs/DECISIONS.md](docs/DECISIONS.md). For *how to check it* read [docs/TESTING.md](docs/TESTING.md).
+This file is the **plan**. For *where we are right now* read [docs/HANDOFF.md](HANDOFF.md). For *why we chose
+things* read [docs/DECISIONS.md](DECISIONS.md). For *how to check it* read [docs/TESTING.md](TESTING.md).
 
 ## Principles
 

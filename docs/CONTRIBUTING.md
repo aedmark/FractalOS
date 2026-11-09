@@ -88,7 +88,7 @@ The frontend handles everything the user *sees* and *hears*.
 
 ## Testing & Verification
 
-Since this is a hybrid OS, testing can be tricky. The automated smoke test and the in-OS suite are described in [docs/TESTING.md](docs/TESTING.md); run the smoke test before you open a Pull Request:
+Since this is a hybrid OS, testing can be tricky. The automated smoke test and the in-OS suite are described in [docs/TESTING.md](TESTING.md); run the smoke test before you open a Pull Request:
 
 ```bash
 cd resources && python3 -m http.server 8000 &
