@@ -11,8 +11,8 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-_Last updated: 2026-11-08, session 44, on `main` after `eed8d5c`: documentation repairs only (session numbering,
-D-009, links), uncommitted. All code is committed._
+_Last updated: 2026-11-08, session 44, on `main` at `f006692`: documentation repairs (session numbering, D-009,
+links). Everything is committed; nothing is pushed._
 
 FractalOS 1.0.0, with the rebuilt public landing page (D-047) and Phase 9 x86_64 provisioning (D-046) committed.
 - **Public landing page (committed in `97ace3d`, copy revised by the owner in `eed8d5c`):** `resources/landing.html`
@@ -41,13 +41,12 @@ FractalOS 1.0.0, with the rebuilt public landing page (D-047) and Phase 9 x86_64
 
 ## Next steps
 
-1. Commit session 44's documentation repairs if the owner agrees.
-2. Decide which of the Manifold's missing documents and rules to adopt, and file them as roadmap items.
-3. P9-04: try `provision_x64.sh` on a real old laptop or desktop: `--role node` with a screen, then `--headless`.
-4. P9-05: let a headless box create its first account.
-5. Recheck the landing page at the seven widths after `eed8d5c`, and decide whether "unhackable" stays while
+1. Decide which of the Manifold's missing documents and rules to adopt, and file them as roadmap items.
+2. P9-04: try `provision_x64.sh` on a real old laptop or desktop: `--role node` with a screen, then `--headless`.
+3. P9-05: let a headless box create its first account.
+4. Recheck the landing page at the seven widths after `eed8d5c`, and decide whether "unhackable" stays while
    P9-06 is open. Update its transcripts and version strings with the next release; they are tied to v1.0.0.
-6. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
+5. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
 
 ## Session log
 
@@ -79,8 +78,8 @@ errors its checker found and the stale handoff.
 **Corrections:** Current state said the landing page was uncommitted; it was committed in `97ace3d` on 2026-11-01.
 The September session 10 (the real-model 7/7 rerun, 2026-09-25) has no entry, although session 11 and P2-01
 in the roadmap cite it; no commit ever had one.
-**Left undone:** the missing Manifold documents and rules (Next steps 2).
-**Next session should start with:** Next steps 1 and 2.
+**Left undone:** the missing Manifold documents and rules (Next steps 1).
+**Next session should start with:** Next steps 1.
 
 ### Session 43: 2026-11-08: Landing page copy revision (the owner, between sessions)
 
