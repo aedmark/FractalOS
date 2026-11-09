@@ -3,7 +3,23 @@ gpio.py - Interact with and monitor physical or simulated GPIO pins and hardware
 """
 
 import asyncio
+import re
 from host_api import host_api
+
+# In Portable mode the pin ends up in a host shell command (`gpio read <pin>`), so it must be a plain number
+# before any string is built (P6-05). Mode and value are already reduced to fixed words and 0/1.
+PIN_RE = re.compile(r"[0-9]{1,3}")
+
+
+def _pin(raw):
+    """Return the pin as a normalised string of digits, or None if it is not a pin number."""
+    text = str(raw)
+    return str(int(text)) if PIN_RE.fullmatch(text) else None
+
+
+def _bad_pin(sub, raw):
+    return {"success": False, "error": {"message": f"gpio {sub}: '{raw}' is not a pin number",
+                                        "suggestion": "Pins are numbers, e.g. 'gpio read 17'."}}
 
 # In-memory virtual pin storage (fallback and simulation)
 VIRTUAL_PINS = {}
@@ -36,7 +52,9 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
     if cmd == "mode":
         if len(args) != 3:
             return {"success": False, "error": {"message": "gpio mode: requires pin and mode (in/out)", "suggestion": "Usage: gpio mode <pin> <in|out>"}}
-        pin = str(args[1])
+        pin = _pin(args[1])
+        if pin is None:
+            return _bad_pin("mode", args[1])
         mode = args[2].lower()
         if mode not in ("in", "out", "op", "ip"):
             return {"success": False, "error": {"message": f"gpio mode: unknown mode '{mode}'", "suggestion": "Use 'in' or 'out'."}}
@@ -54,7 +72,9 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
     elif cmd == "read":
         if len(args) != 2:
             return {"success": False, "error": {"message": "gpio read: requires pin", "suggestion": "Usage: gpio read <pin>"}}
-        pin = str(args[1])
+        pin = _pin(args[1])
+        if pin is None:
+            return _bad_pin("read", args[1])
 
         res = await host_api.exec_command(f"gpio read {pin}")
         if res.get("success") and res.get("exitCode") == 0:
@@ -67,7 +87,9 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
     elif cmd == "write":
         if len(args) != 3:
             return {"success": False, "error": {"message": "gpio write: requires pin and value (0/1)", "suggestion": "Usage: gpio write <pin> <0|1>"}}
-        pin = str(args[1])
+        pin = _pin(args[1])
+        if pin is None:
+            return _bad_pin("write", args[1])
         val = 1 if str(args[2]) in ("1", "high", "true") else 0
 
         VIRTUAL_PINS[pin] = val
@@ -89,7 +111,9 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
     elif cmd in ("monitor", "watch"):
         if len(args) < 2:
             return {"success": False, "error": {"message": "gpio monitor: requires pin", "suggestion": "Usage: gpio monitor <pin> [--trigger <change|rising|falling>] [--action <cmd>] [--interval <ms>] [--mesh]"}}
-        pin = str(args[1])
+        pin = _pin(args[1])
+        if pin is None:
+            return _bad_pin("monitor", args[1])
 
         # Parse flags
         trigger = "change"
@@ -131,7 +155,9 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
     elif cmd in ("unmonitor", "stop", "unwatch"):
         if len(args) < 2:
             return {"success": False, "error": {"message": "gpio stop: requires pin", "suggestion": "Usage: gpio stop <pin>"}}
-        pin = str(args[1])
+        pin = _pin(args[1])
+        if pin is None:
+            return _bad_pin("stop", args[1])
         if pin in ACTIVE_MONITORS:
             del ACTIVE_MONITORS[pin]
 
@@ -151,7 +177,9 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
     elif cmd in ("simulate", "mock"):
         if len(args) != 3:
             return {"success": False, "error": {"message": "gpio simulate: requires pin and value (0/1)", "suggestion": "Usage: gpio simulate <pin> <0|1>"}}
-        pin = str(args[1])
+        pin = _pin(args[1])
+        if pin is None:
+            return _bad_pin("simulate", args[1])
         val = 1 if str(args[2]) in ("1", "high", "true") else 0
         VIRTUAL_PINS[pin] = val
 
@@ -165,7 +193,9 @@ async def run(args, flags, user_context, stdin_data=None, **kwargs):
     elif cmd in ("stream", "telemetry"):
         if len(args) < 2:
             return {"success": False, "error": {"message": "gpio stream: requires pin", "suggestion": "Usage: gpio stream <pin> [sample_count]"}}
-        pin = str(args[1])
+        pin = _pin(args[1])
+        if pin is None:
+            return _bad_pin("stream", args[1])
         count = 5
         if len(args) > 2:
             try: count = max(1, min(20, int(args[2])))

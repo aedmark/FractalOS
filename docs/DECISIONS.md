@@ -199,11 +199,18 @@ drive both paths with a fake `_call_llm_api`; a real model has still not been ob
 
 ## Open questions
 
-- Q-001 Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the
+- **Q-001** Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the
   audit log as the safety net, or stay a curated list? The two halves of `ai_manager.py` (planner manifest of
   17 read-only commands vs. `COMMAND_WHITELIST` with `rm`, `mv`, `forge`, `run`, `chmod`) currently disagree.
-- ~~Q-002 Should `main` be replaced with the rewritten history now or later?~~ Done the same day (D-005).
-- Q-003 Milestone 1 (AI Town Manager): what "long-term memory" means concretely. See P3-01.
+- **Q-002** ~~Should `main` be replaced with the rewritten history now or later?~~ Done the same day (D-005).
+- **Q-003** Milestone 1 (AI Town Manager): what "long-term memory" means concretely. See P3-01.
+- **Q-004** The working agreement and maintainer preferences for `AGENTS.md`: who may commit, push, merge,
+  publish, add dependencies and delete data; branch and commit conventions; writing and reporting style. History
+  shows direct commits to `main` and pushes by the owner. (asked 2026-11-08, session 44; blocks part of P10-06;
+  recommendation: record direct-to-main, agents commit only when asked and never push.)
+- **Q-005** How should security problems be reported: GitHub private vulnerability reporting, the landing page's
+  contact address, or something else; and what acknowledgement time and disclosure policy apply? (asked
+  2026-11-08, session 44; blocks finishing `docs/SECURITY.md`; recommendation: enable GitHub private reporting)
 
 ## D-014 The agent harness grades the file system, and a stand-in Ollama proves the plumbing  (2026-09-25, status: accepted)
 

@@ -86,7 +86,21 @@ async function runTests() {
     hw.cleanup();
     console.log("ok 6 - HardwareManager stop and cleanup");
 
-    console.log("\nALL 6 HARDWARE DAEMON JS UNIT TESTS PASSED!");
+    // 7: in portable mode only a plain pin number may reach the host shell (P6-05)
+    const hostCommands = [];
+    global.Neutralino = { os: { execCommand: async (cmd) => { hostCommands.push(cmd); return { exitCode: 0, stdOut: '1' }; } } };
+    try {
+        await hw.readPin('1; touch /tmp/fractal-p6-05');
+        await hw.writePin('$(id)', 1);
+        await hw.readPin('17');
+        await hw.writePin(18, 1);
+    } finally {
+        delete global.Neutralino;
+    }
+    assert.deepStrictEqual(hostCommands, ['gpio read 17', 'gpio write 18 1']);
+    console.log("ok 7 - HardwareManager never sends a non-numeric pin to the host shell");
+
+    console.log("\nALL 7 HARDWARE DAEMON JS UNIT TESTS PASSED!");
 }
 
 runTests().then(() => {

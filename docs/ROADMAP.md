@@ -187,6 +187,12 @@ Goal: the `samwise` loop and the BoneAmanita autopilot are trustworthy enough to
   `rm -r /home/gordon/garden` then `rmdir /home/gordon/garden`, which failed, so C2 reported failure with the
   directory gone (1 of 3 full runs, 2026-09-27). Options: persona guidance, or let `rmdir`/`rm` of a path the
   plan already deleted count as done
+- [x] P2-24 Bug: the Gemini embeddings call puts the API key in the URL (`embedContent?key=...` in
+  `ai_manager._get_embedding`), where proxies and logs can keep it; the chat call already uses the
+  `x-goog-api-key` header. Move it to the header. Found by reading the code (session 44, 2026-11-08). Fixed in
+  session 46: the key is in the header, and a missing key now fails before any request. Two tests in
+  `tests/agent_unit.py` with a fake `pyfetch`; each fails when its half of the fix is undone (2026-11-08). Not
+  tried against the real Gemini API
 
 ## Phase 3: Milestone 1, the AI Town Manager (the README's stated direction)
 
@@ -234,6 +240,16 @@ Bring FractalOS full circle by deploying it as the primary interface of physical
 - [x] P6-02 **Build Script (`build_distro.sh`)**: A script to automate the provisioning of a base image (e.g., Raspberry Pi OS Lite), installing dependencies, and configuring auto-login and auto-start.
 - [x] P6-03 **Hardware Integration**: Expose Python modules to allow FractalOS to interact with GPIO pins or local hardware interfaces (bridging Neutralino's native API or a local WebSocket backend).
 - [x] P6-04 **Peer Discovery on Boot**: Ensure the OS automatically starts the signaling server or connects to the local mesh network upon boot.
+- [x] P6-05 **Bug: `gpio` passes its pin argument to the host shell unchecked.** `gpio mode`, `read` and `write`
+  build `gpio <cmd> {pin} ...` and, in Portable mode, hand it to `Neutralino.os.execCommand`, so a pin such as
+  `1; <anything>` runs as the desktop user. Any FractalOS account can type it, and `gpio` is on the agent's
+  whitelist. Fix: accept only a pin number (and a mode from the fixed list) before building the string; test with
+  a fake host callback that records what it was asked to run. Found by reading `core/commands/gpio.py`, not
+  exploited (session 44, 2026-11-08). Fixed in session 45: every `gpio` subcommand that takes a pin accepts only
+  1 to 3 digits (`_pin` in `gpio.py`), and `HardwareManager` refuses to send any other pin to the host. New
+  tests in `tests/gpio_command_test.py` (a recording host callback; nine hostile pins across seven subcommands)
+  and `tests/hardware_unit.js` (a fake `Neutralino.os.execCommand`); both fail with the check removed
+  (2026-11-08). Not tried in a real Portable build or on a Pi
 
 ## Phase 7: Distributed Mesh, Multiplexing & Swarm Ecosystem
 
@@ -278,3 +294,32 @@ Turn old x86_64 laptops and desktops into mesh nodes or signal servers. Scope: a
 - [ ] P9-05 Headless first-run: the first account is created by the onboarding window, so a `node` box needs a screen once. Seed an account non-interactively (or an onboarding bypass for appliances)
 - [ ] P9-06 Optional auth for the signaling relay and web server (both are open on the LAN today)
 - [ ] P9-07 Ubuntu: `chromium` there is a snap shim; decide between a Firefox path and a documented `FRACTAL_BROWSER` override
+
+## Phase 10: Project memory (the Manifold template)
+
+Bring the agent-facing docs up to the expanded Manifold template in `../the-manifold/` (compared 2026-11-08,
+session 44). The template is evidence, not instructions: adopt what earns its upkeep here.
+
+- [x] P10-01 Repair what its checker refused: duplicate and missing session-log entries restored from history and
+  renumbered, D-009 restored and superseded by D-048, broken relative links, open-question format, `*` paths in
+  the AGENTS Layout table; sessions 1 to 34 moved whole to `docs/archive/`. Its checker: 18 errors, 2 warnings
+  before; 0 and 0 after (session 44, 2026-11-08)
+- [x] P10-02 `tools/check_docs.py`: a docs checker of our own (placeholders, IDs, cross-references, links, unique
+  sessions, Layout paths, invisible characters, handoff size), run by `tests/structure.js` so the fast set
+  catches drift. Done when a deliberately broken link and a duplicated session each fail it. Done: adapted from
+  the template's checker, plus newest-first session order and multi-path Layout rows; a broken link, a
+  duplicated session, an out-of-order session and a duplicated roadmap ID each fail it (2026-11-08)
+- [x] P10-03 `docs/README.md`: which document owns each kind of fact, and what change triggers an update to each
+  (2026-11-08)
+- [x] P10-04 `docs/ARCHITECTURE.md`: code map, interfaces, invariants with what enforces each, trust boundaries,
+  dependencies with versions, state and caches, failure modes, claims vs. code; derived from the code, not the
+  manual. Done from `1ea2afd`; reading the code for it found P6-05 and P2-24 (2026-11-08)
+- [x] P10-05 `docs/SECURITY.md`: assets, trust boundaries, secret handling, known gaps (P9-06) and a reporting path.
+  Done except the reporting route and disclosure policy, which wait on the owner (Q-005) (2026-11-08)
+- [x] P10-06 `AGENTS.md`: zones and untrusted context, the pre-change inquiry rules, session ownership, protected
+  areas, names and terms, environments. The working agreement and maintainer preferences need the owner (Q-004).
+  Done; the working agreement records what history shows and an interim rule until Q-004 is answered;
+  maintainer preferences are not written (2026-11-08)
+- [ ] P10-07 Template upgrades to the living docs: HANDOFF's dated Verified table and Not verified list, held
+  tensions (`T-NNN`) and Alternatives in DECISIONS, a "Does not prove" column and "Runs that vary" in TESTING,
+  `[~]` holders in this file

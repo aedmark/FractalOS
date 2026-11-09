@@ -320,5 +320,46 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(self.executor.calls[0][0], 'mesh-agent node-beta "read pin 17"')
 
 
+class GeminiKeyTests(unittest.TestCase):
+    """P2-24: the Gemini key travels in the x-goog-api-key header, never in a URL."""
+
+    def setUp(self):
+        self.am = AIManager(FakeExecutor().fs_manager, FakeExecutor())
+        self.requests = []
+        test = self
+
+        class Response:
+            status = 200
+
+            async def json(self):
+                return {'embedding': {'values': [0.25, 0.5]}}
+
+        async def pyfetch(url, **kwargs):
+            test.requests.append((url, kwargs))
+            return Response()
+
+        self.fake_http = types.ModuleType('pyodide.http')
+        self.fake_http.pyfetch = pyfetch
+        self.fake_pyodide = types.ModuleType('pyodide')
+        self.fake_pyodide.http = self.fake_http
+
+    def embed(self, key):
+        with patch.dict(sys.modules, {'pyodide': self.fake_pyodide, 'pyodide.http': self.fake_http}):
+            return asyncio.run(self.am._get_embedding('hello', 'gemini', None, key))
+
+    def test_embedding_key_is_a_header_not_a_query_parameter(self):
+        result = self.embed('test-key-not-real')
+        self.assertEqual(result, {'success': True, 'embedding': [0.25, 0.5]})
+        (url, kwargs), = self.requests
+        self.assertNotIn('test-key-not-real', url)
+        self.assertNotIn('key=', url)
+        self.assertEqual(kwargs['headers'].get('x-goog-api-key'), 'test-key-not-real')
+
+    def test_missing_key_sends_nothing(self):
+        self.assertFalse(self.embed('')['success'])
+        self.assertFalse(self.embed(None)['success'])
+        self.assertEqual(self.requests, [])
+
+
 if __name__ == '__main__':
     unittest.main()

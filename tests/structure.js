@@ -79,5 +79,12 @@ const unloadedCss = cssOnDisk.filter(f => !listed.includes(f));
 report(`every stylesheet is in asset_manifest.js (${cssOnDisk.length})`, unloadedCss.length === 0,
     `not loaded: ${unloadedCss.join(', ')}`);
 
+// The docs carry the project's memory (AGENTS.md); a dangling ID or a duplicated session makes the handoff lie.
+const docs = require('child_process').spawnSync('python3', [path.join(ROOT, 'tools', 'check_docs.py')],
+    { encoding: 'utf8' });
+const docsOut = `${docs.stdout || ''}${docs.stderr || ''}${docs.error ? docs.error.message : ''}`.trim();
+report(`tools/check_docs.py: ${docsOut.split('\n').pop()}`, docs.status === 0,
+    docsOut.split('\n').filter(l => l.startsWith('ERROR') || docs.error).join('\n     '));
+
 console.log(failed ? `FAIL ${failed}` : 'PASS');
 process.exit(failed ? 1 : 0);

@@ -15,10 +15,16 @@ window.HardwareManager = class HardwareManager {
         this.dependencies = dependencies;
     }
 
+    // The pin is interpolated into a host shell command in portable mode, so only a plain number may reach it
+    // (P6-05). gpio.py checks first; this keeps any other caller from building a host command out of text.
+    static isHostSafePin(pinStr) {
+        return /^[0-9]{1,3}$/.test(pinStr);
+    }
+
     async readPin(pin) {
         const pinStr = String(pin);
         // If Neutralino available in portable mode on Linux
-        if (typeof Neutralino !== 'undefined' && Neutralino.os) {
+        if (typeof Neutralino !== 'undefined' && Neutralino.os && HardwareManager.isHostSafePin(pinStr)) {
             try {
                 const res = await Neutralino.os.execCommand(`gpio read ${pinStr}`);
                 if (res && res.exitCode === 0) {
@@ -36,7 +42,7 @@ window.HardwareManager = class HardwareManager {
         const numVal = (val === 1 || val === "1" || val === true) ? 1 : 0;
         this.virtualPins.set(pinStr, numVal);
 
-        if (typeof Neutralino !== 'undefined' && Neutralino.os) {
+        if (typeof Neutralino !== 'undefined' && Neutralino.os && HardwareManager.isHostSafePin(pinStr)) {
             try {
                 await Neutralino.os.execCommand(`gpio write ${pinStr} ${numVal}`);
             } catch (_) {}

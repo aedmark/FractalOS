@@ -921,7 +921,11 @@ Always use absolute paths for all file and directory arguments to prevent contex
         request_body_dict = {}
 
         if provider == "gemini":
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={api_key}"
+            if not api_key:
+                return {"success": False, "error": "Gemini API key is missing."}
+            # The key goes in a header, as in the chat call: a URL ends up in proxy and server logs (P2-24).
+            url = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent"
+            headers["x-goog-api-key"] = api_key
             request_body_dict = {
                 "model": "models/text-embedding-004",
                 "content": {"parts": [{"text": text}]}

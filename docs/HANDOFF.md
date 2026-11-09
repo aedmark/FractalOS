@@ -1,7 +1,8 @@
 # Session Handoff
 
 Read this first. It is rewritten at the end of every session so the top half is always true *right now*.
-The session log below it is append-only history.
+The session log below it is append-only history: the last ten sessions, newest first. Older ones are in
+[archive/](archive/README.md).
 
 Protocol: see [AGENTS.md](../AGENTS.md) (`CLAUDE.md` imports it). Plan: [ROADMAP.md](ROADMAP.md).
 Decisions: [DECISIONS.md](DECISIONS.md).
@@ -11,8 +12,9 @@ Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
 
 ## Current state
 
-_Last updated: 2026-11-08, session 44, on `main` at `f006692`: documentation repairs (session numbering, D-009,
-links). Everything is committed; nothing is pushed._
+_Last updated: 2026-11-08, session 46, on `main`: P2-24 fixed (the Gemini key in a URL), after P6-05 (session 45)
+and session 44's documentation work (Phase 10, P10-01 to P10-06). Those sessions' commits start at `f006692`; check `git status`
+for anything not yet committed. Nothing is pushed._
 
 FractalOS 1.0.0, with the rebuilt public landing page (D-047) and Phase 9 x86_64 provisioning (D-046) committed.
 - **Public landing page (committed in `97ace3d`, copy revised by the owner in `eed8d5c`):** `resources/landing.html`
@@ -26,7 +28,10 @@ FractalOS 1.0.0, with the rebuilt public landing page (D-047) and Phase 9 x86_64
   server or `kiosk` with `extras/provision_x64.sh` (D-046); the `signal` role in Debian 12 and 13 containers (web
   server and relay, two clients exchange broadcast and direct messages); `deploy.json` turning the mesh on in the
   browser (`tests/deploy_mesh.js`, including `--live` through the real relay); a headless Chromium launching under
-  the `node` role in Debian 13; smoke 88/88, structure test PASS (both 2026-10-12, carried over).
+  the `node` role in Debian 13 (all 2026-10-12, carried over). Smoke 88/88, diag 40/40 `check_fail` with 0 error
+  lines, structure PASS, `gpio_command_test.py` 11/11, `hardware_unit.js` 7/7, `agent_unit.py` 37/37
+  (2026-11-08, headless Chromium from Playwright 1.63, after P6-05; smoke, diag and structure rerun after P2-24
+  with the same results, `agent_unit.py` 39/39).
 - **Not tested:** anything on real hardware or under real systemd; the kiosk X session (`xinit` on tty7); a
   headless `node` that has completed onboarding and then joins a mesh; WebRTC data channels across the LAN
   between two machines; the landing page in Firefox, Safari, a physical phone or a screen reader.
@@ -35,34 +40,93 @@ FractalOS 1.0.0, with the rebuilt public landing page (D-047) and Phase 9 x86_64
   `chromium` is a snap (P9-07); 32-bit x86 is out of scope.
 - The Raspberry Pi path (`extras/provision_appliance.sh`) is unchanged and still untested on hardware.
 - FractalOS 1.0 documentation (Architectural Codex, `docs/manual/`) is complete (P8-01, D-045).
-- **Docs vs. the Manifold template:** session 44 compared these docs with the updated template in
-  `../the-manifold/` and fixed the checker's real errors. Still missing: `docs/ARCHITECTURE.md`,
-  `docs/SECURITY.md`, `docs/README.md`, `docs/archive/` (the session log is over 10 entries) and a docs checker.
+- **Project docs follow the Manifold template** (Phase 10): new `docs/ARCHITECTURE.md`, `docs/SECURITY.md`,
+  `docs/README.md` and `docs/archive/`; new AGENTS.md sections (zones, inquiry rules, protected areas, names,
+  environments, an interim working agreement); `tools/check_docs.py`, run by `tests/structure.js`. Left: P10-07
+  (format upgrades to HANDOFF, DECISIONS, TESTING) and the owner's answers to Q-004 and Q-005.
+- **P6-05 fixed:** `gpio` and `HardwareManager` now send only a numeric pin to the host shell; tested with fake
+  host callbacks, not in a real Portable build. **P2-24 fixed:** the Gemini key is sent only as a header; tested
+  with a fake `pyfetch`, not against the real API.
 
 ## Next steps
 
-1. Decide which of the Manifold's missing documents and rules to adopt, and file them as roadmap items.
-2. P9-04: try `provision_x64.sh` on a real old laptop or desktop: `--role node` with a screen, then `--headless`.
-3. P9-05: let a headless box create its first account.
-4. Recheck the landing page at the seven widths after `eed8d5c`, and decide whether "unhackable" stays while
+1. Q-004 and Q-005 (the owner): the working agreement, and how security problems are reported.
+2. P10-07: the remaining template upgrades to the living docs.
+3. Try `gpio` in a real Portable build, ideally on a Pi (P6-05 was only tested with fakes), and one Gemini
+   embedding with a real key (P2-24). Then P9-04: `provision_x64.sh` on a real old laptop or desktop, `--role node`
+   with a screen, then `--headless`.
+4. P9-05: let a headless box create its first account.
+5. Recheck the landing page at the seven widths after `eed8d5c`, and decide whether "unhackable" stays while
    P9-06 is open. Update its transcripts and version strings with the next release; they are tied to v1.0.0.
-5. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
+6. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
 
 ## Session log
+
+### Session 46: 2026-11-08: P2-24 the Gemini key never goes in a URL
+
+**Contributor:** Claude Code (Opus 5.5)
+**Goal:** Move the Gemini embeddings key out of the request URL, which session 44 found by reading the code.
+**Done:** P2-24.
+**Changed:** `resources/core/ai_manager.py` (`_get_embedding`: the key goes in `x-goog-api-key`, as in the chat
+call; an empty key returns "Gemini API key is missing." before any request); `tests/agent_unit.py`
+(`GeminiKeyTests`, a fake `pyodide.http.pyfetch` that records each request); `docs/CHANGELOG.md` (Security);
+ROADMAP, SECURITY.
+**Decisions:** none.
+**Verified:** `agent_unit.py` 39/39. Putting the key back in the URL fails the header test; removing the empty-key
+check fails the missing-key test (both restored, file compared byte for byte). No other `key=` remains in
+`resources/core` or `resources/scripts`. Smoke 88/88, diag 40/40 with 0 error lines, structure PASS,
+`agent_grading.js` 22/22 (same Playwright and server as session 45).
+**Not verified:** a real Gemini embeddings call; the memory search and sleep cycle that use it.
+**Problems / surprises:** with no key, the old code sent a request with `key=None` in the URL. Memory search skips
+embeddings when there is no key, but the sleep cycle (`consolidate_memory`) does not: on Gemini without a key it
+sent one doomed request per memory. It now sends none.
+**Left undone:** nothing in P2-24.
+**Next session should start with:** Q-004 and Q-005 with the owner, or P10-07.
+
+### Session 45: 2026-11-08: P6-05 `gpio` no longer passes text to the host shell
+
+**Contributor:** Claude Code (Opus 5.5)
+**Goal:** Fix the host command injection that session 44 found by reading `gpio.py`.
+**Done:** P6-05.
+**Changed:** `resources/core/commands/gpio.py` (`_pin`: 1 to 3 digits, normalised, checked in all seven
+subcommands that take a pin, before any host string is built); `resources/scripts/hardware_manager.js`
+(`isHostSafePin` gates `readPin` and `writePin`, which build their own `gpio read/write` host commands for the
+monitor daemon); `tests/gpio_command_test.py`, `tests/hardware_unit.js`; `docs/CHANGELOG.md` (Security);
+ROADMAP, ARCHITECTURE, SECURITY.
+**Decisions:** none. Pins are refused everywhere, not only before host calls, so browser and Portable modes accept
+the same input; a named virtual pin such as `gpio simulate led 1` now fails (nothing in the repo used one).
+**Verified:** `tests/gpio_command_test.py` 11/11 and `tests/hardware_unit.js` 7/7; with the check removed from
+`gpio.py` two tests fail, and with `isHostSafePin` returning true test 7 fails (both restored). Smoke 88/88, diag
+40/40 with 0 error lines, structure PASS, `agent_unit.py` 37/37, `agent_grading.js` 22/22, swarm and mesh-agent
+tests OK. Browser runs used Playwright 1.63 from `../level0engine/node_modules` (`NODE_PATH`), against
+`python3 -m http.server` on 127.0.0.1:8000.
+**Not verified:** a real Portable build, a Pi, the wiringPi `gpio` binary.
+**Problems / surprises:** the JS `HardwareManager` built the same host string independently of `gpio.py`, so a
+fix in Python alone would have left the monitor daemon's polling path open to any other caller. The diag run's one
+console error is the expected 404 for the optional `deploy.json`.
+**Left undone:** `host_api.exec_command` still accepts any string; a future caller must check its own input.
+**Next session should start with:** P2-24 (done in session 46).
 
 ### Session 44: 2026-11-08: Documentation repairs against the updated Manifold template
 
 **Contributor:** Claude Code (Opus 5.5)
-**Goal:** Compare FractalOS's docs with the expanded Manifold template in `../the-manifold/`, then fix the real
-errors its checker found and the stale handoff.
-**Done:** No roadmap item; documentation upkeep. D-048.
+**Goal:** Compare FractalOS's docs with the expanded Manifold template in `../the-manifold/`, fix what its
+checker refused, then adopt the missing documents and rules.
+**Done:** P10-01 to P10-06 (Phase 10 filed this session). D-048. New bugs P6-05 and P2-24; questions Q-004, Q-005.
 **Changed:** `docs/HANDOFF.md` (Current state, Next steps, session numbering, three restored entries),
-`docs/DECISIONS.md` (D-009 restored, D-048 added), `docs/ROADMAP.md`, `docs/CONTRIBUTING.md` and `README.md`
-(broken relative links).
+`docs/DECISIONS.md` (D-009 restored, D-048 added, open-question IDs in bold), `docs/ROADMAP.md`,
+`docs/CONTRIBUTING.md` and `README.md` (broken relative links), `AGENTS.md` (directory paths instead of `*`
+paths in the Layout table, the archiving rule, the stale "124" command count), new `docs/archive/` (sessions 1
+to 34, moved whole and checked word for word against the removed text). Then: new `docs/ARCHITECTURE.md`,
+`docs/SECURITY.md`, `docs/README.md`, `tools/check_docs.py`; `tests/structure.js` runs the checker; new AGENTS.md
+sections and Layout rows; TESTING's structure-test section.
 **Decisions:** D-048 records the 2026-09-25 rename that D-009 had argued against.
-**Verified:** the Manifold's `tools/check_docs.py`, run from a scratch copy pointed at this repo, before and after
-(results in the problems below); `node tests/structure.js`.
-**Not verified:** no code changed, so smoke and diag were not run.
+**Verified:** the Manifold's checker from a scratch copy, 18 errors before and 0 after; `tools/check_docs.py`
+0 errors, 0 warnings in 15 files, and it fails on a broken link, a duplicated session, an out-of-order session and
+a duplicated roadmap ID (each undone afterwards, files compared byte for byte); `node tests/structure.js` PASS, and
+FAIL with a broken link. ARCHITECTURE and SECURITY facts were read from the code at `1ea2afd`.
+**Not verified:** no kernel or front-end code changed, so smoke and diag were not run. P6-05 and P2-24 are from
+reading, not from running anything.
 **Problems / surprises:**
 - The 2026-10-06 sessions restarted their numbering at 10, so 12 to 22 were used twice. Each of them had also
   replaced the entry above it instead of adding one, so three entries vanished from the log: the 2026-09-30
@@ -73,13 +137,13 @@ errors its checker found and the stale handoff.
   a session number in the docs points at a session numbered 22 or lower, so none needed changing.
 - D-009 ("the internal name stays OopisOS") was deleted in `7080c94` when the rename went ahead, leaving two
   citations dangling. Restored and marked superseded by D-048.
-- The checker also reports the `AGENTS.md` Layout table's `*` paths and the open questions written without bold
-  IDs. Those are differences in convention, not errors, and were left alone.
+- The checker could not read the `AGENTS.md` Layout table's `*` paths or open questions written without bold
+  IDs. Both were changed to the checker's conventions rather than the checker to ours.
 **Corrections:** Current state said the landing page was uncommitted; it was committed in `97ace3d` on 2026-11-01.
 The September session 10 (the real-model 7/7 rerun, 2026-09-25) has no entry, although session 11 and P2-01
 in the roadmap cite it; no commit ever had one.
-**Left undone:** the missing Manifold documents and rules (Next steps 1).
-**Next session should start with:** Next steps 1.
+**Left undone:** P10-07; maintainer preferences in AGENTS.md (Q-004); the reporting route (Q-005).
+**Next session should start with:** P6-05 (done in session 45).
 
 ### Session 43: 2026-11-08: Landing page copy revision (the owner, between sessions)
 
@@ -169,588 +233,9 @@ and code; the owner's full name in the footer.
 **Left undone:** P7-16 (Package Security & Sandboxing).
 **Next session should start with:** P7-16: Package Security & Sandboxing.
 
-### Session 36: 2026-10-06: P7-14 Package Dependency Resolution & Dynamic Wheels (`pkg deps`, cycle protection, `--force`, `--no-deps`)
-
-**Goal:** Implement P7-14: Support dependencies in `/etc/pkg_manifest.json` (specifying required Pyodide wheels or dependent command packages).
-**Done:** P7-14, D-042. Upgraded `resources/core/commands/pkg.py` to support full dependency graph management: recursive dependency resolution and installation during `pkg install`, circular dependency detection halting infinite loops (e.g. `A -> B -> A`), `--no-deps` flag to bypass dependency resolution, `pkg deps <name>` (or `pkg tree <name>`) displaying direct/nested dependencies, reverse dependents, and required Pyodide wheels in plain-text ASCII branch trees or structured JSON (`--json`), and removal guardrails in `pkg remove <name>` rejecting uninstallations when dependent packages exist unless overridden with `--force` (`-f`). Upgraded `resources/scripts/effect_handler.js` to support dynamic runtime Pyodide wheel loading (`case 'load_pyodide_wheels'` and in `update_commands_manifest`), invoking `FractalOS_Kernel.pyodide.loadPackage(wheels)` directly without requiring page refresh or OS reboot. Created unit test battery `tests/pkg_dependency_test.py` (6/6 passing in 0.006s). Regenerated `manifest.json` (14 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
-**Changed:** `resources/core/commands/pkg.py`, `resources/scripts/effect_handler.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/pkg_dependency_test.py`.
-**Decisions:** D-042 (Package Dependency Resolution, Cycle Detection, Removal Guardrails & Dynamic Wheel Loading).
-**Problems / surprises:**
-- In `pkg.py`, `_install_package_internal` recursively gathers wheels across all installed dependencies and returns them in `effect: update_commands_manifest` with `wheels: all_wheels`, enabling both manifest command sync and Pyodide runtime wheel loading in a single operation.
-- In `pkg remove`, reverse dependency analysis checks all installed packages for declared dependencies, providing safe uninstall semantics.
-**Left undone:** P7-15 (Standard Library Expansion).
-**Next session should start with:** P7-15: Standard Library Expansion.
-
-### Session 35: 2026-10-06: P7-13 Package Publishing Tool & Community Repositories (`pkg publish`, `pkg pack`, `pkg validate`, `pkg init`, `pkg search`)
-
-**Goal:** Implement P7-13: Command to validate, package, generate manifest metadata, and export/publish packages for community repositories.
-**Done:** P7-13, D-041. Upgraded `resources/core/commands/pkg.py` to support comprehensive package lifecycle operations: `pkg init <name> [file]` (scaffolding starter package templates), `pkg validate <file|name>` (compilation check, `run` and `man` function inspection, metadata schema validation, core command collision checks), `pkg pack <file>` (packaging into `.fpkg` archives with SHA256 checksums and ISO timestamps), `pkg publish <file|name>` (updating local community repositories at `/var/pkg/repo` or `~/.pkg/repo` with `index.json` catalog entries, `--export` custom directories, `--registry` remote endpoints, and `--dry-run` simulation), `pkg publish --mesh` (announcing packages to peer nodes across the local mesh network), `pkg search [query]` (catalog searching), and local repository package resolution in `pkg install <name>`. Added `case 'pkg_mesh_publish':` to `resources/scripts/effect_handler.js`. Created unit test battery `tests/pkg_publish_test.py` (7/7 passing in 0.005s). Regenerated `manifest.json` (14 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
-**Changed:** `resources/core/commands/pkg.py`, `resources/scripts/effect_handler.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/pkg_publish_test.py`.
-**Decisions:** D-041 (Package Publishing Tool, Manifest Validation & Local Community Repositories).
-**Problems / surprises:**
-- In `pkg.py`, fixed an old dormant bug in `pkg remove` where `fs_manager.delete_node` was called instead of `fs_manager.remove`.
-- Normalized `user_context` in `pkg.py` to ensure `fs_manager.current_path` is synchronized on path resolution so relative paths resolve against active directory.
-- Implemented dual local repositories (`/var/pkg/repo` for system/root and `~/.pkg/repo` for unprivileged users) so packages can be authored, published, and installed 100% offline.
-**Left undone:** P7-14 (Package Dependency Resolution).
-**Next session should start with:** P7-14: Package Dependency Resolution.
-
-### Session 34: 2026-10-06: P7-12 Clipboard & Drag-and-Drop Bridge (`ClipboardManager`, `clip`, `pbcopy`, `pbpaste`, dropzone overlay)
-
-**Goal:** Implement P7-12: Seamless clipboard sharing and drag-and-drop file import into the VFS from the browser / host environment.
-**Done:** P7-12, D-040. Milestone 7.3 is 100% complete. Created `resources/scripts/clipboard_manager.js` with `ClipboardManager` managing cross-platform clipboard interactions (Neutralino OS clipboard -> Browser Clipboard API -> memory buffer fallback), `Ctrl+Shift+C` selection copying, `Ctrl+Shift+V` pasting, and HTML5 drag-and-drop file import with animated destination card overlay (`#drag-drop-overlay`). Implemented file reading via `FileReader` and synchronous VFS injection via `FileSystemManager.createOrUpdateFile` at active `cwd` with status notifications and audio feedback. Created Python CLI commands `clip.py` (`clip copy <text>`, `clip paste`, `clip clear`, `clip status`, plus piped stdin `echo "foo" | clip`), `pbcopy.py` (silent copy from args/stdin), and `pbpaste.py` (paste clipboard to stdout). Handled `clipboard_action` effect in `resources/scripts/effect_handler.js`. Wired `ClipboardManager` into `main.js`, registered in `asset_manifest.js`, added overlay styling in `resources/main.css`, and regenerated `core/manifest.json` (14 core, 6 apps, 152 commands). Created unit tests `tests/clipboard_unit.js` (4/4 passing) and `tests/clipboard_command_test.py` (9/9 passing). Verified 85/85 smoke checks, structure tests, and all unit test suites.
-**Changed:** `resources/scripts/clipboard_manager.js`, `resources/core/commands/clip.py`, `resources/core/commands/pbcopy.py`, `resources/core/commands/pbpaste.py`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/main.css`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/clipboard_unit.js`, `tests/clipboard_command_test.py`.
-**Decisions:** D-040 (Clipboard Bridge and Drag-and-Drop VFS Import).
-**Problems / surprises:**
-- In `clipboard_manager.js`, used a tiered fallback for clipboard APIs (`Neutralino.clipboard` -> `navigator.clipboard` -> `_memoryBuffer`), ensuring automated tests, headless Playwright runs, and non-HTTPS local dev servers function without throwing clipboard permission errors.
-- Styled `.drag-drop-overlay` with `pointer-events: none` and dynamic `cwd` resolution so dragging anywhere over the terminal gives instantaneous, clear feedback of the target destination path.
-**Left undone:** Advance to Milestone 7.4 (`P7-13`).
-**Next session should start with:** P7-13: Package Publishing Tool (`pkg publish`).
-
-### Session 33: 2026-10-06: P7-11 Persistent Status & Notification Bar (`StatusBarManager`, `status`, `notify`, tray & drawer)
-
-**Goal:** Implement P7-11: System tray / status line displaying active background jobs, mesh peer count, audio mute, and agent status.
-**Done:** P7-11, D-039. Created `resources/scripts/status_bar_manager.js` implementing `StatusBarManager` coordinating the top status bar, system tray pills, real-time alert ticker, and dropdown notification history drawer (`#notification-drawer`). Extended `SoundManager` in `resources/scripts/sound_manager.js` with `isMuted`, `toggleMute()`, and `setMute()`, suppressing tone synthesis when muted and syncing with the status bar tray icon. Created Python commands `status.py` (`status`, `status bar [on|off]`, `status mute [on|off]`, `status notifications`, `status clear`) and `notify.py` (`notify <message> [--success|--warn|--error|--silent]`, `notify list`, `notify clear`). Handled `notify` and `status_action` effects in `resources/scripts/effect_handler.js`. Updated `.terminal` layout and added comprehensive status bar and drawer styles in `resources/main.css`. Created unit test batteries `tests/status_bar_unit.js` (7/7 passing) and `tests/status_command_test.py` (4/4 passing). Regenerated `manifest.json` (14 core, 6 apps, 149 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
-**Changed:** `resources/scripts/status_bar_manager.js`, `resources/core/commands/status.py`, `resources/core/commands/notify.py`, `resources/scripts/sound_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/main.css`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/status_bar_unit.js`, `tests/status_command_test.py`.
-**Decisions:** D-039 (Persistent Status Bar, System Tray & Notification Center).
-**Problems / surprises:**
-- In `main.css`, updated `.terminal` to flex column layout with `flex: 1` workspace, placing `#status-bar` as an un-obscured top status line while preserving input line anchoring.
-- Audio mute button provides instantaneous single-click audio toggle (`🔊`/`🔇`) without terminal commands.
-**Left undone:** P7-12 (Clipboard & Drag-and-Drop Bridge).
-**Next session should start with:** P7-12: Clipboard & Drag-and-Drop Bridge.
-
-### Session 32: 2026-10-06: P7-10 TUI Window Management (`WindowManager`, `wm`, `window`, docking & tiling)
-
-**Goal:** Implement P7-10: Move overlay apps (editor, paint, top, adventure, peers, netgame) into floating/docked panels or tiled viewports alongside the terminal.
-**Done:** P7-10, D-038. Created `resources/scripts/window_manager.js` implementing `WindowManager` supporting 5 layout modes (`floating`, `docked-right`, `docked-left`, `docked-bottom`, `fullscreen`), window dragging, bottom-right resizing, minimization, and window tiling. Created `#window-dock` taskbar strip at bottom of screen displaying interactive window pills. Updated `AppLayerManager` in `resources/scripts/terminal_ui.js` to delegate to `WindowManager`. Added `resources/core/commands/wm.py` and `window.py` supporting `wm list`, `wm focus <id>`, `wm mode <id> <mode>`, `wm dock <id>`, `wm float <id>`, `wm min <id>`, `wm restore <id>`, `wm close <id>`, `wm tile`. Added `--dock` (`-d`), `--float` (`-f`), and `--full` flags to `top.py`, `edit.py`, `paint.py`, and `peers.py`. Handled `window_action` in `resources/scripts/effect_handler.js`. Updated `resources/scripts/boot.js` with global window hotkeys (`Alt+D`, `Alt+F`, `Alt+M`, `Alt+Tab`) and click-outside terminal focus yielding. Styled layouts in `resources/main.css`. Created unit test batteries `tests/window_manager_unit.js` (7/7 passing) and `tests/window_command_test.py` (6/6 passing). Regenerated `manifest.json` (14 core, 6 apps, 147 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
-**Changed:** `resources/scripts/window_manager.js`, `resources/core/commands/wm.py`, `resources/core/commands/window.py`, `resources/core/commands/top.py`, `resources/core/commands/edit.py`, `resources/core/commands/paint.py`, `resources/core/commands/peers.py`, `resources/scripts/terminal_ui.js`, `resources/scripts/boot.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/main.css`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/window_manager_unit.js`, `tests/window_command_test.py`.
-**Decisions:** D-038 (TUI Window Management & Viewport Tiling Architecture).
-**Problems / surprises:**
-- In `terminal_ui.js`, kept `AppLayerManager.isActive()` returning `WindowManager.isAppFocused() || WindowManager.hasModalApp()`, ensuring background terminal clicking yields keyboard focus to `TerminalUI` while leaving windows visible and updating.
-- Defaulted `top` to `docked-right` so running `top` instantly gives the operator an interactive side-by-side terminal and live process monitor.
-**Left undone:** P7-11 (Persistent Status & Notification Bar).
-**Next session should start with:** P7-11: Persistent Status & Notification Bar.
-
-### Session 31: 2026-10-06: P7-09 Terminal Multiplexer & Split Panes (`MultiplexerManager`, `split`, `split-v`, `split-h`, `panes`, `focus`, `close-pane`)
-
-**Goal:** Implement P7-09: Support horizontal and vertical pane splits in the terminal interface (`split-v`, `split-h`, keyboard shortcuts) with independent shell contexts.
-**Done:** P7-09, D-037. Created `resources/scripts/multiplexer_manager.js` with `MultiplexerManager` coordinating pane lifecycles, DOM tree wrapping inside `#multiplexer-container`, independent per-pane `cwd`, command histories, and zoom states. Added Python commands: `split.py`, `split_v.py`, `split_h.py`, `panes.py`, `focus.py`, `close_pane.py`. Handled `multiplexer_action` effects in `resources/scripts/effect_handler.js`. Updated `resources/scripts/boot.js` with directory synchronization on command execution and global keyboard shortcuts (`Alt+V`, `Alt+H`, `Alt+W`, `Alt+Z`, `Alt+Left`/`Alt+Right`). Added CSS styling in `resources/main.css` for flex layouts, active pane borders, header tags, and zoomed state. Added unit tests in `tests/multiplexer_test.py` (4/4 passing) and `tests/multiplexer_unit.js` (7/7 passing). Regenerated `manifest.json` (14 core, 6 apps, 145 commands). Verified 85/85 smoke checks, structure tests, and all test suites.
-**Changed:** `resources/scripts/multiplexer_manager.js`, `resources/core/commands/split.py`, `resources/core/commands/split_v.py`, `resources/core/commands/split_h.py`, `resources/core/commands/panes.py`, `resources/core/commands/focus.py`, `resources/core/commands/close_pane.py`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/main.css`, `resources/scripts/boot.js`, `resources/scripts/effect_handler.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/multiplexer_test.py`, `tests/multiplexer_unit.js`.
-**Decisions:** D-037 (Terminal Multiplexer Architecture & Split Panes).
-**Problems / surprises:**
-- Kept single-pane mode non-destructive on boot to preserve exact DOM hierarchy for Playwright tests, dynamically creating `.terminal-pane` wrappers only when splits occur.
-- Synchronized `FileSystemManager.setCurrentPath(pane.cwd)` on focus changes so commands immediately reflect the target pane's directory.
-**Left undone:** P7-10 (TUI Window Management).
-**Next session should start with:** P7-10: TUI Window Management.
-
-### Session 30: 2026-10-06: P7-08 Swarm Safety & Voltage Policies for Mesh (`SwarmManager`, `/etc/swarm.conf`, `swarm`, `audit.py`)
-
-**Goal:** Implement P7-08: Swarm Safety & Voltage Policies for Mesh (voltage budgeting and confirmation rules specifically tailored for remote commands and physical hardware actions across nodes).
-**Done:** P7-08, D-036. Created `resources/core/swarm_manager.py` with `SwarmManager` managing `/etc/swarm.conf` policies (`max_remote_voltage`, `allow_remote_autopilot`, `allow_remote_gpio`, `allow_remote_force`, `audit_remote_tasks`). Extended `resources/core/audit.py` with `log_swarm` and `get_swarm_entries` for cryptographically verifiable peer provenance logging in `/var/log/audit.log`. Updated `resources/core/ai_manager.py` (`perform_autopilot`) to enforce `max_voltage_budget`, GPIO actuation prohibitions under `swarm_context`, and `--dry-run` plan generation. Added `resources/core/commands/swarm.py` providing unified CLI commands (`swarm status`, `swarm policy [set|reset]`, `swarm log`, `swarm run`). Enhanced `resources/core/commands/mesh_agent.py` and `resources/core/commands/samwise.py` with `--max-voltage` (`-v`), `--dry-run`, and policy subcommands. Updated `NetworkManager.delegateAgentTask` and `_handleMeshAgentRequest` to coordinate voltage budgets and kernel-level swarm safety syscalls. Created unit tests in `tests/swarm_safety_test.py` (6/6 passing) and `tests/swarm_safety_unit.js` (3/3 passing). Regenerated `manifest.json` (14 core, 6 apps, 139 commands). Verified 85/85 smoke checks, structure tests, and all test suites.
-**Changed:** `resources/core/swarm_manager.py`, `resources/core/kernel.py`, `resources/core/audit.py`, `resources/core/ai_manager.py`, `resources/core/bone_driver.py`, `resources/core/commands/swarm.py`, `resources/core/commands/mesh_agent.py`, `resources/core/commands/samwise.py`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/swarm_safety_test.py`, `tests/swarm_safety_unit.js`.
-**Decisions:** D-036 (Swarm Safety Policies, Remote Voltage Budgets & Provenance Auditing).
-**Problems / surprises:**
-- In `ai_manager.py`, `perform_autopilot` now natively handles both `max_voltage_budget` and `swarm_context`, immediately blocking remote physical actuation (such as `gpio write` or `gpio mode`) and excessive plan voltage before running any kinetic commands.
-- `audit.py` captures peer provenance (`PEER: <sourceId> (<user>)`) and voltage ratings in `/var/log/audit.log`, queryable via `swarm log`.
-**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-09: Terminal Split Panes (Multiplexer) for Milestone 7.3.
-
-
-### Session 29: 2026-10-06: P7-07 Distributed Agent Task Delegation (`mesh-agent`, `samwise --node`, `NetworkManager`)
-
-**Goal:** Implement P7-07: Allow `samwise` on one node to dispatch sub-tasks or queries to a peer node's agent over the mesh network and await synthesized results.
-**Done:** P7-07, D-035. Extended `NetworkManager` with `mesh_agent_request` and `mesh_agent_response` handling, request tracking via `reqId`, `resolvePeerId`, and `delegateAgentTask(targetPeerId, prompt, options)`. Created `resources/core/commands/mesh_agent.py` supporting `mesh-agent <nodeId> <prompt> [--autopilot] [--timeout <sec>] [--json]` and wired `--node` / `-n` flag support into `resources/core/commands/samwise.py`. Added `mesh_agent_delegate` effect handling in `resources/scripts/effect_handler.js` with styled ANSI swarm border formatting. Updated `AIManager` with `mesh-agent` / `mesh_agent` whitelisting and confirmation checks for remote autopilot, updated `BoneDriver` with swarm courier tool prompt, voltage pricing (1.0 V inquiry, 5.0 V autopilot), and checkpoint bypass. Created unit tests in `tests/mesh_agent_test.py` (4/4 passing), `tests/mesh_agent_unit.js` (5/5 passing), and `tests/agent_unit.py` (37/37 passing). Verified 85/85 smoke checks, structure tests, and all test suites.
-**Changed:** `resources/scripts/network_manager.js`, `resources/core/commands/mesh_agent.py`, `resources/core/commands/samwise.py`, `resources/scripts/effect_handler.js`, `resources/core/ai_manager.py`, `resources/core/bone_driver.py`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/mesh_agent_test.py`, `tests/mesh_agent_unit.js`, `tests/agent_unit.py`.
-**Decisions:** D-035 (Distributed Agent Task Delegation over the Mesh).
-**Problems / surprises:**
-- In `NetworkManager._processIncomingMessage`, outer wrapper payload passed inner payload under `.data`; updated `_handleMeshAgentRequest` and `_handleMeshAgentResponse` to unpack from either `payload.data` or `payload` cleanly.
-**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-08: Swarm Safety & Voltage Policies for Mesh.
-
-
-
-### Session 28: 2026-10-06: P7-06 IoT Autopilot Actions (`samwise`, `BoneDriver`, `AIManager`, `gpio`)
-
-**Goal:** Implement P7-06: Teach `samwise` to interact with hardware sensors and actuators, configure monitoring daemons, and enforce hardware voltage safety policies.
-**Done:** P7-06, D-034. Extended `BoneDriver` in `resources/core/bone_driver.py` with IoT biology laws and tool manifest examples (`gpio mode`, `read`, `write`, `monitor`, `stop`, `monitors`), operation-based voltage pricing for GPIO subcommands (0.1 V for reads, 2.0 V for modes, 5.0 V for writes/monitors, plus recursive voltage scoring of `--action` commands), and checkpoint bypass for non-filesystem GPIO actions. Updated `AIManager` in `resources/core/ai_manager.py` with `gpio` whitelisting, prompt guidance, `is_dangerous` checks requiring confirmation for kinetic writes in agent mode, and `ALLOWED_PLAN_EFFECTS` support in `_execute_plan_step` and `perform_autopilot` for non-interactive background/hardware effects (`gpio_monitor_start`, `gpio_monitor_stop`, `gpio_simulate`, `play_sound`, `mesh_broadcast`). Updated `samwise.py` to deliver collected effects alongside prose reports. Added 6 new unit tests to `tests/agent_unit.py` (32/32 passing). Verified 85/85 smoke checks, structure tests, and all test batteries.
-**Changed:** `resources/core/bone_driver.py`, `resources/core/ai_manager.py`, `resources/core/commands/gpio.py`, `resources/core/commands/samwise.py`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/agent_unit.py`.
-**Decisions:** D-034 (IoT Autopilot Actions, Hardware Voltage Policies, and Non-Interactive Effects).
-**Problems / surprises:**
-- In `ai_manager.py`, `_execute_plan_step` was previously halting any step that returned any effect other than `change_directory`. Added `ALLOWED_PLAN_EFFECTS` whitelist (`gpio_simulate`, `gpio_monitor_start`, `gpio_monitor_stop`, `play_sound`, etc.) so background hardware actions execute cleanly without requiring interactive user terminal prompts.
-**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-07: Distributed Agent Task Delegation over the mesh network.
-
-
-
-### Session 27: 2026-10-06: P7-05 Hardware Sensor Monitoring Daemon (`gpio`, `HardwareManager`)
-
-**Goal:** Implement P7-05: Hardware Sensor Monitoring Daemon supporting background interval polling, trigger conditions, action callbacks, and virtual GPIO simulation.
-**Done:** P7-05, D-033. Extended `resources/core/commands/gpio.py` with `mode`, `read`, `write`, `monitor <pin>`, `stop <pin>`, `monitors`, `simulate <pin> <val>`, and `stream <pin> [count]`. Implemented `HardwareManager` in `resources/scripts/hardware_manager.js` to manage background polling intervals, edge trigger detection, automatic shell action execution via `CommandExecutor`, mesh broadcast forwarding, and event logging. Added `gpio_monitor_start`, `gpio_monitor_stop`, `gpio_monitor_list`, and `gpio_simulate` effect handlers in `effect_handler.js`. Wired `HardwareManager` into `main.js` and registered in `asset_manifest.js`. Created unit tests in `tests/gpio_command_test.py` and `tests/hardware_unit.js`. Verified 85/85 smoke checks, structure tests, and all test suites.
-**Changed:** `resources/core/commands/gpio.py`, `resources/scripts/hardware_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/gpio_command_test.py`, `tests/hardware_unit.js`.
-**Decisions:** D-033 (Hardware sensor monitoring daemon, edge detection, and virtual GPIO simulation).
-**Problems / surprises:**
-- Node test runner needed explicit `process.exit(0)` after asynchronous timer resolution to avoid lingering event loop polling keeping tests hanging.
-- Dual-mode architecture seamlessly provides virtual GPIO emulation on browser/headless environments while transparently utilizing sysfs/libgpiod when running under Neutralino on physical Linux/Raspberry Pi hardware.
-**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-06: IoT Autopilot Actions for `samwise`.
-
-
-
-### Session 26: 2026-10-06: P7-04 Mesh Node Presence & Discovery UI (`peers`, `netstat --mesh`)
-
-**Goal:** Implement P7-04: Live network status app and shell command (`peers` / `netstat --mesh`) displaying discovered nodes, latency, and shared capabilities.
-**Done:** P7-04, D-032. Milestone 7.1 complete! Created `resources/core/commands/peers.py` and enhanced `netstat.py` with `--mesh` and `--gui` flags. Extended `NetworkManager` to broadcast and cache rich peer metadata (user, host, transport, capabilities, uptime) in `peerMetadata`, with `getLocalNodeInfo()`, `getPeersDetailed({ doPing })`, and `getPeerInfo(peerId)`. Added `peers_display` and `peers_info` handlers in `effect_handler.js` for ANSI table formatting, ping measurements, and JSON export. Built `PeersManager` and `PeersUI` with `peers.css` for a live auto-polling Mesh Network Monitor app with status cards, latency badges, and action buttons. Created unit tests in `tests/peers_command_test.py` and `tests/peers_unit.js`. Verified 85/85 smoke checks, structure tests, and all test suites.
-**Changed:** `resources/core/commands/peers.py`, `resources/core/commands/netstat.py`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/apps/peers/peers_ui.js`, `resources/scripts/apps/peers/peers_manager.js`, `resources/scripts/apps/peers/peers.css`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/peers_command_test.py`, `tests/peers_unit.js`.
-**Decisions:** D-032 (Mesh node presence, discovery protocol, and monitor TUI).
-**Problems / surprises:**
-- In `tests/peers_unit.js`, `createMockElement` threw a TypeError when children was passed as a single element or non-array. Guarded with `Array.isArray(children)` to allow both forms safely.
-**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** Milestone 7.2 (P7-05: Hardware Sensor Monitoring Daemon).
-
-
-### Session 25: 2026-10-06: P7-03 Multiplayer Terminal Applications (`netgame`, `c4`, `ttt`)
-
-**Goal:** Implement P7-03: Shared turn-based multiplayer terminal applications over the mesh network.
-**Done:** P7-03, D-031. Created `netgame.py`, `c4.py`, and `ttt.py` supporting Connect 4 and Tic-Tac-Toe over the mesh. Implemented full game mechanics, board verification, win/draw detection, minimax/heuristic bot opponents, and ANSI board rendering. Created `NetgameManager` and `NetgameUI` with `netgame.css` for a rich fullscreen arcade TUI with drop animations, hotkeys, move log, and Tone.js audio cues. Added `mesh_game` messaging in `NetworkManager` for peer invite, accept, move, and resign events. Wrote comprehensive Python tests (`tests/netgame_test.py`) and JS unit tests (`tests/netgame_unit.js`). Verified all test suites (85/85 smoke, 40/40 in-OS diag, 26/26 agent unit, structure, and mesh).
-**Changed:** `resources/core/commands/netgame.py`, `resources/core/commands/c4.py`, `resources/core/commands/ttt.py`, `resources/scripts/apps/netgame/netgame_ui.js`, `resources/scripts/apps/netgame/netgame_manager.js`, `resources/scripts/apps/netgame/netgame.css`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `resources/scripts/asset_manifest.js`, `resources/main.js`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/netgame_test.py`, `tests/netgame_unit.js`, `tests/mesh_unit.js`.
-**Decisions:** D-031 (Multiplayer terminal games & network coordination).
-**Problems / surprises:**
-- In Node unit testing of `tests/mesh_unit.js`, active WebRTC/socket polling references in Node's event loop kept the process running without an explicit `process.exit(0)`. Updated both `mesh_unit.js` and `netgame_unit.js` to explicitly exit on completion, ensuring automated CI suites terminate immediately.
-**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-04 (Mesh Node Presence & Discovery UI).
-
-### Session 24: 2026-10-06: P7-02 Peer-to-Peer File Transfer (`mesh-cp` / `scp`)
-
-**Goal:** Implement P7-02: Peer-to-peer file transfers across mesh nodes without third-party cloud storage.
-**Done:** P7-02, D-030. Created `mesh_cp.py` and `scp.py` in `resources/core/commands/` supporting standard scp syntax (`node:path`) and `send` / `pull` subcommands. Updated `resources/core/executor.py` to allow hyphenated commands (mapping `mesh-cp` to `mesh_cp`). Added effects `mesh_file_send` and `mesh_file_pull` in `effect_handler.js`. Extended `NetworkManager` with `sendFile` / `pullFile`, payload routing (`mesh_file_push`, `mesh_file_push_ack`, `mesh_file_pull`, `mesh_file_pull_reply`), and target VFS persistence via `FileSystemManager.createOrUpdateFile()`. Created and verified Python tests in `tests/mesh_command_test.py` and JS unit tests in `tests/mesh_unit.js`. Verified 85/85 smoke checks and all test suites.
-**Changed:** `resources/core/commands/mesh_cp.py`, `resources/core/commands/scp.py`, `resources/core/executor.py`, `resources/core/manifest.json`, `resources/scripts/network_manager.js`, `resources/scripts/effect_handler.js`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/mesh_command_test.py`, `tests/mesh_unit.js`.
-**Decisions:** D-030 (Peer-to-Peer file transfer protocol, scp syntax, and hyphenated command mapping).
-**Problems / surprises:**
-- Hyphenated command names like `mesh-cp` could not be directly imported as Python modules (`import_module("commands.mesh-cp")`). Updated `executor._load_command_module` to fall back to replacing hyphens with underscores, allowing `mesh-cp` to seamlessly map to `commands.mesh_cp`.
-- Fixed a safe check for `UserManager.getPrimaryGroupForUser` in `_handleMeshFilePush` and `_handleMeshFilePullReply` to gracefully fall back if the method is omitted in lightweight contexts.
-**Left undone:** Physical testing on a Raspberry Pi deferred until hardware is accessible.
-**Next session should start with:** P7-03 (Multiplayer Terminal Applications).
-
-### Session 23: 2026-09-30: Phase 6 Appliance, GPIO Bridge, and Auto-Signaling Server
-
-**Goal:** Execute the vision for P6: a bare-metal Fractal Pi appliance, hardware integration, and mesh peer discovery on boot.
-**Done:** P6-01, P6-02, P6-03, P6-04. Wrote `extras/provision_appliance.sh` for universal kiosk provisioning. Extended the Phase 5 async kernel bridge to pass `Neutralino.os.execCommand` down to the Python OS, and wrapped it in `commands/gpio.py` to allow native control of physical hardware. Added a "Mesh Network Setup" step to the Onboarding UI that saves a config to `/etc/network.conf`, which `network_manager.js` reads on boot to optionally spawn the Python signaling server directly from the appliance. Fixed `tests/smoke.js` args and ran the full 85-assertion suite and 40-assertion diag suite successfully. Also wrote and published the first community package (`tetris.py` turn-based game) to the user's public registry!
-**Changed:** `docs/ROADMAP.md`, `extras/provision_appliance.sh`, `resources/bridge.js`, `resources/core/host_api.py`, `resources/core/kernel.py`, `resources/core/commands/gpio.py`, `resources/scripts/apps/onboarding/onboarding_ui.js`, `resources/scripts/apps/onboarding/onboarding_manager.js`, `resources/scripts/network_manager.js`, `resources/main.js`, `resources/core/users.py`, `tests/smoke.js`.
-**Decisions:** Extended Neutralino async bridge pattern for arbitrary native execution on the host (`execHostCommand`) when running in appliance mode. Onboarding now determines the root node for peer discovery.
-**Problems / surprises:**
-- A simple Pyodide exception (Permission denied) in `pkg` was too noisy for standard users; patched `pkg.py` to gracefully suggest `sudo`.
-- Discovered that `first_time_setup` never actually created an `/etc/sudoers` file, leaving the first user without sudo access! Patched `users.py` to add `username ALL` on creation.
-- A typo in Phase 5 (`FileSystemManager.getNode` instead of `getNodeByPath` in `bridge.js`) caused the package manager to silently fail parsing manifests on boot. Fixed it before running smoke tests.
-- Had to debug a JavaScript optional chaining error when inserting the `startNetworking` method dynamically because I didn't slice the source text right. Replaced the whole method instead.
-**Left undone:** Have not tested the GPIO script on physical hardware yet.
-**Next session should start with:** "Next steps" above.
-
-### Session 22: 2026-09-30: Phase 5 (Networking and Portable Mode)
-
-**Goal:** Implement Phase 5 open questions (WebSockets, Portable Mode verification, Host Mounting).
-**Done:** P5-01, P5-02, P5-03.
-**Changed:** `extras/signaling_server.py`, `resources/core/commands/mount.py`, `resources/core/filesystem.py`, `resources/scripts/fs_manager.js`, `resources/bridge.js`, `resources/scripts/effect_handler.js`, `resources/core/commands/cat.py`, `resources/core/commands/grep.py`, `resources/core/commands/ls.py`, `resources/core/commands/edit.py`, `resources/core/commands/python.py`, `docs/ROADMAP.md`.
-**Decisions:** Built a lightweight Python WebSocket server for signaling. Verified Neutralino 6.2.0 on Linux. Implemented `mount host <dir>` using an asynchronous VFS bridge approach, adding `host_mount` and `host_file` nodes that fetch content from Neutralino's filesystem API lazily via JavaScript Promises, and updating core commands to `async def run()`.
-**Problems / surprises:** 
-- Python `open()` inside executing scripts is synchronous and cannot access the asynchronous Neutralino file API. We successfully patched `python.py`'s `open` mock to gracefully raise an `OSError(1)` if a script attempts to natively open a host-mounted file. However, `python /mnt/host/script.py` executes flawlessly because the command reads the file via the bridge before calling `exec()`.
-**Left undone:** The roadmap is officially complete!
-**Next session should start with:** Reviewing the system for 1.0 release or defining Phase 6.
-
-
-### Session 21: 2026-09-30: Package Management (P4-01, P4-02)
-
-**Goal:** Implement the package management system for FractalOS.
-**Done:** P4-01, P4-02, D-028.
-**Changed:** `resources/core/commands/pkg.py` (new command), `resources/core/executor.py` (added dynamic module loading via `_load_command_module` and exposed `get_all_commands`), `resources/core/commands/help.py` & `man.py` (switched to `executor._load_command_module`), `resources/scripts/effect_handler.js` (added `update_commands_manifest`), `resources/bridge.js` (boot-time package wheel loading and manifest aggregation), `docs/DECISIONS.md`, `docs/ROADMAP.md`.
-**Decisions:** D-028 (Packages are single `.py` command files stored in the VFS at `/etc/packages/commands/`, registered in `/etc/pkg_manifest.json`, and dynamically loaded by the executor).
-**Problems / surprises:** 
-- The VFS is initialized before Pyodide boots in JS, which allowed us to cleanly read `/etc/pkg_manifest.json` right before Pyodide initialization to load necessary extra wheels upfront using `pyodide.loadPackage()`.
-**Left undone:** Phase 4 is complete. 
-**Next session should start with:** "Next steps" above.
-
-
-### Session 20: 2026-09-29: Memory Embeddings and Adventure Creator (P3-04)
-
-**Goal:** Implement offline embedding search fallback and finish Phase 3 by fleshing out the adventure engine.
-**Done:** P3-04 (Adventure engine features), D-027.
-**Changed:** `resources/core/ai_manager.py` (added exact pure-Python cosine similarity and Jaccard similarity fallback, dredge logic, and consolidate command), `resources/core/bone_driver.py` (updated memory path rule), `resources/core/commands/samwise.py` (added `--sleep`), `resources/core/apps/adventure.py` (added `_handle_use`, `_handle_drop`, `_handle_score`, `_handle_wait`, win condition checks, and the Python-side creator mode endpoints `creator_initialize`, `creator_get_prompt`, and `creator_process_command`), `resources/scripts/apps/adventure/adventure_create.js` (swapped missing JS methods for async `syscall` routing to the new Python creator endpoints), `docs/ROADMAP.md` (P3-04 marked done), `docs/DECISIONS.md` (D-027).
-**Decisions:** D-027 (Pure-Python cosine exact vector search & lexical fallback).
-**Problems / surprises:**
-- The JavaScript adventure creator tool (`adventure_create.js`) was trying to synchronously call `FractalOS_Kernel.adventureCreatorInitialize` which didn't exist anywhere in the codebase. It was a complete ghost limb. Rewrote it to properly `await FractalOS_Kernel.syscall`.
-- The core adventure engine parsed `"use"`, `"drop"`, `"wait"`, and `"score"`, but the methods were completely missing. Implemented them and hooked up the parsing for `winCondition` so a game can actually be won.
-**Left undone:** Phase 3 is completed. Phase 4 (Packages and extensibility) is next.
-**Next session should start with:** "Next steps" above.
-
-
-Newest first. Copy the template for each new session.
-
-### Session 19: 2026-09-29: UI Fixes and Persistence Debugging
-
-**Goal:** Address user-reported UI feedback regarding Paint and BASIC, explain the model list mismatch, and resolve the critical persistence bug on Neocities.
-**Done:** P3-04 (added to ROADMAP)
-**Changed:** 
-- `resources/main.js`, `resources/scripts/effect_handler.js`, `resources/scripts/user_manager.js`: Implemented `FractalOS_LastUser` memory to maintain the logged-in user across page reloads.
-- `resources/scripts/apps/paint/paint_manager.js`: Awaited `getCurrentUser` correctly in `_saveContent` to resolve the broken Paint save button.
-- `resources/scripts/apps/paint/paint_ui.js`: Removed the redundant cut, copy, and paste buttons.
-- `resources/scripts/apps/basic/basic_manager.js`: Clarified the `SYNTAX ERROR` message to explain that BASIC statements require line numbers.
-- `docs/ROADMAP.md`: Added P3-04 for fleshing out the text adventure engine and creator tools.
-**Decisions:** N/A
-**Problems / surprises:** 
-- The persistence bug wasn't an actual data-loss issue; it was a logic gap. When the user refreshed the page, the system dropped them back to `Guest`, making it seem as if their files (stored in `/home/<username>`) and aliases (stored in their user session) were deleted. They just needed to `login`. We fixed this by persisting the last logged-in user across reboots.
-- The "fake models" issue in chat is due to the browser's Mixed Content security policy. HTTPS pages (Neocities) physically block JavaScript from fetching HTTP resources (`http://localhost:11434`), causing our fetch call to Ollama to fail and trigger the hardcoded model fallback.
-- The `PRINT "HELLO"` bug was because the Python `basic.py` interpreter is a stub and `basic_manager.js` forces the user to prefix statements with line numbers (e.g., `10 PRINT "HELLO"`). Updated the error message to clarify this.
-**Left undone:** Adding a manual text-input fallback for the AI Model dropdown picker if the user desires.
-**Next session should start with:** The next steps in the roadmap.
-
-### Session 18: 2026-09-29: Agent hardening and testing hygiene (P1-16, P2-22, P2-23, P1-15)
-
-**Goal:** Address the next steps in the handoff: make smoke tests fail on page errors, fix agent Python environment misunderstanding, guide agent away from redundant rmdir, and add classify flag to ls.
-**Done:**
-- P1-16: Updated `tests/smoke.js` to collect page errors and fail the suite with exit code 1 if any are caught. Confirmed test passes locally.
-- P2-22: Added explicit wording to `bone_driver.py` persona indicating `python` has standard library only (no numpy, requests, etc.).
-- P2-23: Appended guidance to `bone_driver.py` instructing the agent to delete a directory by path "ONCE" and never to run `rmdir` after `rm -r`.
-- P1-15: Added `-F` / `--classify` flag to `ls` (`ls.py`), with logic to append `/` to directories, `@` to symlinks, and `*` to executables. Decided against throwing "invalid option" for unknown flags globally, to keep command argument pass-through behavior intact.
-**Changed:** `tests/smoke.js`, `resources/core/bone_driver.py`, `resources/core/commands/ls.py`, ROADMAP.md, HANDOFF.md.
-**Decisions:** None new.
-**Problems / surprises:** Playwright wasn't installed globally so a scratch path was needed to run the test suite locally.
-**Left undone:** Manual app pass, Gemini run.
-**Next session should start with:** "Next steps" above, starting with the manual app pass.
-
-### Session 17: 2026-09-27: P2-21 closed with a check, not only a prompt (D-024); two regressions from sessions 15-16 fixed
-
-**Goal:** The owner: "continue with P2-21". Session 14 had ticked it with persona guidance but never measured it.
-**Done:**
-- Measured first: C2 ×5 on llama3.1:8b, current code: 4 PASS, 1 `cd garden` + `rm -r *`. Guidance alone was
-  not enough. A full run then showed a new variant, `rm -r .`, which FractalOS's `rm` executed by deleting the
-  current directory; `rm -rf ..` deleted the caller's home.
-- D-024: `validate_plan` rejects `rm` of `*`, `.`, `..`, so P2-17's retry re-plans; `rm` refuses `.`, `..`, `/`.
-  Man page updated. 3 unit tests and 9 smoke checks, each failing on the old code.
-- Evidence: C2 10/10 twice; injected bad first plan corrected 5/5; full runs llama 9/10, 10/10, 10/10 and
-  gemma 10/10 twice, with `rm -r .` once and `rm -r *` twice rejected and corrected unprompted.
-- `tests/agent.js`: `AGENT_TASKS` selects tasks. D3 called `kernel.chidi_analysis`, deleted in session 16, and
-  aborted every full run since, so session 15's 10/10 did not hold on current `main`; D3 now makes the Chidi app's
-  syscall, and must mention the file's content.
-- The model pickers from `93bae32` never filled: `AIManager.getAvailableModels` returned the syscall envelope, not
-  the list. Fixed; smoke check added (fails without the fix).
-**Changed:** `resources/core/ai_manager.py`, `commands/rm.py`, `scripts/ai_manager.js`, `tests/agent.js`,
-`tests/agent_unit.py` (24 → 26), `tests/smoke.js` (75 → 85), DECISIONS (D-024), ROADMAP (P2-21; P1-15, P1-16,
-P2-22, P2-23 new), TESTING, CHANGELOG, AGENTS.md, this file.
-**Decisions:** D-024.
-**Problems / surprises**
-- The smoke run printed `[pageerror] models.includes is not a function` and still said PASS (P1-16).
-- `rm -r .` is not a model quirk to prompt away: it was an OS bug any user could hit.
-- In C1, a rejected `rm -r *` came back as `rm -r /home/gordon/garden` and the brake still disengaged: retries do
-  not get around the voltage brake.
-**Left undone:** P2-22, P2-23, P1-15, P1-16, the manual pass, Gemini.
-**Next session should start with:** "Next steps" above, item 1.
-
-### Session 16: 2026-09-27: Housekeeping (P1-12, P1-10)
-
-- **Goal**: P1-12 (`jsnull` audit) and P1-10 (Move `www/` into `neutralino/`).
-- **Done**:
-  - Found that the `www/` directory is just the stock Neutralinojs template and `documentRoot` handles what actually runs. Moved `www/` to `neutralino/www/` so it doesn't pollute the root repo space.
-  - Updated `AGENTS.md` and `ROADMAP.md` to reflect the `www/` change.
-  - Discovered that all `FractalOS_Kernel` app function wrappers in `kernel.py` were unused (except for one broken one in `chidi_manager.js`).
-  - Fixed `chidi_manager.js` to use the unified `syscall` mechanism.
-  - Deleted ~120 lines of dead global functions from `kernel.py` that were previously exposed to JS, confirming that `execute_command` and `syscall_handler` are the only functions bridging the boundary.
-  - Ran `structure.js`, `diag.js`, and `smoke.js` to confirm all 75 tests still pass perfectly.
-- **Outcome**: P1-10 and P1-12 are complete. The codebase is cleaner and fully decoupled from legacy `pyodide.ffi` boundary bugs.
-
-### Session 15: 2026-09-27: Automated tests for AI commands (P2-04)
-
-- **Goal**: P2-04: Verify Chidi, `remix`, and `storyboard` against a real model with a recorded transcript.
-- **Done**:
-  - Found `remix` and `storyboard` lacked automated tests.
-  - Added tasks `D1`, `D2`, and `D3` to `tests/agent.js` to execute `remix`, `storyboard`, and `chidi_analysis` headless.
-  - Discovered and fixed missing short flag aliases `-p` and `-m` handling in the test runner.
-  - Discovered and fixed Playwright `page.evaluate()` multiple argument restriction.
-  - Found an issue with `analysis_type` for `chidi_analysis`: it expected `"summarize"`, but the test sent `"summary"`. Fixed the test.
-  - Ran the harness with a local Ollama model (`llama3.1:8b`) via Playwright, all 10 tests passed!
-- **Outcome**: P2-04 complete. Transcript recorded in `tests/out/agent-transcript.md`.
-
-- **[2026-09-25] P2-08 Agentic Search Continuation:** Refactored `perform_agentic_search` to yield continuation state in the `confirm_ai_command` effect. Added a hidden `--resume-agent` flag to the `samwise` command to resume the agent plan upon user confirmation. Updated `effect_handler.js` to dispatch the continuation automatically after executing the confirmed step.
-
-### Session 14: 2026-09-27: Agent hardening (P2-21, P2-18), Configurable Gemini (P2-05), Structure check (P1-11)
-
-**Goal:** Work the next steps in the handoff: P2-21, P2-18, P2-05, and P1-11.
-**Done:**
-- P2-21: Updated `ai_manager.py` and `bone_driver.py` persona instructions to explicitly forbid deleting directories with `*` and to require absolute paths.
-- P2-18: "Scar Tissue" Context Injection. Tracked recent execution failures in `session.env_manager` as `_AI_LAST_ERROR`, cleared them on success, and injected them in `_get_terminal_context()`.
-- P2-05: Made the Gemini model configurable by resolving it from the config or default in `ai_manager.py`.
-- P1-11: Added automated checks to `tests/structure.js` that ensure every module in `resources/core/commands/` exposes `run` and `man`. Fixed `true.py` which was missing `man`.
-**Changed:** `resources/core/ai_manager.py`, `resources/core/bone_driver.py`, `resources/core/commands/true.py`, `tests/structure.js`, `ROADMAP.md`, `HANDOFF.md`.
-**Decisions:** none.
-**Problems / surprises:**
-- The command `true` was missing a `man` function, which was caught by the new P1-11 structure test.
-**Left undone:** P2-04 (testing against a real model), P1-12 (`jsnull` audit), P1-10 (`www/`), manual app pass.
-**Next session should start with:** "Next steps" above, starting with P2-04.
-
-### Session 13: 2026-09-26: Agent hardening, `tree -C` (P2-20, P2-16, P1-13, P2-06, P2-17, P1-14)
-
-**Goal:** Work the roadmap in the owner's order: P2-20, P2-16, P2-06, P2-17, then `tree -C` (the owner's idea after
-llama planned it).
-**Done:**
-- P2-20 (D-019): Samwise Chat spliced messages into the shell line; `$(touch ...)` in a chat message created the
-  file. Messages now travel as JSON on stdin.
-- P2-16 (D-020): `--dry-run` ran agent-mode plans and was ignored by `--autopilot`. Planning is now separate
-  (`plan_agentic_search`, `plan_autopilot`); dry run reports and runs nothing.
-- P1-13: the prompt printed `~\$` since the first commit (a regex `$` anchor).
-- P2-06 (D-021): `pyfetch` ignored `timeout=20`, so a hung provider froze the command. AbortSignal timeout,
-  `timeout_seconds` in `/etc/ai.conf`, provider-named errors; `samwise` man page documents `/etc/ai.conf`.
-- P2-17 (D-022): rejected plans retried up to 3 calls; the brake never. P2-21 added from llama's `rm -r *`.
-- P1-14 (D-023): `tree -C`; the terminal renders ANSI colour.
-- Wrap-up: HANDOFF rewritten, CHANGELOG and TESTING brought up to date.
-**Changed:** `resources/core/ai_manager.py`, `commands/samwise.py`, `commands/tree.py`,
-`scripts/apps/samwise_chat/samwise_chat_manager.js`, `scripts/output_manager.js`, `scripts/terminal_ui.js`,
-`main.css`, `tests/smoke.js` (59 → 75), `tests/agent_unit.py` (19 → 24), AGENTS.md, DECISIONS (D-019 to D-023),
-ROADMAP, TESTING, CHANGELOG, this file.
-**Decisions:** D-019, D-020, D-021, D-022, D-023.
-**Problems / surprises**
-- Every fix was mutation-checked: the new checks fail (or, for the timeout, hang) on the old code.
-- The first P2-06 mutation test was useless (the old code lacked a helper the test patched); the real mutation
-  was removing the signal.
-- The smoke test's DOM check found no output: onboarding suppresses it (gotcha added).
-- A multi-edit doc script aborted midway on a duplicate match and the commit went in without the handoff edits;
-  caught and amended before push. Check `git status` and grep after scripted doc edits.
-- llama3.1:8b varies run to run; one 7/7 proves little. gemma4:12b was stable.
-**Left undone:** P2-18, P2-21, P2-05, P2-04, P1-10 to P1-12, the manual app pass.
-**Next session should start with:** "Next steps" above, item 1.
-
-### Session 12: 2026-09-26: Finish the renames; restore AGENTS.md; untrack the log (P1-07, D-018)
-
-**Goal:** The owner's answers: restore anything needed from the deleted `CLAUDE.md` / `AGENTS.md`, document
-that `tests/test_executor.py` runs inside the OS, stop tracking log files, and fix any renames they missed
-(and drop the old rule against renaming).
-**Done:** Chat app renamed to Samwise Chat and made to work (see Current state). Remaining `gemini`-as-command
-and SamwiseOS text renamed. D-006's rule removed. `AGENTS.md` restored and updated, `CLAUDE.md` imports it.
-`neutralinojs.log` untracked. `test_executor.py` run in the OS. Structure, smoke 55/55, diag 40/0, grading
-22/22, units 19 OK, live chat check.
-**Changed:** `resources/scripts/apps/samwise_chat/*` (renamed from `gemini_chat`), `asset_manifest.js`, `main.js`,
-`boot.js`, `ai_manager.js`, `chidi_manager.js`, `session_manager.js`, `commands/samwise.py`, `tests/smoke.js`,
-`extras/inflate.sh`, README, `AGENTS.md`, `CLAUDE.md`, DECISIONS (D-006, D-018), TESTING, ROADMAP, this file.
-**Decisions:** D-018.
-**Problems / surprises**
-- The chat window's CSS never applied: its title-derived id did not match the stylesheet's selector.
-- Kept on purpose: `gemini` as the provider name and API-key setting, `Edmark & Gemini` in BASIC's banner, the
-  LICENSE, and `mcgoopis` / `oopismcgoopis.com` (the owner's handle and site).
-**Left undone:** P2-20 and the agent items; see session 13.
-**Next session should start with:** "Next steps" above.
-
-### Session 11: 2026-09-26: Real-model rerun on current code; sudo crash fixed (P2-01)
-
-**Goal:** The owner asked to tick P2-01 and rerun. It was already ticked (session 10), so the rerun confirms it
-on today's code, after the `samwise` rename and the "oopis cleanse".
-**Done:** `tests/agent.js` 7/7 on llama3.1:8b and gemma4:12b, each PASS checked against its transcript. Smoke
-55/55. Diag failed on `sudo` ("FractalOS is not defined"), traced to `6300a72`, fixed, diag 40/0. Rewrote
-Current state, which still described session 9's failures while ROADMAP said P2-01 was done.
-**Changed:** `resources/scripts/effect_handler.js` (one identifier), ROADMAP (P2-01 note, P2-19 new and done), `tests/agent.js` (graders, `exists`),
-TESTING.md, this file.
-**Decisions:** none.
-**Problems / surprises**
-- The sandbox runs commands in their own network namespace: Ollama and the http server on the host's
-  127.0.0.1 are unreachable from inside it. The harness had to run outside the sandbox.
-- In zsh, `git show $c:tests/...` expands `:t` as a history modifier. Write `"${c}:tests/..."`.
-- gemma's A2 uses an absolute path, so it no longer tests cd memory. llama's A2 and B2 do.
-**Also done:** P2-19. The graders now require C1's result to fail, C2's `garden/` directory to be gone (a new
-`exists` helper asks the kernel's file system, checked true for `/home` and false for a missing path), and B2's
-command to succeed. Grading test 22/22; llama rerun 7/7.
-**Left undone:** P2-16, the owner's question about `CLAUDE.md`.
-**Next session should start with:** "Next steps" above.
-
-### Session 9: 2026-09-25: Reproduce why the agent tasks keep failing (P2-01 diagnosis)
-
-**Goal:** Explain repeated task failures after the thinking and delete-grading fixes were pushed.
-**Done:** Traced both preserved model transcripts through prompts, parser, audit, execution, confirmation and
-harness grades. Reproduced six voltage cases with the actual BoneDriver; replayed AIManager's loop using a
-fake executor to demonstrate continuation after failed cd; reproduced forge's nested-escape SyntaxError.
-Verified the planner manifest/whitelist mismatch. Detailed evidence is in Current state.
-**Changed:** ROADMAP (P2-14 and P2-15 added, P2-10 evidence), this file. No runtime changes.
-**Decisions:** none; calibration and snapshot policy need an intentional implementation, not a threshold tweak.
-**Problems / surprises:** Reordered rm flags change the score from 60 to 10; merely echoing "story save"
-bypasses the surcharge. Project/ is an explicit instruction. A compliant planner cannot use mv for B2.
-**Left undone:** Fixes and real-model reruns; previous browser test results remain the latest, not rerun here.
-**Next session should start with:** Next steps above; P2-01 remains open.
-
-### Session 8: 2026-09-25: Disable thinking, repair delete grading, rerun real models (P2-09, P2-11)
-
-**Goal:** Finish P2-09 and P2-11, rerun tests to close P2-01 if evidence permits.
-**Done:** Ollama thinking disabled; empty-reply diagnostics include done_reason. Delete tasks independently
-verify their fixtures and reject empty/failed model calls. Smoke 50/50, structure PASS, diag 40/0; 11 grading
-cases passed. Reran gemma4:12b and llama3.1:8b; verdicts and transcript paths are in Current state.
-**Changed:** ai_manager.py, smoke.js, agent.js, ROADMAP, TESTING, DECISIONS, CHANGELOG, this file.
-**Decisions:** D-015.
-**Problems / surprises:** Thinking fix reduced gemma tasks to seconds. First run found a newline assumption
-in the harness fixture check; fixed before completed reruns. Existing voltage/parser failures still block A2/B2.
-Llama's force attempt used rm -r rather than rm -rf and deleted the fixture at voltage 10, then story save failed.
-Gemma's generated seeds.py exposed nested escape corruption in forge (new P2-13).
-**Left undone:** P2-01 remains in progress; P2-02, P2-07, P2-08, P2-10, P2-12, P2-13; Gemini and manual UI.
-**Next session should start with:** P2-02, then P2-10; rerun for A2 and B2 evidence.
-
-### Session 7: 2026-09-25: A real model drives the agent harness; verdicts recorded (P2-01 still in progress)
-
-**Goal:** Next steps item 1: run `tests/agent.js` against a real Ollama, read the transcript, record the verdicts.
-**Done:** Local session on the owner's machine. Fast-forwarded local `main` to `origin/main` (it lacked the
-harness). Ran the harness against `llama3.1:8b` and `gemma4:12b`; verdict table under Current state → Verified.
-Replayed the C1 autopilot prompt straight to Ollama to confirm why gemma4 returned nothing. P2-01 stays `[~]`.
-No code changed.
-**Changed:** ROADMAP (P2-01, P2-02 and P2-07 notes; P2-09 to P2-12 new), TESTING.md (running the harness
-locally, two pitfalls), this file.
-**Decisions:** none.
-**Problems / surprises**
-- The transcript this session was asked to read did not exist: the run had never happened, and the harness was
-  only on `origin/main`. Ran it first.
-- `gemma4:12b` thinks by default and ran out of output: `done_reason: "length"`, 3,296 tokens, empty reply, 74 s.
-  With `think: false` the same prompt gave a two-line plan in 1 s. Three of its seven tasks were hollow.
-- `llama3.1:8b` is fast and obedient in autopilot but narrates in agent mode, and the planner parser runs the
-  narration. It also followed the persona's `mkdir Project` example over the user's "in my home directory".
-- The +15 interlock stops a single-file `forge` (5 + 15 = 20.0), so "create one file" cannot run without a
-  `story save`. Evidence for P2-02, not changed.
-- The harness's C1 said "deleted garden/" when `garden/` had never been made. Grading without a precondition.
-- The harness default model `gemma3:latest` is not installed here; pass `AGENT_MODEL`.
-**Left undone:** P2-09 to P2-12, the rerun, Gemini. The stand-in `tests/fake_ollama.py` was not run: it needs
-port 11434, which the real Ollama holds.
-**Next session should start with:** "Next steps" above, item 1.
-
-### Session 6: 2026-09-25: Agent harness and stand-in Ollama; two agent bugs fixed (P2-01 in progress, D-014)
-
-**Goal:** P2-01: let a real model drive the agent.
-**Done:** The container can reach no model (Ollama, Gemini, GitHub releases, Hugging Face all blocked; no key
-to use), so the session built what makes the local run one command: `tests/agent.js` (seven tasks, file-system
-grading, transcript) and `tests/fake_ollama.py` (Ollama's API with canned persona-shaped plans). The first run
-found the agent's context probe resetting the cwd to `/` and agent mode crashing on its own confirm effect;
-both fixed in `ai_manager.py` and `commands/samwise.py`, two smoke checks added. Harness 7/7 against the
-stand-in, smoke 47/47, structure 10/10, diag 40/0.
-**Changed:** `resources/core/ai_manager.py`, `resources/core/commands/samwise.py`, `tests/agent.js` (new),
-`tests/fake_ollama.py` (new), `tests/smoke.js`, CLAUDE.md, ROADMAP (P2-01 `[~]`, P2-06 note, P2-08 new),
-DECISIONS (D-014), TESTING.md, CHANGELOG, this file.
-**Decisions:** D-014.
-**Problems / surprises**
-- Every prompt the OS ever built said `Current Directory: /`, whatever the shell's cwd was. The persona's
-  "Gravity: if pwd is /, cd home" rule exists because of this bug.
-- Agent mode's permission dialog had never appeared: `samwise.py` indexed `["success"]` on the effect dict.
-- `pyfetch(timeout=20)` is not a thing; there is no LLM timeout at all (noted under P2-06).
-- The `\n`-in-a-template-literal trap from session 5, again; now in TESTING.md's pitfalls.
-**Left undone:** the real-model run itself (local job), P2-07, P2-08, P1-12.
-**Next session should start with:** "Next steps" above, item 1, on a machine with Ollama.
-
-### Session 5: 2026-09-25: The agent gets `python`; agent mode's plan regex fixed (P2-03, D-013)
-
-**Goal:** P2-03: let the agent use `python`, rewrite the persona's "cannot run Python" law, decide its step budget.
-**Done:** P2-03 (D-013). `python` in `COMMAND_WHITELIST` and `DANGEROUS_COMMANDS`; `AIManager.agent_refusal()`
-rejects `--steps` in both paths; persona rewritten for `.sh` and `.py`; planner manifest unchanged. Nine
-fake-LLM smoke checks. Then the paste bug: 58 doubled backslashes in `ai_manager.py` (agent mode never matched
-a plan line; literal `\n` in Ollama prompts) and 7 more in `find`, `jobs`, `story`, `character`, `audit`,
-`backup`, all undone, one `find` smoke check. Smoke 45/45, diag 40/0. P2-07 added to the roadmap.
-**Changed:** `ai_manager.py`, `bone_driver.py`, `commands/{find,jobs,story,character,backup}.py`, `audit.py`,
-`tests/smoke.js`, DECISIONS (D-013), ROADMAP, CHANGELOG, TESTING.md, this file.
-**Decisions:** D-013.
-**Problems / surprises**
-- The first fake-LLM test of agent mode "passed" for the wrong reason: the plan text was returned as the answer
-  and happened to contain the probe word. Only the `python` confirmation check exposed that no plan line had
-  ever matched. Lesson recorded in TESTING.md: assert on the executor's output, not on words in the answer.
-- Reading the autopilot for this item showed it enforces nothing but voltage and ignores `--force` (P2-07).
-- A `\n` inside a JS template literal feeding Python source became a real newline; raw-string edits fixed it.
-**Left undone:** P2-01 (a real model), P2-07 (autopilot brakes), P1-12 (jsnull audit).
-**Next session should start with:** "Next steps" above.
-
-### Session 4: 2026-09-24: `python` command (P1-09, D-011) and the `jsnull` fix (D-012)
-
-**Goal:** The owner decided: real Python inside FractalOS is wanted. Build it (P1-09), closing the README's
-"planned" claim.
-**Done:** `resources/core/commands/python.py` (D-011): file / `-c` / stdin, captured output, VFS `open()`
-(text modes, permission-checked, write-back on flush/close/drop), piped `input()`, `sys.argv`, `sys.exit`,
-script-only tracebacks, `--steps` budget via `sys.settrace`, man page in the OS voice. Manifest regenerated
-(123 commands). 17 smoke checks. README row and feature bullet, CHANGELOG. Found and fixed D-012 on the way.
-**Changed:** `commands/python.py` (new), `kernel.py` (`_from_js`), `core/manifest.json`, `tests/smoke.js`,
-README, CHANGELOG, ROADMAP (P1-09 done, P2-03 rewritten, P1-12 added), DECISIONS, CLAUDE.md, TESTING.md, this.
-**Decisions:** D-011, D-012.
-**Problems / surprises**
-- `python` with nothing piped executed the source text "jsnull": Pyodide turns JS `null` into
-  `pyodide.ffi.jsnull`, not `None`. Checked against the old build (same), so pre-existing; `wc` crashed the
-  same way. Fixed at the one entry point instead of in fourteen commands.
-- A test using `cd /home/Guest && python ...` wrote to `/`: effects run after the line. Test rewritten; the
-  rule added to CLAUDE.md.
-- `wc` with no input prints nothing (by design); my first expectation of `0 0 0` was wrong.
-**Left undone:** The agent cannot use `python` yet (P2-03). No REPL, no `-m`, no binary files. P1-12 audit.
-**Next session should start with:** "Next steps" above.
-
-### Session 3: 2026-09-24: Generated kernel manifest and structure test (P1-08)
-
-**Goal:** P1-08: stop hand-maintaining the Python file lists in `bridge.js`; a test that fails when they drift.
-**Done:** P1-08 (D-010). `tools/gen_manifest.py` → `resources/core/manifest.json` (12 core, 6 apps, 122
-commands); `bridge.js` fetches it and the three hand-typed arrays are gone, as is the dead `apps/gemini_chat.py`
-stub; `tests/structure.js` (10 checks, Node only) guards the manifest and `asset_manifest.js` both ways.
-Mutation-checked: an unregistered command file and an orphan script each fail the right check. Smoke 14/14 and
-diag 40/0 both pass on the new boot path. Also merged the owner's "Samwise Cleanse" (banner rename) by rebasing
-and re-keyed the diag harness on the unchanged "ALL SYSTEMS OPERATIONAL" line.
-**Changed:** `resources/bridge.js`, `resources/core/manifest.json` (new, generated), `tools/gen_manifest.py`
-(new), `tests/structure.js` (new), `tests/diag.js` (banner regex), docs.
-**Decisions:** D-010.
-**Problems / surprises**
-- The owner renamed the diag banner while the harness that matched on it was in flight. Keyed on the last
-  banner line instead, and wrote down in HANDOFF that the banner is prose the owner edits.
-- The lists in `bridge.js` were already exactly in sync with disk, so this was prevention; the `gemini_chat`
-  null stub ("still needed to avoid import errors") was the only stale entry, and nothing imported it.
-**Left undone:** P1-11 (every command exposes `run` and `man`) would fit naturally into `tests/structure.js`.
-The apps, the agent and portable mode remain unobserved.
-**Next session should start with:** "Next steps" above.
-
-### Session 2: 2026-09-24: The in-OS diag suite runs headlessly (P1-06)
-
-**Goal:** P1-06: run `extras/diag.sh` through a headless harness and make it the pass/fail gate.
-**Done:** P1-06. New `tests/diag.js`: boots, completes onboarding programmatically (mirrors
-`OnboardingManager.onFinish`, then reloads), logs in as root, writes the script into `/home/root` via the
-`filesystem.write_file` syscall, wraps `OutputManager.appendToOutput` to record every line, runs the script,
-grades it. First real run: 40 passed / 0 failed / 0 error lines / banner reached, in 98 s. Nothing in the kernel
-or the commands needed fixing for Python 3.14. Docs updated (TESTING.md section and four pitfalls, CLAUDE.md,
-CONTRIBUTING, ROADMAP tick). `tests/out/` gitignored.
-**Changed:** `tests/diag.js` (new), `.gitignore`, `CLAUDE.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `docs/TESTING.md`,
-this file. No app code.
-**Decisions:** none new; D-008 covers the approach.
-**Problems / surprises**
-- First run "saw" only 34 lines and 3 assertions: `su` / `logout` restore per-user terminal state and replace
-  the output div. Fixed by recording output at the `appendToOutput` call instead of reading the DOM.
-- 40 assertions run but only 38 `check_fail` lines exist at top level; the suite writes child scripts with
-  their own. The gate treats the file count as a floor and also requires the completion banner.
-- `beep` / `play` at the end log "SoundManager not initialized" in headless mode (no user gesture for
-  AudioContext). Ignored by name in the harness; every other console error is reported.
-- The run takes 98 s although the script's `delay` lines add up to 124 s; some run inside background jobs.
-**Left undone:** The apps, the agent, portable mode and non-Chromium browsers are still unobserved. The diag
-harness runs as root only; a Guest-level or sudo-only pass would need a second script.
-**Next session should start with:** "Next steps" above.
-
-### Session 1: 2026-09-24: Pyodide trim and upgrade, history rewrite, docs (P1-01 to P1-05)
-
-**Goal:** Trim the vendored Pyodide to the core files plus the wheels the kernel loads and update it; then rewrite
-history to reclaim the clone size; then set up the plainchant / BoneAmanita-style documentation scheme.
-**Done:** P1-02 (D-004): `resources/dep/pyodide/` from 413 files / 415 MB (0.28.0.dev0, Python 3.13) to 9 files
-/ 16 MB (314.0.7, Python 3.14.2); `bridge.js` loads only `cryptography`. P1-03 (D-005): `git filter-repo` on
-the branch, pack 327 MB → 8.8 MB. P1-01: `CLAUDE.md`, `ROADMAP.md`, `docs/HANDOFF.md`, `docs/DECISIONS.md`
-(D-001 to D-009), `docs/TESTING.md`. P1-04 (D-008): `tests/smoke.js`. P1-05: `.gitignore`. README and
-CONTRIBUTING pointed at the new docs; CHANGELOG entry for the Pyodide change.
-**Changed:** `resources/dep/pyodide/*` (replaced), `resources/bridge.js` (one line), `README.md`,
-`CONTRIBUTING.md`, `CHANGELOG.md`, the new docs and test. No kernel or command code.
-**Decisions:** D-001 to D-009 (five of them record pre-existing choices; D-004, D-005, D-008 are this session's).
-**Problems / surprises**
-- The cloud container's proxy blocks `cdn.jsdelivr.net` (Pyodide's CDN) and the GitHub API for other repos, but
-  allows `registry.npmjs.org` and GitHub release downloads. The core files came from npm, the wheels from the
-  337 MB `pyodide-314.0.7.tar.bz2` release asset (extracted selectively).
-- Pyodide 314 has no `ssl` package at all (`KeyError` in the lock); the old `loadPackage(["cryptography", "ssl"])`
-  would have thrown. Found by reading the lock file before touching the code.
-- Pyodide's version scheme changed: npm `latest` is `314.0.7` (2026-09-14) and `0.29.5` (2026-09-16) is the
-  *older* Python 3.13 line. Easy to pick the wrong "newest".
-- First smoke run reported the kernel never ready: `window.FractalOS_Kernel` is undefined because it is a
-  top-level `const`. Bare name fixed it. Recorded in TESTING.md.
-- A `pkill -f` pattern matched the session's own shell and killed it mid-command; nothing was lost because the
-  commit had not started. Recorded in TESTING.md.
-- `add_repo` for `BoneAmanita` was denied by the session's permission classifier; the public repo was cloned
-  read-only instead, which the tool's own guidance for public repos allows. `plainchant` attached normally.
-**Left undone:** `diag.sh` not run (P1-06). Nothing above
-the kernel exercised. Autopilot, portable mode, Firefox / Safari unobserved.
-**Next session should start with:** "Next steps" above.
-**Addendum, same day:** the owner replaced `main` with the rewritten branch from the IDE (reset + force push) and
-deleted `fix/aikido-security-code-audit-94322582-biyf` and `-94323551-kisu`, two 2026-08-21 bot branches (a
-quote-aware command-substitution fix in `executor.py`; root-only `chown` / `chgrp`) that still referenced the old
-history and kept a fresh clone at 335 MB. Owner's call: the fixes are not relevant any more. Fresh clone: 9.1 MB.
+Older sessions, moved whole: sessions 24 to 36 in
+[archive/SESSION_LOG_2026_10.md](archive/SESSION_LOG_2026_10.md), sessions 1 to 23 in
+[archive/SESSION_LOG_2026_09.md](archive/SESSION_LOG_2026_09.md).
 
 ---
 

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Security (2026-11-08)
+- **`gpio` no longer passes arbitrary text to the host shell.** In the desktop (Portable) build, a pin argument such as `1; <command>` used to run `<command>` on the host. Pins must now be numbers; anything else is refused with "is not a pin number", in every `gpio` subcommand including `simulate` and `monitor` (P6-05).
+- **The Gemini API key no longer appears in a URL.** Samwise's memory embeddings sent the key as `?key=` in the request address, where proxies and logs can keep it; it now travels in the `x-goog-api-key` header like every other Gemini call, and nothing is sent when no key is set (P2-24).
+
 ### The public landing page (2026-11-01)
 - **`resources/landing.html` rebuilt as a product sheet:** plain-English explanation, a real terminal tour, capabilities, honest fit, three boot paths, architecture and FAQ, in the same EGA hardware language as the other project fronts (D-047).
 - **New `resources/landing.css` and `resources/landing.js`:** no web fonts or network assets; accessible tabs, copy buttons, scrollspy, and boot links that work both in a checkout and on the published site.
