@@ -1,21 +1,30 @@
 # Testing: how to check FractalOS actually works
 
-`SESSION_HANDOFF` for this project is `HANDOFF.md`: the dated log of what happened. This file is the standing
+`HANDOFF.md` is the dated log of what happened. This file is the standing
 reference for how to run the checks again, what each one proves, and the traps already hit so a new session
 does not re-discover them. `ROADMAP.md` says what is planned; `DECISIONS.md` (D-008) says why the tests look
 the way they do.
 
-There are four layers. The first three are automated.
+Every suite says what it proves and what it does not. Results live in HANDOFF's "Verified" table, with the date,
+commit and environment they were measured on; a count written anywhere else goes stale unnoticed.
 
-| Layer | What | Proves | Runs in |
-| --- | --- | --- | --- |
-| Structure | `tests/structure.js` | Every Python file is in `core/manifest.json`; every script and stylesheet is in `asset_manifest.js`; nothing listed is missing; the docs are internally consistent (`tools/check_docs.py`) | a second, Node and host Python |
-| Smoke | `tests/smoke.js` | Pyodide boots, kernel comes up, accounts and hashing work, the executor runs commands | ~40 s, headless Chromium |
-| In-OS suite | `tests/diag.js` running `extras/diag.sh` | 40+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links, scripting | ~2 min, headless Chromium, inside the OS as root |
-| Agent | `tests/agent.js` (+ `tests/fake_ollama.py`) | The `samwise` agent plans and acts against a real Ollama: seven tasks graded on the file system, transcript recorded | ~1 min with the stand-in, model-bound with Ollama; needs a machine with a model |
-| Agent graders and units | `tests/agent_grading.js`, `tests/agent_unit.py` | The harness's graders against canned outcomes; plan parsing, validation, voltage, `--force`, checkpoints, `forge` escapes | seconds, Node and host Python, no browser or model |
-| Inside the OS | `tests/test_executor.py` | The `python` command can import and drive the kernel | copy into the VFS, then `python test_executor.py` in FractalOS |
-| Manual | CONTRIBUTING.md checklist | UI, apps, sounds, portable mode | a person |
+| Suite | What | Proves | Does not prove | Runs in |
+| --- | --- | --- | --- | --- |
+| Structure | `tests/structure.js` | every Python file is in `core/manifest.json`; every script and stylesheet is in `asset_manifest.js`; nothing listed is missing; the docs agree with each other (`tools/check_docs.py`) | that anything runs; that the docs agree with the code; load order | a second, Node and host Python |
+| Smoke | `tests/smoke.js` | Pyodide boots, the kernel comes up, accounts and hashing work, the executor runs commands, Samwise Chat opens | the apps' UI beyond Samwise Chat; Firefox, Safari, a phone; Portable mode | ~40 s, headless Chromium |
+| In-OS suite | `tests/diag.js` running `extras/diag.sh` | 40+ phases of command behaviour, permissions, sudo, jobs, text tools, archives, links, scripting | anything as a non-root user (it runs as root); the agent; the mesh | ~2 min, headless Chromium |
+| Agent | `tests/agent.js` (+ `tests/fake_ollama.py`) | the `samwise` agent plans and acts against a real Ollama: ten tasks graded on the file system | that it works every time (see "Runs that vary"); Gemini or llama.cpp; with the stand-in, anything about a model | ~1 min with the stand-in, model-bound with Ollama |
+| Agent graders and units | `tests/agent_grading.js`, `tests/agent_unit.py` | the harness's graders; plan parsing, validation, voltage, `--force`, checkpoints, `forge` escapes; the Gemini key travels as a header (P2-24) | a real model; real `pyfetch` | seconds, no browser or model |
+| Mesh relay | `tests/deploy_mesh.js` (`--live`) | `deploy.json` switches the mesh on and aims the WebSocket; with `--live`, two browsers meet through the real relay | WebRTC data channels; two machines; a LAN | ~2 min, headless Chromium (+ the relay) |
+| Feature units | `node tests/units.js` runs every `tests/*_test.py` and `tests/*_unit.js` (clipboard, gpio, hardware, mesh, mesh agent, multiplexer, netgame, peers, packages, status bar, swarm safety, windows) | each feature's command or manager against fakes; `gpio` sends only numeric pins to the host (P6-05); the window manager publishes layer insets and awaits `openWindow` (P7-17) | the real browser APIs, Neutralino or hardware they fake | seconds, Node and host Python |
+| Inside the OS | `tests/test_executor.py` | the `python` command can import and drive the kernel | anything automatic: it is run by hand | copy into the VFS, then `python test_executor.py` |
+| Manual | CONTRIBUTING.md checklist | UI, apps, sounds, Portable mode | what nobody did that day: say who checked what in HANDOFF | a person |
+
+The `*_test.py` suites print a `CRITICAL: Filesystem save function not provided` log line when they finish; that
+is the kernel noticing it has no browser behind it, not a failure. `tests/units.js` grades by exit code, which is
+the only thing to trust: `window_manager_unit.js` failed unnoticed from 2026-10-08 to 2026-11-08 (P7-17), and a
+shell loop that read `$?` inside a command substitution reported it as passing. The runner was checked against
+the broken version: it fails and prints the `TypeError`.
 
 ## `tests/test_executor.py` runs inside FractalOS
 
@@ -231,6 +240,20 @@ marks onboarding complete and reloads first.
 'cd /src && ./extras/provision_x64.sh --role signal'` (also `debian:12`), then start the two services as the `fractal`
 user by hand, since containers have no systemd. A headless `node` also needs `--no-sandbox` in
 `FRACTAL_BROWSER_ARGS` inside Docker. Real hardware is P9-04.
+
+## Runs that vary
+
+Some results depend on something outside the code: the agent harness on a language model, the mesh tests on
+timing. For those:
+
+- **One run proves little.** Run it several times and record the tally with the date, the model and what varied
+  ("llama3.1:8b 9/10, 10/10, 10/10, 2026-09-27"), in HANDOFF.
+- **Read the failure before blaming the code.** Say in the handoff whether a miss was the code or the model.
+- **To test how the code handles a rare bad reply, inject it** (wrap `_call_llm_api` so the first call returns
+  the bad plan) rather than rerunning until it happens. That is how P2-21's retry was measured.
+- **Measure one case in isolation** with `AGENT_TASKS=C2` when that is what changed.
+- **Check the judge before trusting its verdict.** The graders in `tests/agent.js` have controls in
+  `tests/agent_grading.js`, including outcomes they must fail; run it after touching a grader.
 
 ## Manual checks (before a release)
 

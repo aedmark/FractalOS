@@ -1,66 +1,142 @@
 # Session Handoff
 
-Read this first. It is rewritten at the end of every session so the top half is always true *right now*.
+Read this first. Rewrite the top half whenever current state changes or work pauses with context another
+session needs, so it is always true *right now*; it fits on a screen or two (about 80 lines).
 The session log below it is append-only history: the last ten sessions, newest first. Older ones are in
 [archive/](archive/README.md).
 
 Protocol: see [AGENTS.md](../AGENTS.md) (`CLAUDE.md` imports it). Plan: [ROADMAP.md](ROADMAP.md).
 Decisions: [DECISIONS.md](DECISIONS.md).
-Tests: [TESTING.md](TESTING.md). Dev diary: [devlog.html](devlog.html).
+Architecture: [ARCHITECTURE.md](ARCHITECTURE.md). Tests: [TESTING.md](TESTING.md). Security:
+[SECURITY.md](SECURITY.md). Changes: [CHANGELOG.md](CHANGELOG.md). Dev diary: [devlog.html](devlog.html).
 
 ---
 
 ## Current state
 
-_Last updated: 2026-11-08, session 46, on `main`: P2-24 fixed (the Gemini key in a URL), after P6-05 (session 45)
-and session 44's documentation work (Phase 10, P10-01 to P10-06). Those sessions' commits start at `f006692`; check `git status`
-for anything not yet committed. Nothing is pushed._
+_Last updated: 2026-11-08, session 48, on `main` after `d0277e0`: P10-07 (template formats, session 47) and
+P7-17 (the window manager test, and `tests/units.js` to run every feature suite). Check `git status` for anything
+not yet committed. Nothing is pushed._
 
-FractalOS 1.0.0, with the rebuilt public landing page (D-047) and Phase 9 x86_64 provisioning (D-046) committed.
-- **Public landing page (committed in `97ace3d`, copy revised by the owner in `eed8d5c`):** `resources/landing.html`
-  is an EGA product sheet with a plain-English explanation, real captured shell and Python output, an abridged
-  Samwise run, capabilities, a who-it-is-for section, three boot paths, the architecture and an FAQ, with
-  `landing.css` and `landing.js` beside it; no web fonts or network assets. The `97ace3d` version was checked at
-  1440, 1200, 1024, 960, 768, 390 and 320 px with no horizontal overflow, working tabs and copy buttons, and no
-  console errors (2026-11-01). The `eed8d5c` revision (new title and intro, capability headings, sans-serif body
-  text, the owner's full name) has not been viewed at those widths.
-- **Works and tested:** any x86_64 machine that runs a modern browser can be provisioned as a mesh `node`, `signal`
-  server or `kiosk` with `extras/provision_x64.sh` (D-046); the `signal` role in Debian 12 and 13 containers (web
-  server and relay, two clients exchange broadcast and direct messages); `deploy.json` turning the mesh on in the
-  browser (`tests/deploy_mesh.js`, including `--live` through the real relay); a headless Chromium launching under
-  the `node` role in Debian 13 (all 2026-10-12, carried over). Smoke 88/88, diag 40/40 `check_fail` with 0 error
-  lines, structure PASS, `gpio_command_test.py` 11/11, `hardware_unit.js` 7/7, `agent_unit.py` 37/37
-  (2026-11-08, headless Chromium from Playwright 1.63, after P6-05; smoke, diag and structure rerun after P2-24
-  with the same results, `agent_unit.py` 39/39).
-- **Not tested:** anything on real hardware or under real systemd; the kiosk X session (`xinit` on tty7); a
-  headless `node` that has completed onboarding and then joins a mesh; WebRTC data channels across the LAN
-  between two machines; the landing page in Firefox, Safari, a physical phone or a screen reader.
-- **Known limits:** a `node` needs a screen once for first-run account setup (P9-05); the web server and relay are
-  unauthenticated (P9-06), which the landing page's new "unhackable mesh" wording does not reflect; Ubuntu's
-  `chromium` is a snap (P9-07); 32-bit x86 is out of scope.
-- The Raspberry Pi path (`extras/provision_appliance.sh`) is unchanged and still untested on hardware.
-- FractalOS 1.0 documentation (Architectural Codex, `docs/manual/`) is complete (P8-01, D-045).
-- **Project docs follow the Manifold template** (Phase 10): new `docs/ARCHITECTURE.md`, `docs/SECURITY.md`,
-  `docs/README.md` and `docs/archive/`; new AGENTS.md sections (zones, inquiry rules, protected areas, names,
-  environments, an interim working agreement); `tools/check_docs.py`, run by `tests/structure.js`. Left: P10-07
-  (format upgrades to HANDOFF, DECISIONS, TESTING) and the owner's answers to Q-004 and Q-005.
-- **P6-05 fixed:** `gpio` and `HardwareManager` now send only a numeric pin to the host shell; tested with fake
-  host callbacks, not in a real Portable build. **P2-24 fixed:** the Gemini key is sent only as a header; tested
-  with a fake `pyfetch`, not against the real API.
+**Session owner:** none. Session 48 has ended; the next session owns nothing until it says so here.
+
+**Where things stand, in one paragraph:** FractalOS 1.0.0 is released and Phases 1 to 8 are done. Phase 9
+(x86_64 nodes) works in containers but not yet on real hardware (P9-04 to P9-07). Phase 10 brought the project
+docs up to the Manifold template and found and fixed two security bugs (P6-05, P2-24). The biggest gap is not
+code: nothing since the Phase 6 Pi work has run on a physical machine or in a real Portable build.
+
+**Verified** (2026-11-08, on the working tree committed as `d0277e0`, Arch-based Linux, Node 22.23.4,
+Python 3.14.9, headless Chromium from Playwright 1.63 via `NODE_PATH`, `python3 -m http.server` on 127.0.0.1:8000)
+
+Every row was run in sessions 45 to 48 unless it says it was carried over.
+
+| Suite | Result |
+| --- | --- |
+| `node tests/structure.js` (includes `tools/check_docs.py`) | **PASS**, docs 0 errors, 0 warnings |
+| `node tests/smoke.js http://127.0.0.1:8000/index.html` | **88/88** |
+| `node tests/diag.js http://127.0.0.1:8000/index.html` | **40/40** `check_fail`, 0 error lines (one expected 404: `deploy.json`) |
+| `python3 tests/agent_unit.py` | **39/39** |
+| `node tests/agent_grading.js` | **22/22** |
+| `node tests/units.js` (all 24 feature suites, including gpio 11/11, hardware 7/7, window manager 7/7) | **PASS 24/24** (session 48) |
+| `node tests/deploy_mesh.js` (and `--live`) | PASS, carried over from 2026-10-12 |
+| `tests/agent.js` against a real model | not run since 2026-09-27 (archive, session 17) |
+
+**What works**
+- **The OS in a browser tab and in Portable mode** (D-001 to D-003): shell, 152 commands, apps, users, `sudo`,
+  packages with checksums (D-044), the `samwise` agent with voltage brakes, the mesh across tabs and through the
+  relay.
+- **x86_64 appliance roles** (P9-01 to P9-03, D-046): `signal` tested in Debian 12 and 13 containers; `node`
+  browser launch in Debian 13; `deploy.json` switches the mesh on.
+- **The public landing page** (D-047, revised by the owner in `eed8d5c`).
+- **Project memory** (Phase 10): ARCHITECTURE, SECURITY, a docs map, an archive, a docs checker inside the
+  structure test.
+
+**Not verified**
+- Anything on real hardware or real systemd: the kiosk X session, a headless `node` after first-run setup, WebRTC
+  between two machines, the Pi path (`extras/provision_appliance.sh`).
+- `gpio` in a real Portable build (P6-05 tested with fakes) and a real Gemini embeddings call (P2-24).
+- The `eed8d5c` landing page at the D-047 widths; the landing page in Firefox, Safari, on a phone, with a screen
+  reader.
+
+**Known limits:** a `node` needs a screen once for first-run setup (P9-05); the relay and web server are
+unauthenticated (P9-06), which the landing page's "unhackable mesh" does not reflect; Ubuntu's `chromium` is a snap
+(P9-07); 32-bit x86 is out of scope.
+
+**Gotchas for the next session**
+- Playwright is not installed in this repo. Session 45 borrowed `../level0engine/node_modules` with `NODE_PATH`;
+  `docs/TESTING.md` has the scratch-directory recipe.
+- `node tests/structure.js` now needs `python3` on the path, because it runs `tools/check_docs.py`.
+- The Python feature suites end with a `CRITICAL: Filesystem save function not provided` line; read `OK` and the
+  exit code instead (TESTING.md).
+- Add a session-log entry; never overwrite the one above. Past ten entries, archive the oldest (AGENTS.md).
 
 ## Next steps
 
 1. Q-004 and Q-005 (the owner): the working agreement, and how security problems are reported.
-2. P10-07: the remaining template upgrades to the living docs.
-3. Try `gpio` in a real Portable build, ideally on a Pi (P6-05 was only tested with fakes), and one Gemini
-   embedding with a real key (P2-24). Then P9-04: `provision_x64.sh` on a real old laptop or desktop, `--role node`
-   with a screen, then `--headless`.
-4. P9-05: let a headless box create its first account.
-5. Recheck the landing page at the seven widths after `eed8d5c`, and decide whether "unhackable" stays while
+2. Try `gpio` in a real Portable build, ideally on a Pi, and one Gemini embedding with a real key. Then P9-04:
+   `provision_x64.sh` on a real old laptop or desktop, `--role node` with a screen, then `--headless`.
+3. P9-05: let a headless box create its first account.
+4. Recheck the landing page at the seven widths after `eed8d5c`, and decide whether "unhackable" stays while
    P9-06 is open. Update its transcripts and version strings with the next release; they are tied to v1.0.0.
-6. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
+5. Devlog entry if requested; multi-machine WAN WebRTC trials; Raspberry Pi hardware trials.
+
+## Open questions for the owner
+
+The ones that block the next steps; the questions live in DECISIONS.md, "Open questions".
+
+- Q-004 Who may commit, push, merge and add dependencies; writing and reporting preferences (blocks the rest of
+  `AGENTS.md`'s working agreement).
+- Q-005 How security problems are reported (blocks finishing `docs/SECURITY.md`).
 
 ## Session log
+
+### Session 48: 2026-11-08: P7-17 the window manager test runs again, and every feature suite has a runner
+
+**Contributor:** Claude Code (Opus 5.5)
+**Goal:** Repair `tests/window_manager_unit.js`, broken since 2026-10-08, and put it in a set people run.
+**Done:** P7-17.
+**Changed:** `tests/window_manager_unit.js` (the mock's `style` gains `setProperty` and `getPropertyValue`; the
+body runs in an async function that awaits `openWindow` and exits 1 on failure; test 1 asserts the published
+layer insets); new `tests/units.js` (runs every `tests/*_test.py` and `tests/*_unit.js`, grades by exit code,
+optional name filter); AGENTS.md (Layout row, "Feature suites" under Running and testing); TESTING, ROADMAP.
+`resources/scripts/window_manager.js` is unchanged.
+**Decisions:** none. The test was out of date, not the code: both breaking commits were intended behaviour.
+**Verified:** `window_manager_unit.js` 7/7. With `_syncLayerInsets()` skipped in `initialize` it fails on "layer
+insets published on init"; with registered windows dropped in `openWindow` it fails on "Two open windows" (file
+restored, compared byte for byte). `node tests/units.js` PASS 24/24; against the old test copied in as a probe it
+fails and prints the `TypeError` (probe deleted). `node tests/structure.js` PASS; docs 0 errors, 0 warnings.
+**Not verified:** smoke and diag, since no product code changed; the window manager in a real browser beyond what
+smoke covers.
+**Problems / surprises:** the old test ran its assertions at the top level and never awaited `openWindow`, so the
+window was not registered yet when the next line counted windows. Wrapping it in an async runner with an explicit
+exit code is the pattern the other `*_unit.js` files (for example `hardware_unit.js`) already use.
+**Corrections:** none.
+**Left undone:** Q-004, Q-005.
+**Next session should start with:** Q-004 and Q-005 with the owner, then real-hardware trials (Next steps 2).
+
+### Session 47: 2026-11-08: P10-07 the living docs follow the template's formats
+
+**Contributor:** Claude Code (Opus 5.5)
+**Goal:** Finish Phase 10: the Manifold template's formats in HANDOFF, DECISIONS, TESTING and ROADMAP.
+**Done:** P10-07. Phase 10 is complete. New bug P7-17; new held tension T-001.
+**Changed:** `docs/HANDOFF.md` (Current state rebuilt: session owner, a one-paragraph summary, a dated Verified
+table with commit and environment, What works, Not verified, Gotchas, Open questions for the owner; the
+log template gains Contributor, Verified, Not verified, Corrections); `docs/DECISIONS.md` (the fuller format with
+Alternatives and Review trigger, the "record pre-existing choices" rule, Held tensions with T-001, open
+questions moved from between D-013 and D-014 to the end, text unchanged); `docs/TESTING.md` (a "Does not prove"
+column, rows for the mesh relay and feature suites, "Runs that vary"); `docs/ROADMAP.md` (legend with holders and
+item-history rules; P7-17).
+**Decisions:** none. T-001 proposes the owner as its owner; confirm or reassign.
+**Verified:** every `tests/*_test.py` and `tests/*_unit.js` run by exit code: all pass except
+`window_manager_unit.js`. Bisected with `git archive` into the scratchpad: passes at `e0a96b9^`, fails from
+`e0a96b9` ("One window registered") and from `9c61914` with a `TypeError`. `tools/check_docs.py` 0 errors,
+0 warnings; `node tests/structure.js` PASS.
+**Not verified:** no code changed, so smoke and diag were not rerun (their rows are from sessions 45 and 46).
+**Problems / surprises:** a quick loop over the JS suites reported `window_manager_unit.js` as exit 0 because the
+status was read inside a command substitution; rerun on its own it exits 1. Read exit codes one suite at a time.
+**Corrections:** none.
+**Left undone:** P7-17; Q-004, Q-005.
+**Next session should start with:** P7-17 (done in session 48).
 
 ### Session 46: 2026-11-08: P2-24 the Gemini key never goes in a URL
 
@@ -209,31 +285,7 @@ and code; the owner's full name in the footer.
 **Next session should start with:** Community issue triage, hardware testing, or Phase 8 planning.
 
 
-### Session 38: 2026-10-06: P7-16 Package Security & Sandboxing (`pkg verify`, `pkg audit`, integrity checks, permission scopes)
-
-**Goal:** Implement P7-16: Verification hashes and permission scopes for installed third-party packages before execution.
-**Done:** P7-16, D-044. Milestone 7.4 is 100% complete! Upgraded `resources/core/commands/pkg.py` with cryptographic SHA256 checksum tracking across `.fpkg` archives, repository indexes (`index.json`), and `/etc/pkg_manifest.json`. Added checksum verification at installation time (rejecting corrupted or tampered bundles unless overridden with `--skip-verify` or `--force`). Implemented `pkg verify [name]` (`pkg check`, `pkg integrity`) to inspect installed packages on disk in `/etc/packages/commands/{name}.py` against recorded manifest hashes, outputting verified vs tampered diagnostics in text or JSON (`--json`). Updated `resources/core/executor.py` so `_load_command_module` prioritizes VFS package nodes directly, recalculates their SHA256 checksums before execution against `/etc/pkg_manifest.json`, and raises `SecurityError` to block execution of altered or corrupted files. Added permission scope modeling (`metadata()["permissions"]`) with elevated scopes (`root`, `fs:system`, `hardware`) requiring explicit operator authorization via `--trust` (`-t`) or `--force`. Created `pkg audit [name|file]` (`pkg sec`, `pkg security`) using Python standard `ast` to perform static security analysis, detecting dynamic code evaluation (`eval`, `exec`, `compile`, `__import__`), OS process calls (`.system()`, `.popen()`), sensitive filesystem paths (`/etc/`, `/proc/`, `/dev/`), and calculating risk levels (`SAFE`, `LOW RISK`, `MODERATE RISK`, `HIGH RISK`). Created unit test suite `tests/pkg_security_test.py` (6/6 passing in 0.010s). Verified 85/85 smoke checks, structure tests, and all unit test suites.
-**Changed:** `resources/core/commands/pkg.py`, `resources/core/executor.py`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/pkg_security_test.py`.
-**Decisions:** D-044 (Package Security, Cryptographic Verification & Sandboxing).
-**Problems / surprises:**
-- In `executor.py`, user packages loaded into `sys.modules` previously cached the module in memory, which bypassed disk checks on subsequent runs if the file on disk was modified. Solved by prioritizing VFS package files in `_load_command_module` before `importlib` and performing cryptographic SHA256 integrity verification on every user package load.
-- In `pkg.py`, elevated scopes (`root`, `hardware`, `fs:system`) are enforced for all installations unless `--trust` or `--force` is explicitly provided, preventing accidental installation of privileged packages.
-**Left undone:** Bare-metal Raspberry Pi testing once hardware is accessible.
-**Next session should start with:** Multi-node mesh trials, hardware appliance tests, or devlog update.
-
-### Session 37: 2026-10-06: P7-15 Standard Library Expansion (`fortune`, `cowsay`, `cal`, `banner`)
-
-**Goal:** Implement P7-15: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages with documentation and examples.
-**Done:** P7-15, D-043. Authored four standard library community packages in `extras/packages/`: `fortune.py`, `cowsay.py`, `cal.py`, and `banner.py`. Each package includes full metadata, flags definition, async `run`, `man`, and `help`. Handled ANSI rendering conventions (D-023) with plain text by default and `-C` / `--color` flags, plus ANSI escape code stripping in `cowsay.py`'s speech bubble width calculations to prevent border distortion when receiving colored piped input. Packaged the community standard library into `resources/core/standard_packages.py`, integrated resolution fallbacks into `resources/core/commands/pkg.py` (`_find_package_source_content` and `pkg search`), and added default VFS paths `/var/pkg/repo` and `/etc/packages/commands` in `resources/core/filesystem.py`. Created test suite `tests/stdlib_packages_test.py` covering searching, installing, executing, flag options, ANSI handling, piped composition (`fortune | cowsay`), and dependency listing/removal (8/8 passing in 0.013s). Regenerated `core/manifest.json` (15 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
-**Changed:** `extras/packages/fortune.py`, `extras/packages/cowsay.py`, `extras/packages/cal.py`, `extras/packages/banner.py`, `resources/core/standard_packages.py`, `resources/core/commands/pkg.py`, `resources/core/filesystem.py`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/stdlib_packages_test.py`.
-**Decisions:** D-043 (Standard Library Community Packages).
-**Problems / surprises:**
-- In `cowsay.py`, piped ANSI color codes from upstream commands (like `fortune -C`) previously caused speech bubble borders to misalign due to raw byte lengths in `textwrap.wrap` and padding. Resolved by adding `_strip_ansi` and `_visible_len` so padding and column calculations consider only printable characters.
-- In `filesystem.py`, provisioned default directories `/var/pkg/repo` and `/etc/packages/commands` to ensure clean package repository operations even before initial package publication.
-**Left undone:** P7-16 (Package Security & Sandboxing).
-**Next session should start with:** P7-16: Package Security & Sandboxing.
-
-Older sessions, moved whole: sessions 24 to 36 in
+Older sessions, moved whole: sessions 24 to 38 in
 [archive/SESSION_LOG_2026_10.md](archive/SESSION_LOG_2026_10.md), sessions 1 to 23 in
 [archive/SESSION_LOG_2026_09.md](archive/SESSION_LOG_2026_09.md).
 
@@ -244,11 +296,15 @@ Older sessions, moved whole: sessions 24 to 36 in
 ```
 ### Session N: YYYY-MM-DD: short title
 
+**Contributor:** person or agent/tool
 **Goal:**
 **Done:** roadmap IDs
 **Changed:** files / behaviour
 **Decisions:** D-numbers added
+**Verified:** tests and their counts; mutation results if performed; for runs that vary, the tally
+**Not verified:** checks skipped or environments unavailable
 **Problems / surprises:**
+**Corrections:** earlier notes (here or in other docs) found wrong, and what was actually true
 **Left undone:**
 **Next session should start with:**
 ```

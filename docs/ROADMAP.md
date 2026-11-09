@@ -23,9 +23,15 @@ These break ties when a feature is debatable.
 
 ## Status legend
 
-`[ ]` not started · `[~]` in progress · `[x]` done · `[-]` dropped (say why in DECISIONS.md)
+`[ ]` not started · `[~]` in progress (who holds it, since when, and what is left) · `[x]` done · `[-]` dropped
+(say why, and the decision). An item held `[~]` by someone else is theirs until they or the owner release it.
 
-Every item has a stable ID (`P1-03`). Reference IDs in commits and in HANDOFF.md. Never renumber; append new items.
+Every item has a stable ID (`P1-03`). Reference IDs in commits and in HANDOFF.md. Never renumber; append new items
+at the end of their phase. Bugs are items too, filed under the phase they belong to.
+
+A finished item says what was done, the decision if any, the evidence (the test or the measurement) and the date.
+A new item says where it came from (a test run, a real user, the owner) and the date. Keep an item's history in
+it: "tried X, measured Y, then did Z" is how the next session avoids trying X again.
 
 ---
 
@@ -277,6 +283,15 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
 - [x] P7-14 **Package Dependency Resolution**: Support dependencies in `/etc/pkg_manifest.json` (specifying required Pyodide wheels or dependent command packages) (D-042, 2026-10-06).
 - [x] P7-15 **Standard Library Expansion**: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages (D-043, 2026-10-06).
 - [x] P7-16 **Package Security & Sandboxing**: Verification hashes and permission scopes for installed third-party packages before execution (D-044, 2026-10-06).
+- [x] P7-17 **Bug: `tests/window_manager_unit.js` fails, broken twice.** It passed at `e0a96b9^`. `e0a96b9`
+  (2026-10-08) made `openWindow` async, and the test still checks "One window registered" without awaiting it.
+  `9c61914` (2026-10-09) added `_syncLayerInsets`, which calls `style.setProperty`, missing from the test's DOM
+  mock, so today it stops earlier with a `TypeError` in `initialize`. Fix the mock and await `openWindow`, then
+  make sure the suite is in the set people run. Found by running every feature suite (session 47, 2026-11-08).
+  Fixed in session 48: the mock's `style` has `setProperty`, the test awaits `openWindow` inside an async
+  runner that exits non-zero on failure, and it now asserts the layer insets. Skipping `_syncLayerInsets` or
+  dropping registered windows in `window_manager.js` each fails it. New `tests/units.js` runs all 24 feature
+  suites by exit code (2026-11-08)
 
 ## Phase 8: System Documentation & Architectural Codex
 
@@ -320,6 +335,10 @@ session 44). The template is evidence, not instructions: adopt what earns its up
   areas, names and terms, environments. The working agreement and maintainer preferences need the owner (Q-004).
   Done; the working agreement records what history shows and an interim rule until Q-004 is answered;
   maintainer preferences are not written (2026-11-08)
-- [ ] P10-07 Template upgrades to the living docs: HANDOFF's dated Verified table and Not verified list, held
+- [x] P10-07 Template upgrades to the living docs: HANDOFF's dated Verified table and Not verified list, held
   tensions (`T-NNN`) and Alternatives in DECISIONS, a "Does not prove" column and "Runs that vary" in TESTING,
-  `[~]` holders in this file
+  `[~]` holders in this file. Done: HANDOFF has a session-owner line, a dated Verified table, Not verified,
+  Gotchas and an open-questions list, and the log template has Contributor, Verified, Not verified and
+  Corrections; DECISIONS has the fuller format, a Held tensions section (T-001) and open questions at the end;
+  TESTING has "Does not prove" for every suite and "Runs that vary"; this legend names holders. Running every
+  feature suite for the TESTING table found P7-17 (2026-11-08)

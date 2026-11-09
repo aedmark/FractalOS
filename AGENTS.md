@@ -140,6 +140,7 @@ force anything.
 | `tests/smoke.js`, `tests/diag.js` | Headless-Chromium tests (Node + Playwright): a kernel smoke test, and a runner that executes `extras/diag.sh` inside the OS and grades it |
 | `tests/deploy_mesh.js` | Headless-Chromium: `deploy.json` turns the mesh on/off and aims the WebSocket; `--live` adds two browsers meeting through the real relay |
 | `tests/agent.js`, `tests/fake_ollama.py` | Headless run of the `samwise` agent (autopilot and agent mode) through seven tasks against a real Ollama, graded on the file system, transcript to `tests/out/`; and a stand-in Ollama that proves the plumbing without a model (D-014) |
+| `tests/units.js` | Runs every feature suite (`tests/*_test.py`, `tests/*_unit.js`) and grades each by exit code (P7-17) |
 | `tests/agent_grading.js`, `tests/agent_unit.py` | No browser, no model: the agent harness's graders against canned outcomes, and unit tests of plan parsing, validation and retries, stop-on-failure, voltage and `--force`, checkpoints and `forge` escapes |
 | `tests/test_executor.py` | Runs **inside FractalOS** (`python test_executor.py` after copying it into the VFS) to exercise the `python` command; it imports the kernel, so plain `python3` on the host cannot run it |
 | `docs/README.md` | Which document owns which facts, and what change triggers an update |
@@ -212,4 +213,7 @@ and owns localStorage, IndexedDB, the DOM, audio and the browser APIs.
   recipe (Playwright in a scratch directory, system Chromium) in `docs/TESTING.md`.
 - **Grader and agent unit tests:** `node tests/agent_grading.js` and `python3 tests/agent_unit.py`. Seconds, no
   browser or model. Run them after touching `tests/agent.js`, `ai_manager.py` or `bone_driver.py`.
+- **Feature suites:** `node tests/units.js` runs every `tests/*_test.py` and `tests/*_unit.js` and grades each by
+  its exit code (`node tests/units.js window` for a subset). Seconds, no browser. Run it after touching a command,
+  a manager or one of those tests (P7-17).
 - Nothing here runs under `npm test`; there is no `package.json`.

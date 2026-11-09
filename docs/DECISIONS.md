@@ -1,16 +1,26 @@
 # Decisions
 
 Short, append-only record of choices that a future session might otherwise re-litigate. One entry per decision.
-Newest at the bottom. To reverse a decision, add a new entry that supersedes it; do not edit the old one.
+Newest at the bottom. To reverse a decision, add a new entry that supersedes it; the old one keeps its text and
+only its status changes ("superseded by D-MMM"). An "Update, same session" note at the end of an entry is fine
+while it is still uncommitted.
 
-Format:
+Record pre-existing choices too, the first time a session has to understand them ("status: accepted, recorded
+YYYY-MM-DD"). Every odd-looking constraint answers an earlier question or failure; writing that question down
+stops a later session from removing a fence whose purpose it forgot.
+
+Format (Alternatives and Review trigger are optional, and are what stop the re-litigation):
 
 ```
-## D-NNN Title  (YYYY-MM-DD, status: accepted | superseded by D-MMM)
-**Context:** why this came up.
-**Decision:** what we chose.
-**Consequences:** what it costs or constrains.
+## D-NNN Title  (YYYY-MM-DD, status: proposed | accepted | rejected | superseded by D-MMM)
+**Context:** the question, failure or measurement this answers (and the roadmap item or bug).
+**Decision:** what we chose (numbered points if there are several).
+**Alternatives:** what else was considered, and why not, one line each.
+**Consequences:** what it costs or constrains; what was left out and why.
+**Review trigger:** an event that should cause reconsideration.
 ```
+
+Held tensions (`T-NNN`) and open questions (`Q-NNN`) are at the end of the file.
 
 D-001 to D-003 and D-006 to D-007 record choices the owner made before this file existed (2025-11 to 2026-01).
 They are dated the day they were written down, not the day they were made.
@@ -196,21 +206,6 @@ messages carried a literal `\n`), evidently from a paste through an escaping lay
 it being harmless should know that (it still confirms dangerous commands and halts on anything not
 whitelisted). The autopilot itself still checks nothing but voltage (P2-07). Nine checks in `tests/smoke.js`
 drive both paths with a fake `_call_llm_api`; a real model has still not been observed (P2-01).
-
-## Open questions
-
-- **Q-001** Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the
-  audit log as the safety net, or stay a curated list? The two halves of `ai_manager.py` (planner manifest of
-  17 read-only commands vs. `COMMAND_WHITELIST` with `rm`, `mv`, `forge`, `run`, `chmod`) currently disagree.
-- **Q-002** ~~Should `main` be replaced with the rewritten history now or later?~~ Done the same day (D-005).
-- **Q-003** Milestone 1 (AI Town Manager): what "long-term memory" means concretely. See P3-01.
-- **Q-004** The working agreement and maintainer preferences for `AGENTS.md`: who may commit, push, merge,
-  publish, add dependencies and delete data; branch and commit conventions; writing and reporting style. History
-  shows direct commits to `main` and pushes by the owner. (asked 2026-11-08, session 44; blocks part of P10-06;
-  recommendation: record direct-to-main, agents commit only when asked and never push.)
-- **Q-005** How should security problems be reported: GitHub private vulnerability reporting, the landing page's
-  contact address, or something else; and what acknowledgement time and disclosure policy apply? (asked
-  2026-11-08, session 44; blocks finishing `docs/SECURITY.md`; recommendation: enable GitHub private reporting)
 
 ## D-014 The agent harness grades the file system, and a stand-in Ollama proves the plumbing  (2026-09-25, status: accepted)
 
@@ -582,3 +577,53 @@ cited a decision that did not exist.
 **Consequences:** State saved under the old `oopisOs*` localStorage keys is not read. On 2026-11-08 no file under
 `resources/` outside `dep/` mentions `oopis` except the owner's contact links, so there is no migration path; a
 browser that ran a pre-rename build starts as a first run.
+
+---
+
+## Held tensions
+
+A tension is two claims that are both true and do not fit together yet. An open question has an unknown
+answer; a held tension has two known answers and a price. Hold it only while holding costs less than choosing
+badly. Each names an owner, a review trigger and the cost; one with no owner or trigger is deleted at the next
+consolidation, and one that survives review becomes a decision with the losing claim as an alternative.
+
+```
+### T-NNN Title  (YYYY-MM-DD, status: held | resolved by D-MMM)
+**Owner:** ...
+**Claim A:** ...
+**Claim B:** ...
+**Why both hold:** ...
+**Cost of holding both:** ...
+**Review trigger:** ...
+```
+
+### T-001 GPIO pin state lives in Python and in JavaScript  (2026-11-08, status: held)
+**Owner:** the owner (proposed by session 47; confirm or reassign).
+**Claim A:** Python is the source of truth for system state; JavaScript mirrors it (D-001).
+**Claim B:** the monitor daemon must poll pins on a timer between commands, which only the front end can do, so
+`HardwareManager` keeps its own `virtualPins` and `monitors` (D-033), while `gpio.py` keeps `VIRTUAL_PINS` and
+`ACTIVE_MONITORS`.
+**Why both hold:** the kernel runs only when a command runs; a timer-driven daemon needs the page.
+**Cost of holding both:** two copies of pin state kept in step only by the `gpio_simulate` effect. A change that
+writes one side without emitting the effect lets `gpio read` and a monitor disagree; both copies vanish on reload.
+**Review trigger:** pin state that must survive a reload, or a second writer of pin state on either side.
+
+---
+
+## Open questions
+
+Questions for the owner. This is their one home: HANDOFF and the roadmap cite them by ID. Numbers are permanent;
+an answered question stays, with the answer and its date.
+
+- **Q-001** Is the agent's command whitelist meant to grow toward "anything a user can do", with voltage and the
+  audit log as the safety net, or stay a curated list? The two halves of `ai_manager.py` (planner manifest of
+  17 read-only commands vs. `COMMAND_WHITELIST` with `rm`, `mv`, `forge`, `run`, `chmod`) currently disagree.
+- **Q-002** ~~Should `main` be replaced with the rewritten history now or later?~~ Done the same day (D-005).
+- **Q-003** Milestone 1 (AI Town Manager): what "long-term memory" means concretely. See P3-01.
+- **Q-004** The working agreement and maintainer preferences for `AGENTS.md`: who may commit, push, merge,
+  publish, add dependencies and delete data; branch and commit conventions; writing and reporting style. History
+  shows direct commits to `main` and pushes by the owner. (asked 2026-11-08, session 44; blocks part of P10-06;
+  recommendation: record direct-to-main, agents commit only when asked and never push.)
+- **Q-005** How should security problems be reported: GitHub private vulnerability reporting, the landing page's
+  contact address, or something else; and what acknowledgement time and disclosure policy apply? (asked
+  2026-11-08, session 44; blocks finishing `docs/SECURITY.md`; recommendation: enable GitHub private reporting)

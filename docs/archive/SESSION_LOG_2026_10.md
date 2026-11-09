@@ -1,8 +1,32 @@
-# Session log, October 2026 (sessions 24 to 36)
+# Session log, October 2026 (sessions 24 to 38)
 
 Moved whole from `docs/HANDOFF.md` on 2026-11-08, when the live log passed ten entries. Newest first, as in
 HANDOFF. Historical, not current: what these entries call "Next steps" or "Current state" was true when they
 were written.
+
+### Session 38: 2026-10-06: P7-16 Package Security & Sandboxing (`pkg verify`, `pkg audit`, integrity checks, permission scopes)
+
+**Goal:** Implement P7-16: Verification hashes and permission scopes for installed third-party packages before execution.
+**Done:** P7-16, D-044. Milestone 7.4 is 100% complete! Upgraded `resources/core/commands/pkg.py` with cryptographic SHA256 checksum tracking across `.fpkg` archives, repository indexes (`index.json`), and `/etc/pkg_manifest.json`. Added checksum verification at installation time (rejecting corrupted or tampered bundles unless overridden with `--skip-verify` or `--force`). Implemented `pkg verify [name]` (`pkg check`, `pkg integrity`) to inspect installed packages on disk in `/etc/packages/commands/{name}.py` against recorded manifest hashes, outputting verified vs tampered diagnostics in text or JSON (`--json`). Updated `resources/core/executor.py` so `_load_command_module` prioritizes VFS package nodes directly, recalculates their SHA256 checksums before execution against `/etc/pkg_manifest.json`, and raises `SecurityError` to block execution of altered or corrupted files. Added permission scope modeling (`metadata()["permissions"]`) with elevated scopes (`root`, `fs:system`, `hardware`) requiring explicit operator authorization via `--trust` (`-t`) or `--force`. Created `pkg audit [name|file]` (`pkg sec`, `pkg security`) using Python standard `ast` to perform static security analysis, detecting dynamic code evaluation (`eval`, `exec`, `compile`, `__import__`), OS process calls (`.system()`, `.popen()`), sensitive filesystem paths (`/etc/`, `/proc/`, `/dev/`), and calculating risk levels (`SAFE`, `LOW RISK`, `MODERATE RISK`, `HIGH RISK`). Created unit test suite `tests/pkg_security_test.py` (6/6 passing in 0.010s). Verified 85/85 smoke checks, structure tests, and all unit test suites.
+**Changed:** `resources/core/commands/pkg.py`, `resources/core/executor.py`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/pkg_security_test.py`.
+**Decisions:** D-044 (Package Security, Cryptographic Verification & Sandboxing).
+**Problems / surprises:**
+- In `executor.py`, user packages loaded into `sys.modules` previously cached the module in memory, which bypassed disk checks on subsequent runs if the file on disk was modified. Solved by prioritizing VFS package files in `_load_command_module` before `importlib` and performing cryptographic SHA256 integrity verification on every user package load.
+- In `pkg.py`, elevated scopes (`root`, `hardware`, `fs:system`) are enforced for all installations unless `--trust` or `--force` is explicitly provided, preventing accidental installation of privileged packages.
+**Left undone:** Bare-metal Raspberry Pi testing once hardware is accessible.
+**Next session should start with:** Multi-node mesh trials, hardware appliance tests, or devlog update.
+
+### Session 37: 2026-10-06: P7-15 Standard Library Expansion (`fortune`, `cowsay`, `cal`, `banner`)
+
+**Goal:** Implement P7-15: Add classic utilities and games (e.g., `fortune`, `cowsay`, `cal`, `banner`) as installable community packages with documentation and examples.
+**Done:** P7-15, D-043. Authored four standard library community packages in `extras/packages/`: `fortune.py`, `cowsay.py`, `cal.py`, and `banner.py`. Each package includes full metadata, flags definition, async `run`, `man`, and `help`. Handled ANSI rendering conventions (D-023) with plain text by default and `-C` / `--color` flags, plus ANSI escape code stripping in `cowsay.py`'s speech bubble width calculations to prevent border distortion when receiving colored piped input. Packaged the community standard library into `resources/core/standard_packages.py`, integrated resolution fallbacks into `resources/core/commands/pkg.py` (`_find_package_source_content` and `pkg search`), and added default VFS paths `/var/pkg/repo` and `/etc/packages/commands` in `resources/core/filesystem.py`. Created test suite `tests/stdlib_packages_test.py` covering searching, installing, executing, flag options, ANSI handling, piped composition (`fortune | cowsay`), and dependency listing/removal (8/8 passing in 0.013s). Regenerated `core/manifest.json` (15 core, 6 apps, 152 commands). Verified 85/85 smoke checks, structure tests, and all unit test suites.
+**Changed:** `extras/packages/fortune.py`, `extras/packages/cowsay.py`, `extras/packages/cal.py`, `extras/packages/banner.py`, `resources/core/standard_packages.py`, `resources/core/commands/pkg.py`, `resources/core/filesystem.py`, `resources/core/manifest.json`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/HANDOFF.md`, `tests/stdlib_packages_test.py`.
+**Decisions:** D-043 (Standard Library Community Packages).
+**Problems / surprises:**
+- In `cowsay.py`, piped ANSI color codes from upstream commands (like `fortune -C`) previously caused speech bubble borders to misalign due to raw byte lengths in `textwrap.wrap` and padding. Resolved by adding `_strip_ansi` and `_visible_len` so padding and column calculations consider only printable characters.
+- In `filesystem.py`, provisioned default directories `/var/pkg/repo` and `/etc/packages/commands` to ensure clean package repository operations even before initial package publication.
+**Left undone:** P7-16 (Package Security & Sandboxing).
+**Next session should start with:** P7-16: Package Security & Sandboxing.
 
 ### Session 36: 2026-10-06: P7-14 Package Dependency Resolution & Dynamic Wheels (`pkg deps`, cycle protection, `--force`, `--no-deps`)
 
