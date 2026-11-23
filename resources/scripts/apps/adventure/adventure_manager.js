@@ -5,6 +5,7 @@ window.AdventureManager = class AdventureManager extends App {
         this.dependencies = {};
         this.callbacks = {};
         this.ui = null;
+        this.companion = null;
     }
 
     async enter(appLayer, options = {}) {
@@ -27,6 +28,33 @@ window.AdventureManager = class AdventureManager extends App {
 
         if (initialStateResult.success) this._applyUiUpdates(initialStateResult.updates);
         else this.ui.appendOutput("I couldn't start the adventure.", "error");
+        if (options.companion && initialStateResult.success && !options.scriptingContext?.isScripting) {
+            const ui = this.ui;
+            const controls = companionControls(this.dependencies.CompanionClient, this.dependencies.Utils, result => {
+                if (this.ui !== ui) return;
+                const room = result.scene ? ` (${result.scene.room_name})` : "";
+                ui.appendOutput(`BoneAmanita${room}: ${result.reply}`, "dialogue");
+            });
+            this.companion = controls;
+            ui.mountCompanion(controls.element, async message => {
+                try {
+                    const packet = JSON.parse(await FractalOS_Kernel.syscall("adventure", "companion_scene", []));
+                    if (this.ui !== ui) return;
+                    if (!packet.success) {
+                        controls.setStatus("Could not read the current adventure scene.");
+                        return;
+                    }
+                    const scene = packet.data;
+                    if (!scene) {
+                        controls.setStatus("There is no current adventure scene.");
+                        return;
+                    }
+                    await controls.ask(message, scene);
+                } catch {
+                    controls.setStatus("Could not read the current adventure scene.");
+                }
+            });
+        }
 
         if (options.scriptingContext?.isScripting) await this._runScript(options.scriptingContext);
         else setTimeout(() => this.container.focus(), 0);
@@ -62,6 +90,8 @@ window.AdventureManager = class AdventureManager extends App {
     exit() {
         if (!this.isActive) return;
         const { AppLayerManager } = this.dependencies;
+        this.companion?.dispose();
+        this.companion = null;
         if (this.ui) {
             this.ui.hideAndReset();
         }

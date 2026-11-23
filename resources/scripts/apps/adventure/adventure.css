@@ -8,10 +8,32 @@
     background-color: var(--color-background-medium);
     border: var(--border-width-thick) solid var(--color-border-secondary);
     border-radius: var(--border-radius-md);
-    padding: var(--spacing-md);
     box-shadow: var(--shadow-inset-dark), var(--shadow-drop-medium);
     font-family: var(--font-family-mono), monospace;
     color: var(--color-text-primary);
+}
+
+#adventure-container .app-main {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+}
+
+#adventure-container .app-footer {
+    white-space: normal;
+    padding-bottom: var(--spacing-sm);
+}
+
+#adventure-status {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    color: var(--color-text-secondary);
+}
+
+#adventure-room-name {
+    color: var(--color-info);
 }
 
 #adventure-output {
@@ -52,7 +74,6 @@
 
 #adventure-input-container {
     display: flex;
-    padding-top: var(--spacing-md);
     font-size: var(--font-size-lg);
     color: var(--color-text-primary);
 }
@@ -67,4 +88,47 @@
     font-size: inherit;
     padding-left: var(--spacing-sm);
     caret-color: var(--color-text-primary);
+}
+
+.companion-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.companion-field {
+    box-sizing: border-box;
+    min-width: 0;
+    background: var(--color-background-darkest);
+    border: var(--border-width) solid var(--color-border-primary);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    color: var(--color-text-primary);
+    font: inherit;
+}
+
+.companion-field:focus-visible {
+    outline: var(--border-width) solid var(--color-info);
+    border-color: var(--color-info);
+}
+
+.companion-controls input[type="text"],
+.companion-controls input[type="password"] {
+    flex: 1 1 12em;
+}
+
+.companion-controls input[type="number"] {
+    width: 9ch;
+}
+
+.companion-controls__status {
+    flex-basis: 100%;
+    color: var(--color-text-secondary);
+    white-space: normal;
+}
+
+.companion-controls__status:empty {
+    display: none;
 }

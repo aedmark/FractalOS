@@ -14,10 +14,9 @@ Architecture: [ARCHITECTURE.md](ARCHITECTURE.md). Tests: [TESTING.md](TESTING.md
 
 ## Current state
 
-_Last updated: 2026-11-08, session 49, on `main`, pushed to `origin/main` at `54c2750`: the owner answered Q-004
-and Q-005 (D-049, D-050). Check `git status` for anything not yet committed._
+_Last updated: 2026-11-23, session 58. Adventure validates and opens BoneAmanita exports._
 
-**Session owner:** none. Session 49 has ended; the next session owns nothing until it says so here.
+**Session owner:** none. Check `git status` for the current working tree.
 
 **Where things stand, in one paragraph:** FractalOS 1.0.0 is released and Phases 1 to 8 are done. Phase 9
 (x86_64 nodes) works in containers but not yet on real hardware (P9-04 to P9-07). Phase 10 brought the project
@@ -41,6 +40,20 @@ Every row was run in sessions 45 to 48 unless it says it was carried over.
 | `tests/agent.js` against a real model | not run since 2026-09-27 (archive, session 17) |
 
 **What works**
+- **Exported adventures** (P11-09, D-057). Upload the JSON and run `adventure <filename>`. FractalOS checks
+  the start, exit destinations, and carried-item references before opening the game.
+- **Live companion rehearsal** (P11-02). Gordon verified inventory, the south-exit hint, and Server Closet recall in Samwise Chat.
+- **Adventure pickups** (P11-06, D-054). Use the displayed name in commands such as `take brass key`.
+  The companion scene includes pickup history with room locations and current inventory (P11-07, P11-08).
+- **Companion launcher** (P11-04, D-053). Run `./extras/start_companion.py` from FractalOS. It uses the sibling
+  BoneAmanita checkout and derives the agreed browser origin from the web port.
+- **Companion pairing and layout** (P11-03, D-052). Adventure uses the shared title bar and companion controls
+  use the theme. Masked paste stays in the code field. Pairing hides the code, port, and button in both views
+  until a new pairing is required (P11-05).
+- **Status bar identity** (P7-18). The bar and terminal prompt use the same user lookup when sessions restore or change.
+- **The local BoneAmanita companion** (P11-01, D-051). `adventure --companion` and `samwise --chat --companion`
+  share an account-bound pairing in one tab. Chromium exercised both rooms, the lantern, captured scene labels,
+  a retry with the same turn ID, plain-text output, and game commands during a disconnect.
 - **The OS in a browser tab and in Portable mode** (D-001 to D-003): shell, 152 commands, apps, users, `sudo`,
   packages with checksums (D-044), the `samwise` agent with voltage brakes, the mesh across tabs and through the
   relay.
@@ -72,6 +85,8 @@ unauthenticated (P9-06), which the landing page's "unhackable mesh" does not ref
 
 ## Next steps
 
+Play exported worlds with [the upload workflow](../README.md#play-with-boneamanita).
+
 1. The owner: turn on private vulnerability reporting (Settings, Security) so SECURITY.md's route works (D-050).
 2. Try `gpio` in a real Portable build, ideally on a Pi, and one Gemini embedding with a real key. Then P9-04:
    `provision_x64.sh` on a real old laptop or desktop, `--role node` with a screen, then `--headless`.
@@ -88,6 +103,97 @@ None blocks the next steps. Q-001 (how far the agent's whitelist should grow) an
 memory" means for P3-01) are older and still open.
 
 ## Session log
+
+### Session 58: 2026-11-23: Validate the exported Adventure on import
+
+**Goal:** Open a BoneAmanita export and play from its recorded starting room with its inventory.
+**Done:** P11-09, D-057. The loader rejects bad starting rooms, exits, and inventory references before launch.
+Gordon completed P11-02 in the live browser. Archived session 48.
+**Verified:** [OBSERVED] The old command launched all four invalid test inputs. The new command rejects them.
+Chromium uploaded the file produced by BoneAmanita, opened The Mill, showed the brass key in inventory,
+and reached The Gallery via north. The companion browser test passed. Smoke passed 91/91, diagnostics 40/40,
+feature suites 26/26, and structure and docs passed.
+
+### Session 57: 2026-11-23: Attach rooms to Adventure pickups
+
+**Goal:** Give Samwise Chat the source facts to distinguish the key pickup from the lantern pickup.
+**Done:** P11-08, D-056. Room records travel in Adventure scenes. The chat turn stays scene-free. Archived session 47.
+**Verified:** [OBSERVED] The previous browser packet omitted pickup locations. The updated Chromium fixture
+verified both item-room pairs after moving and dropping an item. General smoke passed 91/91, diagnostics 40/40,
+and structure and docs passed.
+**Not verified:** Chat recall against the updated live service.
+
+### Session 56: 2026-11-23: Record the items taken during Adventure
+
+**Goal:** Supply factual pickup history for plural questions.
+**Done:** P11-07, D-055. Adventure records distinct successful pickups and projects them when the scene fits the
+size limit. Archived session 46.
+**Verified:** [OBSERVED] The prior scene omitted pickup history. The browser regression then verified two
+pickups across rooms, a failed take, and a drop. The oversized-history probe preserved the base scene.
+General smoke passed 91/91, in-OS diagnostics 40/40, and structure and docs passed.
+**Not verified:** Live-model playthrough with the updated companion service.
+
+### Session 55: 2026-11-22: Ground Adventure pickup questions
+
+**Goal:** Make the brass key selectable by its displayed name and report the actual pickup to BoneAmanita.
+**Done:** P11-06, D-054. Authored nouns retain precedence. Failed commands leave the last successful take intact.
+Adventure suppresses another question submission while a reply is pending. Archived session 45.
+**Verified:** [OBSERVED] Chromium reproduced the rejected full-name command before the fix. The companion smoke then
+passed with both items carried, a failed take after the key pickup, and one echo for an in-flight question.
+General smoke passed 91/91, in-OS diagnostics 40/40, and structure and docs passed.
+**Not verified:** Live-model playthrough with the updated companion service.
+
+### Session 54: 2026-11-22: Hide companion pairing controls after connection
+
+**Goal:** Clear the pairing controls from the companion windows once paired.
+**Done:** P11-05. Both views follow the browser pairing state. A rejected code restores the form.
+Re-pairing to the same session and port preserves the pending turn ID. Archived session 44.
+**Verified:** [OBSERVED] The pairing field stayed visible before the fix. Chromium then passed with both
+windows open, a newly opened window, and a rejected code followed by re-pairing and retry. General smoke passed
+91/91. Structure and documentation passed with 0 errors and warnings.
+**Not verified:** Live BoneAmanita model behavior.
+
+### Session 53: 2026-11-22: One-command companion launcher
+
+**Goal:** Replace separate FractalOS and BoneAmanita startup commands with one local launcher.
+**Done:** P11-04. The launcher starts the web server, opens its URL, and runs BoneAmanita in the terminal for pairing.
+It uses the configured origin and stops its server when BoneAmanita exits. Archived session 43.
+**Decisions:** D-053.
+**Verified:** [OBSERVED] A pseudo-terminal smoke test used a fake BoneAmanita process and the real static server.
+The origin matched, HTTP served the page, and Ctrl+C stopped both. The launcher test verified the browser URL.
+Feature suites passed 25/25. Chromium smoke passed 91/91.
+**Not verified:** Launching a live model or opening a real desktop browser with the launcher.
+
+### Session 52: 2026-11-22: Companion paste and layout
+
+**Goal:** Fix the window controls, masked pairing-code paste, and form styling in Adventure.
+**Done:** P11-03. The terminal paste shortcut stays with its focused input. Adventure uses the standard title bar
+and the companion controls use the app theme. Archived session 42.
+**Decisions:** D-052.
+**Verified:** [OBSERVED] Headless Chromium reproduced the pairing paste failure on the previous tree. After the fix,
+masked paste and the two-room companion smoke passed. Primary smoke passed 91/91. Clipboard and window-manager
+units passed. The Adventure layout was visually checked at an 850×560 viewport.
+**Not verified:** Live model playthrough and other browsers.
+
+### Session 51: 2026-11-22: Status bar identity
+
+**Goal:** Correct the Guest badge after restoring a logged-in session.
+**Done:** P7-18. The terminal's prompt refresh supplies the current username to the status bar. Archived session 41.
+**Changed:** `terminal_ui.js`, `status_bar_manager.js`, and `tests/smoke.js`.
+**Verified:** [OBSERVED] Chromium reproduced Guest on all three new checks before the fix. After the fix, smoke
+passed 91/91, including restore, login, and logout. Status bar unit checks passed 7/7.
+**Problems / surprises:** The bar's periodic refresh updated the working directory and clock, while the user label remained the initial Guest text.
+
+### Session 50: 2026-11-22: Local BoneAmanita companion
+
+**Goal:** Share one local companion session across Adventure and Samwise Chat.
+**Done:** P11-01. The Adventure kernel supplies the visible scene. The two views share a browser client and render dialogue as text. Archived session 40.
+**Changed:** `companion.js`, the Adventure and Samwise command and app paths, boot wiring, and `tests/companion_smoke.js`.
+**Decisions:** D-051. Gordon approved the fixed IPv4 loopback destination and user-selected ports.
+**Verified:** [OBSERVED] Browser companion smoke passed with a fake peer, including native commands during a disconnect. Structure passed, 24/24 feature suites passed, smoke 88/88, and diagnostics 40/40.
+**Not verified:** P11-02 live model behavior.
+**Problems / surprises:** The first actual pair-button click reached the terminal. Adventure lacked the standard floating app class (D-038).
+**Next session should start with:** Play the built-in two rooms against the live companion, then ask about the lantern in chat.
 
 ### Session 49: 2026-11-08: Push, and the owner's answers to Q-004 and Q-005
 
@@ -111,191 +217,7 @@ a repository setting, so it was left to the owner (Next steps 1).
 **Left undone:** enabling private vulnerability reporting (the owner).
 **Next session should start with:** Next steps 2, the real-hardware trials.
 
-### Session 48: 2026-11-08: P7-17 the window manager test runs again, and every feature suite has a runner
-
-**Contributor:** Claude Code (Opus 5.5)
-**Goal:** Repair `tests/window_manager_unit.js`, broken since 2026-10-08, and put it in a set people run.
-**Done:** P7-17.
-**Changed:** `tests/window_manager_unit.js` (the mock's `style` gains `setProperty` and `getPropertyValue`; the
-body runs in an async function that awaits `openWindow` and exits 1 on failure; test 1 asserts the published
-layer insets); new `tests/units.js` (runs every `tests/*_test.py` and `tests/*_unit.js`, grades by exit code,
-optional name filter); AGENTS.md (Layout row, "Feature suites" under Running and testing); TESTING, ROADMAP.
-`resources/scripts/window_manager.js` is unchanged.
-**Decisions:** none. The test was out of date, not the code: both breaking commits were intended behaviour.
-**Verified:** `window_manager_unit.js` 7/7. With `_syncLayerInsets()` skipped in `initialize` it fails on "layer
-insets published on init"; with registered windows dropped in `openWindow` it fails on "Two open windows" (file
-restored, compared byte for byte). `node tests/units.js` PASS 24/24; against the old test copied in as a probe it
-fails and prints the `TypeError` (probe deleted). `node tests/structure.js` PASS; docs 0 errors, 0 warnings.
-**Not verified:** smoke and diag, since no product code changed; the window manager in a real browser beyond what
-smoke covers.
-**Problems / surprises:** the old test ran its assertions at the top level and never awaited `openWindow`, so the
-window was not registered yet when the next line counted windows. Wrapping it in an async runner with an explicit
-exit code is the pattern the other `*_unit.js` files (for example `hardware_unit.js`) already use.
-**Corrections:** none.
-**Left undone:** Q-004, Q-005.
-**Next session should start with:** Q-004 and Q-005 with the owner, then real-hardware trials (Next steps 2).
-Q-004 and Q-005 were answered in session 49.
-
-### Session 47: 2026-11-08: P10-07 the living docs follow the template's formats
-
-**Contributor:** Claude Code (Opus 5.5)
-**Goal:** Finish Phase 10: the Manifold template's formats in HANDOFF, DECISIONS, TESTING and ROADMAP.
-**Done:** P10-07. Phase 10 is complete. New bug P7-17; new held tension T-001.
-**Changed:** `docs/HANDOFF.md` (Current state rebuilt: session owner, a one-paragraph summary, a dated Verified
-table with commit and environment, What works, Not verified, Gotchas, Open questions for the owner; the
-log template gains Contributor, Verified, Not verified, Corrections); `docs/DECISIONS.md` (the fuller format with
-Alternatives and Review trigger, the "record pre-existing choices" rule, Held tensions with T-001, open
-questions moved from between D-013 and D-014 to the end, text unchanged); `docs/TESTING.md` (a "Does not prove"
-column, rows for the mesh relay and feature suites, "Runs that vary"); `docs/ROADMAP.md` (legend with holders and
-item-history rules; P7-17).
-**Decisions:** none. T-001 proposes the owner as its owner; confirm or reassign.
-**Verified:** every `tests/*_test.py` and `tests/*_unit.js` run by exit code: all pass except
-`window_manager_unit.js`. Bisected with `git archive` into the scratchpad: passes at `e0a96b9^`, fails from
-`e0a96b9` ("One window registered") and from `9c61914` with a `TypeError`. `tools/check_docs.py` 0 errors,
-0 warnings; `node tests/structure.js` PASS.
-**Not verified:** no code changed, so smoke and diag were not rerun (their rows are from sessions 45 and 46).
-**Problems / surprises:** a quick loop over the JS suites reported `window_manager_unit.js` as exit 0 because the
-status was read inside a command substitution; rerun on its own it exits 1. Read exit codes one suite at a time.
-**Corrections:** none.
-**Left undone:** P7-17; Q-004, Q-005.
-**Next session should start with:** P7-17 (done in session 48).
-
-### Session 46: 2026-11-08: P2-24 the Gemini key never goes in a URL
-
-**Contributor:** Claude Code (Opus 5.5)
-**Goal:** Move the Gemini embeddings key out of the request URL, which session 44 found by reading the code.
-**Done:** P2-24.
-**Changed:** `resources/core/ai_manager.py` (`_get_embedding`: the key goes in `x-goog-api-key`, as in the chat
-call; an empty key returns "Gemini API key is missing." before any request); `tests/agent_unit.py`
-(`GeminiKeyTests`, a fake `pyodide.http.pyfetch` that records each request); `docs/CHANGELOG.md` (Security);
-ROADMAP, SECURITY.
-**Decisions:** none.
-**Verified:** `agent_unit.py` 39/39. Putting the key back in the URL fails the header test; removing the empty-key
-check fails the missing-key test (both restored, file compared byte for byte). No other `key=` remains in
-`resources/core` or `resources/scripts`. Smoke 88/88, diag 40/40 with 0 error lines, structure PASS,
-`agent_grading.js` 22/22 (same Playwright and server as session 45).
-**Not verified:** a real Gemini embeddings call; the memory search and sleep cycle that use it.
-**Problems / surprises:** with no key, the old code sent a request with `key=None` in the URL. Memory search skips
-embeddings when there is no key, but the sleep cycle (`consolidate_memory`) does not: on Gemini without a key it
-sent one doomed request per memory. It now sends none.
-**Left undone:** nothing in P2-24.
-**Next session should start with:** Q-004 and Q-005 with the owner, or P10-07.
-
-### Session 45: 2026-11-08: P6-05 `gpio` no longer passes text to the host shell
-
-**Contributor:** Claude Code (Opus 5.5)
-**Goal:** Fix the host command injection that session 44 found by reading `gpio.py`.
-**Done:** P6-05.
-**Changed:** `resources/core/commands/gpio.py` (`_pin`: 1 to 3 digits, normalised, checked in all seven
-subcommands that take a pin, before any host string is built); `resources/scripts/hardware_manager.js`
-(`isHostSafePin` gates `readPin` and `writePin`, which build their own `gpio read/write` host commands for the
-monitor daemon); `tests/gpio_command_test.py`, `tests/hardware_unit.js`; `docs/CHANGELOG.md` (Security);
-ROADMAP, ARCHITECTURE, SECURITY.
-**Decisions:** none. Pins are refused everywhere, not only before host calls, so browser and Portable modes accept
-the same input; a named virtual pin such as `gpio simulate led 1` now fails (nothing in the repo used one).
-**Verified:** `tests/gpio_command_test.py` 11/11 and `tests/hardware_unit.js` 7/7; with the check removed from
-`gpio.py` two tests fail, and with `isHostSafePin` returning true test 7 fails (both restored). Smoke 88/88, diag
-40/40 with 0 error lines, structure PASS, `agent_unit.py` 37/37, `agent_grading.js` 22/22, swarm and mesh-agent
-tests OK. Browser runs used Playwright 1.63 from `../level0engine/node_modules` (`NODE_PATH`), against
-`python3 -m http.server` on 127.0.0.1:8000.
-**Not verified:** a real Portable build, a Pi, the wiringPi `gpio` binary.
-**Problems / surprises:** the JS `HardwareManager` built the same host string independently of `gpio.py`, so a
-fix in Python alone would have left the monitor daemon's polling path open to any other caller. The diag run's one
-console error is the expected 404 for the optional `deploy.json`.
-**Left undone:** `host_api.exec_command` still accepts any string; a future caller must check its own input.
-**Next session should start with:** P2-24 (done in session 46).
-
-### Session 44: 2026-11-08: Documentation repairs against the updated Manifold template
-
-**Contributor:** Claude Code (Opus 5.5)
-**Goal:** Compare FractalOS's docs with the expanded Manifold template in `../the-manifold/`, fix what its
-checker refused, then adopt the missing documents and rules.
-**Done:** P10-01 to P10-06 (Phase 10 filed this session). D-048. New bugs P6-05 and P2-24; questions Q-004, Q-005.
-**Changed:** `docs/HANDOFF.md` (Current state, Next steps, session numbering, three restored entries),
-`docs/DECISIONS.md` (D-009 restored, D-048 added, open-question IDs in bold), `docs/ROADMAP.md`,
-`docs/CONTRIBUTING.md` and `README.md` (broken relative links), `AGENTS.md` (directory paths instead of `*`
-paths in the Layout table, the archiving rule, the stale "124" command count), new `docs/archive/` (sessions 1
-to 34, moved whole and checked word for word against the removed text). Then: new `docs/ARCHITECTURE.md`,
-`docs/SECURITY.md`, `docs/README.md`, `tools/check_docs.py`; `tests/structure.js` runs the checker; new AGENTS.md
-sections and Layout rows; TESTING's structure-test section.
-**Decisions:** D-048 records the 2026-09-25 rename that D-009 had argued against.
-**Verified:** the Manifold's checker from a scratch copy, 18 errors before and 0 after; `tools/check_docs.py`
-0 errors, 0 warnings in 15 files, and it fails on a broken link, a duplicated session, an out-of-order session and
-a duplicated roadmap ID (each undone afterwards, files compared byte for byte); `node tests/structure.js` PASS, and
-FAIL with a broken link. ARCHITECTURE and SECURITY facts were read from the code at `1ea2afd`.
-**Not verified:** no kernel or front-end code changed, so smoke and diag were not run. P6-05 and P2-24 are from
-reading, not from running anything.
-**Problems / surprises:**
-- The 2026-10-06 sessions restarted their numbering at 10, so 12 to 22 were used twice. Each of them had also
-  replaced the entry above it instead of adding one, so three entries vanished from the log: the 2026-09-30
-  Phase 6 session (logged as "Session 7"), P7-01/P7-02 ("Session 10") and P7-03 ("Session 11"). Later edits
-  stripped the headings of seven more (P7-08 to P7-13 and the v1.0.0 release). Recovered the three entries
-  whole from `c9be644`, `a68afb8` and `06e0d14`, restored the seven original headings, and renumbered in date
-  order: Phase 6 is 23, the 2026-10-06 sessions 24 to 39, and the later ones 40 to 42. Every cross-reference to
-  a session number in the docs points at a session numbered 22 or lower, so none needed changing.
-- D-009 ("the internal name stays OopisOS") was deleted in `7080c94` when the rename went ahead, leaving two
-  citations dangling. Restored and marked superseded by D-048.
-- The checker could not read the `AGENTS.md` Layout table's `*` paths or open questions written without bold
-  IDs. Both were changed to the checker's conventions rather than the checker to ours.
-**Corrections:** Current state said the landing page was uncommitted; it was committed in `97ace3d` on 2026-11-01.
-The September session 10 (the real-model 7/7 rerun, 2026-09-25) has no entry, although session 11 and P2-01
-in the roadmap cite it; no commit ever had one.
-**Left undone:** P10-07; maintainer preferences in AGENTS.md (Q-004); the reporting route (Q-005).
-**Next session should start with:** P6-05 (done in session 45).
-
-### Session 43: 2026-11-08: Landing page copy revision (the owner, between sessions)
-
-**Contributor:** the owner (`eed8d5c`, "1.0 Documentation"), logged by session 44
-**Changed:** `resources/landing.html`, `resources/landing.css`: page title "A whole system in a browser tab";
-a new origin-story introduction (the Fallout-style terminal); plainer capability headings; an "offline-first,
-unhackable" mesh line in the who-it-is-for list; sans-serif body text with monospace kept for headings, chrome
-and code; the owner's full name in the footer.
-**Not verified:** not viewed at the D-047 widths after the change.
-
-### Session 42: 2026-11-01: Public landing page rebuild
-
-**Goal:** Replace the generic green-on-black landing page with a front door that sells FractalOS to people already looking for a local-first, Python-in-the-browser, AI-and-mesh machine, while still being understandable to someone who has never opened a terminal.
-**Done:** D-047. Rebuilt `resources/landing.html` as an EGA product sheet: plain-English explanation and a first-five-minutes card; a tabbed tour with real `whoami`, `ls`, `df -h`, `help python` and CPython 3.14.2 output, an abridged real Samwise autopilot run, and a clearly labelled illustrative mesh transcript; seven capabilities; who-it-is-for and not-for lists; browser, Neutralino and x86_64 appliance paths on a printed quick-start card; an architecture diagram, effect contract, spec table and glossary; ten FAQ answers; and a final boot panel. Added `landing.css` and `landing.js` (no dependencies, no web fonts). Fixed stale claims: v1.0 to v1.0.0, Ollama as well as Gemini, the opt-in mesh, and the non-existent `uname` example.
-**Changed:** `resources/landing.html`, `resources/landing.css`, `resources/landing.js`, `README.md`, `AGENTS.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
-**Decisions:** D-047.
-**Problems / surprises:**
-- The old page's `uname -a` transcript was fiction; `uname` is not a command. Replaced it with captured output from the running v1.0.0 build (`whoami`, `ls /`, `df -h`, `help python`).
-- At 1200px the hero terminal's Python line was two characters too wide and showed a scrollbar; a 961–1280px font step fixed it. Mobile code blocks now wrap instead of showing scrollbars.
-- The boot button has two layouts to serve: `landing.html` beside `index.html` in a checkout, and the published root page with the OS under `os/`. `landing.js` picks `./index.html` for the former and `./os/index.html` for the latter.
-**Left undone:** The landing page is not committed. Firefox, Safari, a physical phone and a screen reader were not exercised.
-**Next session should start with:** committing the landing page if approved, then P9-04 on real hardware.
-
-### Session 41: 2026-10-12: P9-01..P9-03 x86_64 mesh node / signal server
-
-**Goal:** Give ordinary x86_64 hardware (any machine that runs a modern browser) an install path as a mesh node or signal server, like the Pi had.
-**Done:** P9-01, P9-02, P9-03, D-046. New `extras/provision_x64.sh` (roles `signal`, `node`, `kiosk`; `--headless`, `--no-start`, `--uninstall`; systemd units under an unprivileged `fractal` user; system Chromium, no Neutralino). New runtime switch `resources/deploy.json` read by `NetworkManager._applyDeployConfig`. Repaired `extras/signaling_server.py`. New `tests/deploy_mesh.js` (mutation-checked: 7 checks fail with the change reverted).
-**Changed:** `extras/provision_x64.sh`, `extras/signaling_server.py`, `resources/scripts/network_manager.js`, `tests/deploy_mesh.js`, `tools/package_release.py` (skips `deploy.json`), `.gitignore`, `README.md`, `AGENTS.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/TESTING.md`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
-**Decisions:** D-046.
-**Problems / surprises:**
-- `NETWORKING_ENABLED` was a hard-coded `false` and `/etc/network.conf` only controls a Neutralino-spawned relay, so P6-04 ("peer discovery on boot") could not have worked on any appliance. `deploy.json` is the fix.
-- The Python relay treated `targetId: "broadcast"` as a direct target and silently dropped every broadcast; only the unused Node relay worked. Found by the container test, not by reading.
-- First run shows onboarding, which returns before `startNetworking()`, so a freshly provisioned headless node never joins. Hence the "screen once" limit.
-**Left undone:** P9-04..P9-07. Nothing committed. Real-hardware and real-systemd testing.
-**Next session should start with:** committing this work if approved, then P9-04 on a physical machine.
-
-### Session 40: 2026-10-07: P8-01 The FractalOS 1.0 Architectural Codex & Manual (`docs/manual/`)
-
-**Goal:** Overhaul and modernize the legacy 101-page OopisOS manual into the comprehensive FractalOS 1.0 Architectural Codex and User Guide in `docs/manual/`.
-**Done:** P8-01, D-045. Authored a complete offline, zero-dependency HTML documentation suite under `docs/manual/`:
-- Created `docs/manual/manual.css` with responsive layout, custom typography, callouts, and print styles.
-- Created `docs/manual/index.html` detailing Books I–VI and VIII–X with deep architectural analyses, ASCII flowcharts, the Effect Contract, the Voltage Safety Framework, WebRTC mesh protocols, and test engineering.
-- Created `docs/manual/commands.html` documenting all 151 native Python commands across 18 functional categories with exact synopsis, flags, execution tracing, and architectural patterns (What It Does, How It Works, Why It Works).
-- Verified 100% of internal and cross-file anchor links (52 in index, 320 in commands, 151 cross-links, 0 broken).
-- Verified `node tests/structure.js` and `python3 tests/agent_unit.py`.
-**Changed:** `docs/manual/manual.css`, `docs/manual/index.html`, `docs/manual/commands.html`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/HANDOFF.md`.
-**Decisions:** D-045 (Architectural Codex & HTML Manual).
-**Problems / surprises:**
-- The command set grew from ~50 JavaScript commands in OopisOS v5.0 to 151 native Python commands in FractalOS 1.0. Decoupled the exhaustive 151-command reference into `commands.html` with cross-links from `index.html` to ensure optimal performance and browsing experience.
-**Left undone:** Hardware testing on real Raspberry Pi boards.
-**Next session should start with:** Hardware trials, WAN mesh testing, or devlog update.
-
-
-Older sessions, moved whole: sessions 24 to 39 in
+Older sessions, moved whole: sessions 42 to 48 in [the November archive](archive/SESSION_LOG_2026_11.md), sessions 24 to 41 in
 [archive/SESSION_LOG_2026_10.md](archive/SESSION_LOG_2026_10.md), sessions 1 to 23 in
 [archive/SESSION_LOG_2026_09.md](archive/SESSION_LOG_2026_09.md).
 

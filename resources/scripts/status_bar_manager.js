@@ -122,6 +122,11 @@ window.StatusBarManager = class StatusBarManager {
         this.dependencies = dependencies;
     }
 
+    setUser(username) {
+        const userEl = document.getElementById("status-bar-user");
+        if (userEl) userEl.textContent = `${username}@fractal`;
+    }
+
     setAgentStatus(status) {
         this.agentStatus = status;
         const agentEl = document.getElementById("status-bar-agent");
@@ -295,7 +300,7 @@ window.StatusBarManager = class StatusBarManager {
             clockEl.textContent = now.toTimeString().slice(0, 8);
         }
 
-        // User & CWD
+        // CWD
         const { FileSystemManager, MultiplexerManager, NetworkManager, SoundManager } = this.dependencies;
 
         const cwdEl = document.getElementById("status-bar-cwd");

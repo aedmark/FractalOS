@@ -44,6 +44,7 @@ window.FRACTAL_ASSET_MANIFEST = {
         "./scripts/message_bus_manager.js",
 
         "./scripts/apps/app.js",
+        "./scripts/companion.js",
         "./scripts/pager.js",
 
         "./scripts/apps/editor/editor_ui.js",

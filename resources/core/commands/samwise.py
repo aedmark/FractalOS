@@ -6,6 +6,7 @@ def define_flags():
     return {
         'flags': [
             {'name': 'chat', 'short': 'c', 'long': 'chat', 'takes_value': False},
+            {'name': 'companion', 'long': 'companion', 'takes_value': False, 'description': 'Use local BoneAmanita in chat.'},
             {'name': 'autopilot', 'short': 'a', 'long': 'autopilot', 'takes_value': False, 'description': 'Engage BoneAmanita Autopilot Mode.'},
             {'name': 'force', 'short': 'f', 'long': 'force', 'takes_value': False, 'description': 'Override safety interlocks for High Voltage actions.'},
             {'name': 'provider', 'short': 'p', 'long': 'provider', 'takes_value': True},
@@ -24,6 +25,11 @@ async def run(args, flags, user_context, stdin_data=None, api_key=None, ai_manag
     """
     Engages in a context-aware conversation OR activates Autopilot.
     """
+    if flags.get('companion'):
+        if not flags.get('chat') or any(flags.get(flag) for flag in ('autopilot', 'chat-internal', 'sleep', 'resume-agent')):
+            return {"success": False, "error": {"message": "samwise: use --companion with --chat."}}
+        return {"effect": "launch_app", "app_name": "SamwiseChat", "options": {"companion": True}}
+
     if not ai_manager:
         return {
             "success": False,
@@ -230,6 +236,9 @@ DESCRIPTION
 OPTIONS
     -c, --chat
         Open an interactive, graphical chat session.
+
+    --companion
+        With --chat, talk to the local BoneAmanita companion.
 
     -a, --autopilot
         Engage BoneAmanita Autopilot. The AI will DIRECTLY execute commands to

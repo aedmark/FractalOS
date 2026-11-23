@@ -22,14 +22,21 @@ window.SamwiseChatUI = class SamwiseChatUI {
         return this.elements.container;
     }
 
+    mountCompanion(controls) {
+        this.elements.footer.prepend(controls);
+    }
+
     _buildLayout(initialState) {
         const { Utils, UIComponents } = this.dependencies;
 
-        const appWindow = UIComponents.createAppWindow('Samwise Chat', this.managerCallbacks.onExit);
-        
-        this.elements.modelSelect = Utils.createElement('select', { className: 'app-header__select' });
-        this.elements.modelSelect.onchange = (e) => this.managerCallbacks.onModelChange(e.target.value);
-        appWindow.header.insertBefore(this.elements.modelSelect, appWindow.header.querySelector('.app-header__exit-btn'));
+        const companion = initialState.options.companion;
+        const appWindow = UIComponents.createAppWindow(companion ? 'BoneAmanita' : 'Samwise Chat', this.managerCallbacks.onExit);
+        appWindow.container.classList.add('samwise-chat-window');
+        if (!companion) {
+            this.elements.modelSelect = Utils.createElement('select', { className: 'app-header__select' });
+            this.elements.modelSelect.onchange = (e) => this.managerCallbacks.onModelChange(e.target.value);
+            appWindow.header.insertBefore(this.elements.modelSelect, appWindow.header.querySelector('.app-header__exit-btn'));
+        }
 
         this.elements.container = appWindow.container;
         this.elements.main = appWindow.main;
@@ -53,6 +60,7 @@ window.SamwiseChatUI = class SamwiseChatUI {
         this.elements.input = Utils.createElement("input", {
             type: "text",
             placeholder: "Type your message...",
+            "aria-label": companion ? "Ask BoneAmanita" : "Chat message",
             className: "samwise-chat-input",
         });
         const sendBtn = Utils.createElement("button", {
@@ -69,8 +77,9 @@ window.SamwiseChatUI = class SamwiseChatUI {
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
-            await this.managerCallbacks.onSendMessage(this.elements.input.value);
-            this.elements.input.value = "";
+            const input = this.elements.input;
+            await this.managerCallbacks.onSendMessage(input.value);
+            if (this.elements.input === input) input.value = "";
         });
         this.elements.input.addEventListener("keydown", (e) => {
             if (e.key === "Enter" && !e.shiftKey) {

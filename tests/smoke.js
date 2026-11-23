@@ -395,6 +395,26 @@ kernel.ai_manager.continue_chat_conversation = _fake_chat
         const direct = await page.evaluate(async () => await CommandExecutor.processSingleCommand('samwise --chat-internal', { isInteractive: false }));
         report('samwise --chat-internal without a JSON message fails cleanly', direct.success === false, JSON.stringify(direct).slice(0, 200));
 
+        await page.evaluate(({ users, groups }) => {
+            const { StorageManager, Config } = dependencies;
+            StorageManager.saveItem(Config.STORAGE_KEYS.USER_CREDENTIALS, users, 'User Credentials');
+            StorageManager.saveItem(Config.STORAGE_KEYS.USER_GROUPS, groups, 'User Groups');
+            StorageManager.saveItem(Config.STORAGE_KEYS.ONBOARDING_COMPLETE, true, 'Onboarding Status');
+            StorageManager.saveItem(Config.STORAGE_KEYS.LAST_CREATED_USER, 'gordon', 'Last Created User');
+        }, setup.data);
+        await page.reload();
+        await page.waitForFunction(() => document.querySelector('#prompt-container')?.textContent.includes('gordon@'), null,
+            { timeout: BOOT_TIMEOUT_MS });
+        const statusUser = () => page.locator('#status-bar-user').textContent();
+        const restoredUser = await statusUser();
+        report('status bar shows the restored user', restoredUser === 'gordon@fractal', restoredUser);
+        const login = await page.evaluate(() => CommandExecutor.processSingleCommand('login root rootpw', { isInteractive: false }));
+        const rootUser = await statusUser();
+        report('status bar follows login', login.success && rootUser === 'root@fractal', rootUser);
+        const logout = await page.evaluate(() => CommandExecutor.processSingleCommand('logout', { isInteractive: false }));
+        const logoutUser = await statusUser();
+        report('status bar follows logout', logout.success && logoutUser === 'gordon@fractal', logoutUser);
+
     } catch (e) {
         console.error(`aborted: ${e.message}`);
         failed++;

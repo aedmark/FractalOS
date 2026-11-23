@@ -21,6 +21,7 @@ window.onload = async () => {
     const groupManager = new GroupManager();
     const fsManager = new FileSystemManager(configManager);
     const sessionManager = new SessionManager();
+    const companionClient = new CompanionClient(() => sessionManager.getCurrentUserFromStack());
     const sudoManager = new SudoManager();
     const messageBusManager = new MessageBusManager();
     const outputManager = new OutputManager();
@@ -47,6 +48,7 @@ window.onload = async () => {
     Object.assign(dependencies, {
         Config: configManager, StorageManager: storageManager, FileSystemManager: fsManager,
         SessionManager: sessionManager, SudoManager: sudoManager, GroupManager: groupManager,
+        CompanionClient: companionClient,
         MessageBusManager: messageBusManager, OutputManager: outputManager, TerminalUI: terminalUI,
         ModalManager: modalManager, AppLayerManager: appLayerManager, AliasManager: aliasManager,
         HistoryManager: historyManager, TabCompletionManager: tabCompletionManager, Utils: Utils,

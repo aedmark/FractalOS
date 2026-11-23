@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Status bar
+- The user badge follows the restored session, login, and logout (P7-18).
+
+### Local BoneAmanita companion
+- Adventure opens playable BoneAmanita exports and reports invalid start, exit, and inventory references before launch (P11-09, D-057).
+- Adventure records the room where each item was taken so BoneAmanita can answer room-specific pickup questions in Samwise Chat (P11-08, D-056).
+- Adventure shares the items successfully taken during the playthrough so BoneAmanita can answer plural pickup questions (P11-07, D-055).
+- Adventure accepts commands such as `take brass key`, shares the last successful pickup with BoneAmanita, and waits for a reply before echoing another question (P11-06, D-054).
+- The pairing code, port, and button hide in both views after pairing and return when the service requires a fresh code (P11-05).
+- `./extras/start_companion.py` starts both services and opens FractalOS at the configured origin from one terminal (P11-04, D-053).
+- `adventure --companion` and `samwise --chat --companion` share a paired BoneAmanita conversation. Adventure sends the current visible scene while its command input remains independent (P11-01, D-051).
+- Adventure uses the standard title bar. Companion inputs and buttons follow the theme, and pairing-code paste stays in the masked field (P11-03, D-052).
+
 ### Security (2026-11-08)
 - **`gpio` no longer passes arbitrary text to the host shell.** In the desktop (Portable) build, a pin argument such as `1; <command>` used to run `<command>` on the host. Pins must now be numbers; anything else is refused with "is not a pin number", in every `gpio` subcommand including `simulate` and `monitor` (P6-05).
 - **The Gemini API key no longer appears in a URL.** Samwise's memory embeddings sent the key as `?key=` in the request address, where proxies and logs can keep it; it now travels in the `x-goog-api-key` header like every other Gemini call, and nothing is sent when no key is set (P2-24).

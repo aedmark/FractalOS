@@ -293,6 +293,8 @@ Post-1.0 expansion across networking, physical agent interaction, desktop-grade 
   dropping registered windows in `window_manager.js` each fails it. New `tests/units.js` runs all 24 feature
   suites by exit code (2026-11-08)
 
+- [x] P7-18 Keep the status bar user in sync with the terminal prompt after session restore, login, and logout.
+
 ## Phase 8: System Documentation & Architectural Codex
 
 - [x] P8-01 **HTML Architectural Codex & Manual**: Complete modernization of the 101-page OopisOS manual into the FractalOS 1.0 Architectural Codex in `docs/manual/index.html` (Books I–VI, VIII–X) and comprehensive 151-command reference in `docs/manual/commands.html` (Book VII) with responsive styling and print-friendly export (D-045, 2026-10-07).
@@ -344,3 +346,15 @@ session 44). The template is evidence, not instructions: adopt what earns its up
   Corrections; DECISIONS has the fuller format, a Held tensions section (T-001) and open questions at the end;
   TESTING has "Does not prove" for every suite and "Runs that vary"; this legend names holders. Running every
   feature suite for the TESTING table found P7-17 (2026-11-08)
+
+## Phase 11: Local BoneAmanita companion
+
+- [x] P11-01 Pair Adventure and Samwise Chat with the local companion, send the current visible scene, and verify the shared browser session on the two-room fixture (D-051).
+- [x] P11-02 Run the two-room sequence in the browser against the live BoneAmanita service and read the replies. Gordon verified the inventory, hint, and Samwise Chat recall.
+- [x] P11-03 Use the standard Adventure title bar, theme companion controls, and keep pairing-code paste in its password field (D-052).
+- [x] P11-04 Start the local web server and BoneAmanita from one interactive launcher with a matched origin (D-053).
+- [x] P11-05 Hide companion pairing controls while connected and restore them when the service requires pairing again.
+- [x] P11-06 Accept displayed item names and ground companion pickup questions in the last successful take (D-054).
+- [x] P11-07 Send distinct successful pickups for plural questions about the current playthrough (D-055).
+- [x] P11-08 Attach the room of each successful pickup so the companion can recall it in Samwise Chat (D-056).
+- [x] P11-09 Import a BoneAmanita adventure snapshot with validated start, exits, and inventory (D-057).

@@ -13,6 +13,29 @@ window.TextAdventureModal = class TextAdventureModal {
     return this.elements.container;
   }
 
+  mountCompanion(controls, ask) {
+    const { Utils } = this.dependencies;
+    const input = Utils.createElement("input", {
+      type: "text", className: "companion-field", placeholder: "Ask BoneAmanita", "aria-label": "Ask BoneAmanita",
+    });
+    const submit = Utils.createElement("button", { type: "submit", className: "btn btn--confirm", textContent: "Ask BoneAmanita" });
+    const form = Utils.createElement("form", { className: "companion-controls" }, input, submit);
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const message = input.value.trim();
+      if (!message || submit.disabled) return;
+      input.value = "";
+      submit.disabled = true;
+      this.appendOutput(message, "system");
+      try {
+        await ask(message);
+      } finally {
+        submit.disabled = false;
+      }
+    });
+    this.elements.footer.append(controls, form);
+  }
+
   _buildLayout(scriptingContext) {
     const { Utils } = this.dependencies;
     this._createElements();
@@ -39,12 +62,12 @@ window.TextAdventureModal = class TextAdventureModal {
   }
 
   _createElements() {
-    const { Utils } = this.dependencies;
+    const { Utils, UIComponents } = this.dependencies;
+    const { container, header, main, footer } = UIComponents.createAppWindow("Adventure", this.callbacks.onExitRequest);
+    container.id = "adventure-container";
     const roomNameSpan = Utils.createElement("span", { id: "adventure-room-name" });
     const scoreSpan = Utils.createElement("span", { id: "adventure-score" });
-    const headerLeft = Utils.createElement("div", {}, roomNameSpan);
-    const headerRight = Utils.createElement("div", {}, scoreSpan);
-    const header = Utils.createElement("header", { id: "adventure-header" }, headerLeft, headerRight);
+    const roomStatus = Utils.createElement("div", { id: "adventure-status" }, roomNameSpan, scoreSpan);
     const output = Utils.createElement("div", { id: "adventure-output" });
     const inputPrompt = Utils.createElement("span", { id: "adventure-prompt", textContent: ">" });
     const input = Utils.createElement("input", {
@@ -52,11 +75,12 @@ window.TextAdventureModal = class TextAdventureModal {
       type: "text",
       spellcheck: "false",
       autocapitalize: "none",
+      "aria-label": "Adventure command",
     });
     const inputContainer = Utils.createElement("div", { id: "adventure-input-container" }, inputPrompt, input);
-    const container = Utils.createElement("div", { id: "adventure-container" }, header, output, inputContainer);
-
-    this.elements = { container, header, output, input, roomNameSpan, scoreSpan };
+    main.append(roomStatus, output);
+    footer.append(inputContainer);
+    this.elements = { container, header, footer, output, input, roomNameSpan, scoreSpan };
   }
 
   _handleInput(e) {

@@ -5,6 +5,7 @@ window.SamwiseChatManager = class SamwiseChatManager extends App {
         this.dependencies = {};
         this.callbacks = {};
         this.ui = null;
+        this.companion = null;
     }
 
     async enter(appLayer, options = {}) {
@@ -25,27 +26,34 @@ window.SamwiseChatManager = class SamwiseChatManager extends App {
 
         
         this.ui = new this.dependencies.SamwiseChatUI(this.state, this.callbacks, this.dependencies);
-        this.dependencies.AIManager.getAvailableModels(this.state.provider).then(models => {
-            if (!models.includes(this.state.model) && this.state.model) {
-                models.unshift(this.state.model);
-            }
-            this.ui.updateModels(models, this.state.model);
-        });
+        if (options.companion) {
+            const ui = this.ui;
+            this.companion = companionControls(this.dependencies.CompanionClient, this.dependencies.Utils, result => {
+                if (this.ui === ui) ui.appendMessage(result.reply, "ai", false);
+            });
+            ui.mountCompanion(this.companion.element);
+        } else {
+            this.dependencies.AIManager.getAvailableModels(this.state.provider).then(models => {
+                if (!models.includes(this.state.model) && this.state.model) {
+                    models.unshift(this.state.model);
+                }
+                this.ui?.updateModels(models, this.state.model);
+            });
+        }
 
         this.container = this.ui.getContainer();
         appLayer.appendChild(this.container);
 
-        this.ui.appendMessage(
-            "Greetings! What would you like to do?",
-            "ai",
-            true
-        );
+        if (!options.companion) {
+            this.ui.appendMessage("Greetings! What would you like to do?", "ai", true);
+        }
 
         this.container.focus();
     }
 
     exit() {
         if (!this.isActive) return;
+        this.companion?.dispose();
         if (this.ui) {
             this.ui.hideAndReset();
         }
@@ -53,6 +61,7 @@ window.SamwiseChatManager = class SamwiseChatManager extends App {
         this.isActive = false;
         this.state = {};
         this.ui = null;
+        this.companion = null;
     }
 
     handleKeyDown(event) {
@@ -68,6 +77,10 @@ window.SamwiseChatManager = class SamwiseChatManager extends App {
                 if (!userInput || userInput.trim() === "") return;
 
                 this.ui.appendMessage(userInput, "user", false);
+                if (this.companion) {
+                    await this.companion.ask(userInput, null);
+                    return;
+                }
                 this.state.conversationHistory.push({ role: "user", parts: [{ text: userInput }] });
                 this.ui.toggleLoader(true);
 

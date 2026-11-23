@@ -19,10 +19,11 @@ class TerminalUI {
     }
 
     async updatePrompt() {
-        const { UserManager, FileSystemManager, EnvironmentManager, Config, NetworkManager } = this.dependencies;
+        const { UserManager, FileSystemManager, EnvironmentManager, Config, NetworkManager, StatusBarManager } = this.dependencies;
         const user = (await UserManager.getCurrentUser()) || {
             name: Config.USER.DEFAULT_NAME,
         };
+        StatusBarManager?.setUser(user.name);
         const ps1 = await EnvironmentManager.get("PS1");
 
         if (!this.elements.promptContainer) return;

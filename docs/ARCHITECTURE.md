@@ -32,6 +32,8 @@ audio, the network and every browser API (D-001, D-002).
 | File system | `resources/core/filesystem.py` | `fs_manager` | the save callback; host file callbacks |
 | Accounts | `resources/core/users.py`, `groups.py`, `sudo.py`, `session.py`, `audit.py` | `user_manager` and friends | filesystem (`/etc/...`) |
 | Agent | `resources/core/ai_manager.py`, `bone_driver.py`, `swarm_manager.py` | `ai_manager` | `pyodide.http.pyfetch`; the executor |
+| Local companion | `resources/scripts/companion.js` | `CompanionClient` | A shared tab session with BoneAmanita over loopback. Adventure supplies the latest pickup and the items taken during the playthrough (D-051, D-054, D-055). |
+| Companion launcher | `extras/start_companion.py` | `main()` | Local static HTTP server and foreground BoneAmanita process with the same browser origin (D-053) |
 | Snapshots | `resources/core/story_manager.py` | `story_manager` | filesystem (`.story/`) |
 | App backends | `resources/core/apps/` | one manager per app | filesystem |
 | Effects | `resources/scripts/effect_handler.js` | one `case` per effect name | the managers below |

@@ -1,6 +1,37 @@
 import json
 import random
 import re
+from uuid import uuid4
+
+
+def validate_adventure(adventure):
+    if not isinstance(adventure, dict) or not isinstance(rooms := adventure.get("rooms"), dict):
+        raise ValueError("The adventure must define a rooms object.")
+    start = adventure.get("startingRoomId")
+    if not isinstance(start, str) or not start or start not in rooms:
+        raise ValueError("The adventure needs a starting room that exists in rooms.")
+    for room_id, room in rooms.items():
+        if not isinstance(room, dict):
+            raise ValueError(f"Room {room_id!r} must be an object.")
+        exits = room.get("exits", {})
+        if not isinstance(exits, dict):
+            raise ValueError(f"Room {room_id!r} must map exit names to destination room IDs.")
+        for direction, target in exits.items():
+            if not isinstance(direction, str) or not direction.strip() or not isinstance(target, str) or target not in rooms:
+                raise ValueError(f"Exit {direction!r} in room {room_id!r} needs a valid destination room ID.")
+
+    items = adventure.get("items", {})
+    if not isinstance(items, dict) or any(not isinstance(item, dict) for item in items.values()):
+        raise ValueError("The adventure must define items as an object of item records.")
+    player = adventure.get("player", {})
+    if not isinstance(player, dict) or not isinstance(inventory := player.get("inventory", []), list):
+        raise ValueError("Player inventory must be a list of item IDs.")
+    for item_id in inventory:
+        if not isinstance(item_id, str) or item_id not in items:
+            raise ValueError(f"Player inventory references an unknown item {item_id!r}.")
+    if len(inventory) != len(set(inventory)):
+        raise ValueError("Player inventory contains duplicate item IDs.")
+
 
 class AdventureManager:
     """Manages the state and logic for the text adventure game."""
@@ -26,11 +57,16 @@ class AdventureManager:
     def initialize_state(self, adventure_data_json, scripting_context_json):
         adventure = json.loads(adventure_data_json)
         scripting_context = json.loads(scripting_context_json) if scripting_context_json else None
+        try:
+            validate_adventure(adventure)
+        except ValueError as exc:
+            return {"success": False, "error": str(exc)}
 
         starting_room = adventure.get("rooms", {}).get(adventure.get("startingRoomId"))
         initial_score = starting_room.get("points", 0) if starting_room else 0
 
         self.state = {
+            "worldId": uuid4().hex,
             "adventure": adventure,
             "player": {
                 "currentLocation": adventure.get("startingRoomId"),
@@ -42,11 +78,45 @@ class AdventureManager:
             },
             "scriptingContext": scripting_context,
             "lastPlayerCommand": "",
+            "lastTake": None,
+            "pickupHistory": {},
+            "pickupLocations": {},
         }
 
         self.verbs.update(adventure.get("verbs", {}))
 
         return self.get_initial_ui_update()
+
+    def companion_scene(self):
+        """Project the current scene using only information the player can see."""
+        player = self.state.get("player")
+        if player is None:
+            return None
+        adventure = self.state["adventure"]
+        room_id = player["currentLocation"]
+        room = adventure["rooms"].get(room_id)
+        if room is None:
+            return None
+        items = adventure.get("items", {})
+        scene = {
+            "world_id": self.state["worldId"],
+            "revision": player["moves"],
+            "room_id": room_id,
+            "room_name": room.get("name", ""),
+            "description": room.get("description", ""),
+            "exits": list(room.get("exits", {})),
+            "inventory": [{"id": item_id, "name": items[item_id].get("name", item_id)}
+                          for item_id in player["inventory"] if item_id in items],
+            "last_take": self.state["lastTake"],
+        }
+        scene["pickup_history"] = list(self.state["pickupHistory"].values())
+        # Keep the base scene usable when pickup history exceeds the companion's scene limit.
+        if len(json.dumps(scene, ensure_ascii=False)) > 8_000:
+            del scene["pickup_history"]
+        scene["pickup_locations"] = list(self.state["pickupLocations"].values())
+        if len(json.dumps(scene, ensure_ascii=False)) > 8_000:
+            del scene["pickup_locations"]
+        return scene
 
     def get_initial_ui_update(self):
         """Returns the necessary data to render the initial game state."""
@@ -161,21 +231,22 @@ class AdventureManager:
         return None
 
     def _find_entity_in_scope(self, noun_str):
+        if not noun_str:
+            return None, None
         current_location = self.state['player']['currentLocation']
         inventory = self.state['player']['inventory']
+        items = self.state['adventure'].get('items', {})
+        npcs = self.state['adventure'].get('npcs', {})
+        scoped = [(items[item_id], 'item') for item_id in inventory if item_id in items]
+        scoped.extend((item, 'item') for item in items.values() if item.get('location') == current_location)
+        scoped.extend((npc, 'npc') for npc in npcs.values() if npc.get('location') == current_location)
 
-        for item_id in inventory:
-            item = self.state['adventure']['items'].get(item_id)
-            if item and item.get('noun') == noun_str:
-                return item, 'item'
-
-        for item_id, item in self.state['adventure']['items'].items():
-            if item.get('location') == current_location and item.get('noun') == noun_str:
-                return item, 'item'
-
-        for npc_id, npc in self.state['adventure']['npcs'].items():
-            if npc.get('location') == current_location and npc.get('noun') == noun_str:
-                return npc, 'npc'
+        for entity, entity_type in scoped:
+            if entity.get('noun') == noun_str:
+                return entity, entity_type
+        for entity, entity_type in scoped:
+            if " ".join(entity.get('name', '').lower().split()) == noun_str:
+                return entity, entity_type
 
         return None, None
 
@@ -230,6 +301,14 @@ class AdventureManager:
             if entity.get('canTake', False):
                 entity['location'] = 'inventory'
                 self.state['player']['inventory'].append(entity['id'])
+                pickup = {"id": entity["id"], "name": entity["name"]}
+                self.state["lastTake"] = pickup
+                self.state["pickupHistory"].setdefault(entity["id"], pickup)
+                room_id = self.state["player"]["currentLocation"]
+                room = self.state["adventure"]["rooms"][room_id]
+                self.state["pickupLocations"].setdefault((entity["id"], room_id), {
+                    **pickup, "room_id": room_id, "room_name": room.get("name", room_id),
+                })
                 if entity.get('points'):
                     self.state['player']['score'] += entity.get('points', 0)
                 return [{"type": "output", "text": f"You take the {entity['name']}.", "styleClass": "system"}]

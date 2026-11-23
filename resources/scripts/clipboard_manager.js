@@ -124,12 +124,12 @@ window.ClipboardManager = class ClipboardManager {
             // Ctrl+Shift+V -> Paste into active terminal input
             if (e.ctrlKey && e.shiftKey && (e.key === "V" || e.key === "v")) {
                 const { TerminalUI } = this.dependencies;
-                if (TerminalUI) {
-                    e.preventDefault();
-                    const text = await this.paste();
-                    if (text) {
-                        TerminalUI.handlePaste(text.replace(/\r?\n|\r/g, " "));
-                    }
+                const input = TerminalUI?.elements?.editableInputDiv;
+                if (!input?.contains(e.target)) return;
+                e.preventDefault();
+                const text = await this.paste();
+                if (text && input.contains(document.activeElement)) {
+                    TerminalUI.handlePaste(text.replace(/\r?\n|\r/g, " "));
                 }
             }
         });

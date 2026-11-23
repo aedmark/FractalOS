@@ -63,6 +63,28 @@ Instant start on any device with a modern browser. No build steps or npm install
 
 > **Note:** The trimmed Pyodide runtime (v314.0.7, Python 3.14.2) and core cryptography dependencies are pre-vendored in `resources/dep/pyodide/`. Everything loads locally without external CDN fetches.
 
+#### Play with BoneAmanita
+
+From the FractalOS checkout, run the launcher in one private terminal. If you started the web server and the
+companion manually, stop those processes first so the launcher can use the same ports.
+
+```bash
+./extras/start_companion.py
+```
+
+The launcher serves [FractalOS at localhost:8000](http://localhost:8000/index.html), opens the browser, and
+starts the companion from the sibling `BoneAmanita` checkout. Use `--bone-root` if it lives elsewhere.
+`--web-port` and `--companion-port` override the ports, and `--no-browser` prints the URL for an existing browser.
+`Ctrl+C` stops both services.
+
+1. In FractalOS, run `adventure --companion`. Pair using the code printed in the launcher terminal. The default port is 8765. The pairing controls disappear once connected.
+2. In the Adventure command field, enter `go north` and `take lantern`. In **Ask BoneAmanita**, ask what you are carrying.
+3. Enter `go south` in the command field. Ask what room you are in and what you brought.
+4. Enter `quit` and run `samwise --chat --companion`. Ask “What did I pick up in the Server Closet?” Both views use the same pairing and BoneAmanita conversation in the tab.
+
+To play a world exported by BoneAmanita, run `upload` in the FractalOS terminal and choose the exported JSON.
+Then run `adventure fractal_adventure.json`, using the uploaded filename. Add `--companion` to talk to BoneAmanita while playing.
+
 ### 2. Portable Desktop Mode (Recommended)
 Run FractalOS as a standalone native desktop application with local file system persistence (`data/`) using **Neutralinojs**.
 

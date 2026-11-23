@@ -1,10 +1,10 @@
 
-#samwise-chat-app-container .app-main {
+.samwise-chat-window .app-main {
     padding: var(--spacing-md);
     padding-bottom: 0;
 }
 
-#samwise-chat-app-container .app-footer {
+.samwise-chat-window .app-footer {
     padding: var(--spacing-md);
     padding-top: 0;
     border-top: none;

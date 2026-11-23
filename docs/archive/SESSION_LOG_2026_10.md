@@ -1,8 +1,37 @@
-# Session log, October 2026 (sessions 24 to 39)
+# Session log, October 2026 (sessions 24 to 41)
 
 Moved whole from `docs/HANDOFF.md` on 2026-11-08, when the live log passed ten entries. Newest first, as in
 HANDOFF. Historical, not current: what these entries call "Next steps" or "Current state" was true when they
 were written.
+
+### Session 41: 2026-10-12: P9-01..P9-03 x86_64 mesh node / signal server
+
+**Goal:** Give ordinary x86_64 hardware (any machine that runs a modern browser) an install path as a mesh node or signal server, like the Pi had.
+**Done:** P9-01, P9-02, P9-03, D-046. New `extras/provision_x64.sh` (roles `signal`, `node`, `kiosk`; `--headless`, `--no-start`, `--uninstall`; systemd units under an unprivileged `fractal` user; system Chromium, no Neutralino). New runtime switch `resources/deploy.json` read by `NetworkManager._applyDeployConfig`. Repaired `extras/signaling_server.py`. New `tests/deploy_mesh.js` (mutation-checked: 7 checks fail with the change reverted).
+**Changed:** `extras/provision_x64.sh`, `extras/signaling_server.py`, `resources/scripts/network_manager.js`, `tests/deploy_mesh.js`, `tools/package_release.py` (skips `deploy.json`), `.gitignore`, `README.md`, `AGENTS.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/TESTING.md`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
+**Decisions:** D-046.
+**Problems / surprises:**
+- `NETWORKING_ENABLED` was a hard-coded `false` and `/etc/network.conf` only controls a Neutralino-spawned relay, so P6-04 ("peer discovery on boot") could not have worked on any appliance. `deploy.json` is the fix.
+- The Python relay treated `targetId: "broadcast"` as a direct target and silently dropped every broadcast; only the unused Node relay worked. Found by the container test, not by reading.
+- First run shows onboarding, which returns before `startNetworking()`, so a freshly provisioned headless node never joins. Hence the "screen once" limit.
+**Left undone:** P9-04..P9-07. Nothing committed. Real-hardware and real-systemd testing.
+**Next session should start with:** committing this work if approved, then P9-04 on a physical machine.
+
+### Session 40: 2026-10-07: P8-01 The FractalOS 1.0 Architectural Codex & Manual (`docs/manual/`)
+
+**Goal:** Overhaul and modernize the legacy 101-page OopisOS manual into the comprehensive FractalOS 1.0 Architectural Codex and User Guide in `docs/manual/`.
+**Done:** P8-01, D-045. Authored a complete offline, zero-dependency HTML documentation suite under `docs/manual/`:
+- Created `docs/manual/manual.css` with responsive layout, custom typography, callouts, and print styles.
+- Created `docs/manual/index.html` detailing Books I–VI and VIII–X with deep architectural analyses, ASCII flowcharts, the Effect Contract, the Voltage Safety Framework, WebRTC mesh protocols, and test engineering.
+- Created `docs/manual/commands.html` documenting all 151 native Python commands across 18 functional categories with exact synopsis, flags, execution tracing, and architectural patterns (What It Does, How It Works, Why It Works).
+- Verified 100% of internal and cross-file anchor links (52 in index, 320 in commands, 151 cross-links, 0 broken).
+- Verified `node tests/structure.js` and `python3 tests/agent_unit.py`.
+**Changed:** `docs/manual/manual.css`, `docs/manual/index.html`, `docs/manual/commands.html`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/HANDOFF.md`.
+**Decisions:** D-045 (Architectural Codex & HTML Manual).
+**Problems / surprises:**
+- The command set grew from ~50 JavaScript commands in OopisOS v5.0 to 151 native Python commands in FractalOS 1.0. Decoupled the exhaustive 151-command reference into `commands.html` with cross-links from `index.html` to ensure optimal performance and browsing experience.
+**Left undone:** Hardware testing on real Raspberry Pi boards.
+**Next session should start with:** Hardware trials, WAN mesh testing, or devlog update.
 
 ### Session 39: 2026-10-06: FractalOS 1.0.0 Official Release, Documentation & Packaging
 

@@ -1,4 +1,5 @@
 import json
+from apps.adventure import validate_adventure
 from filesystem import fs_manager
 
 default_adventure_data = {
@@ -23,6 +24,10 @@ default_adventure_data = {
     }
 }
 
+def define_flags():
+    return {"flags": ["--create", "--companion"]}
+
+
 def run(args, flags, user_context, **kwargs):
     if '--create' in flags:
         return {
@@ -46,6 +51,10 @@ def run(args, flags, user_context, **kwargs):
             adventure_to_load = json.loads(node.get('content', '{}'))
         except json.JSONDecodeError:
             return {"success": False, "error": {"message": "adventure: The adventure file appears to be corrupted.", "suggestion": "Please ensure the file is correctly formatted JSON."}}
+        try:
+            validate_adventure(adventure_to_load)
+        except ValueError as exc:
+            return {"success": False, "error": {"message": f"adventure: {exc}"}}
     else:
         adventure_to_load = default_adventure_data
 
@@ -53,7 +62,8 @@ def run(args, flags, user_context, **kwargs):
         "effect": "launch_app",
         "app_name": "Adventure",
         "options": {
-            "adventureData": adventure_to_load
+            "adventureData": adventure_to_load,
+            "companion": bool(flags.get("--companion")),
         }
     }
 
@@ -63,13 +73,15 @@ NAME
     adventure - an interactive text adventure game engine
 
 SYNOPSIS
-    adventure [path_to_game.json]
+    adventure [--companion] [path_to_game.json]
     adventure --create [filename.json]
 
 DESCRIPTION
     Launches the FractalOS interactive fiction engine. When run without arguments, it starts the default built-in adventure. If a path to a valid JSON game file is provided, it will load that adventure instead.
 
 OPTIONS
+    --companion
+        Add a dialogue input for the local BoneAmanita companion.
     --create
         Launches the interactive adventure creation tool to build a new game file.
 
@@ -83,4 +95,4 @@ EXAMPLES
 """
 
 def help(args, flags, user_context, **kwargs):
-    return "Usage: adventure [--create] [path_to_game.json]"
+    return "Usage: adventure [--companion | --create] [path_to_game.json]"

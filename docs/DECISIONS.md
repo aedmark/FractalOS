@@ -607,6 +607,63 @@ says so.
 
 ---
 
+## D-051 Adventure and Samwise Chat share a local BoneAmanita session (2026-11-22, status: accepted)
+
+**Context:** P11-01. Adventure owns game state. BoneAmanita supplies dialogue and maintains the companion conversation in its native process.
+**Decision:** Share a page-local, account-bound pairing with the approved loopback service. Adventure sends its visible scene. Samwise Chat sends dialogue without a scene.
+**Alternatives:** Pair each window separately, which breaks continuity. Send story text through the command parser, which loses the boundary between dialogue and commands.
+**Consequences:** One turn ID survives a retry. Both views render replies as plain text. The saved adventure and shell commands remain under FractalOS.
+
+---
+
+## D-052 Companion fields use browser paste and standard app controls (2026-11-22, status: accepted)
+
+**Context:** P11-03. The global terminal paste handler could insert pairing text into the page. Adventure also supplied an unstyled header to the window manager.
+**Decision:** Scope the terminal paste shortcut to its focused input. Use the common app title bar and theme controls for Adventure and companion fields.
+**Consequences:** The browser inserts the pairing code into the masked field. Window controls share the title row, and the terminal retains its paste shortcut when focused.
+
+---
+
+## D-053 One terminal owns the local companion services (2026-11-22, status: accepted)
+
+**Context:** P11-04. Separate startup commands made the FractalOS origin and companion configuration easy to mismatch.
+**Decision:** Serve FractalOS on loopback, derive the browser and companion origin from one port, and leave the pairing code in the foreground terminal.
+**Consequences:** The launcher stops its static server when BoneAmanita exits. It uses the existing BoneAmanita configuration and saves.
+
+---
+
+## D-054 Adventure supplies the most recent successful pickup (2026-11-22, status: accepted)
+
+**Context:** P11-06. Adventure rejected the displayed name of the brass key, and the companion guessed which item had been taken.
+**Decision:** Resolve displayed names after authored nouns. Project the last successful take alongside the carried inventory.
+**Consequences:** Pickup history starts fresh per playthrough and survives moves, failed commands, and drops. Samwise Chat still sends no scene.
+
+---
+
+## D-055 Adventure projects the items taken during the playthrough (2026-11-23, status: accepted)
+
+**Context:** P11-07. After two pickups, the companion can give a single latest item or a list of the items taken.
+**Decision:** Record distinct successful pickups in first-pickup order. Send the list when it fits the companion scene limit.
+**Consequences:** The list survives room changes and drops. Starting inventory and failed takes add no entries.
+
+---
+
+## D-056 Adventure attaches each pickup to its room (2026-11-23, status: accepted)
+
+**Context:** P11-08. The companion confused where two inventory items were picked up when asked in chat.
+**Decision:** Project one pickup location per item and room when it fits the scene limit. Preserve the room where the take succeeded.
+**Consequences:** Drops and movement preserve the record. Samwise Chat continues sending scene-free turns.
+
+---
+
+## D-057 Adventure imports validate the starting room and references (2026-11-23, status: accepted)
+
+**Context:** P11-09. A raw BoneAmanita checkpoint could open with exit labels that crashed the game.
+**Decision:** Check the start, exit destinations, and inventory references before launching the imported adventure.
+**Consequences:** A valid export is an independent FractalOS playthrough. The existing upload and adventure commands open it.
+
+---
+
 ## Held tensions
 
 A tension is two claims that are both true and do not fit together yet. An open question has an unknown
