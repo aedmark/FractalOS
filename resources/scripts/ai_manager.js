@@ -11,7 +11,7 @@ class AIManager {
     async getAvailableModels(provider) {
         const fallback = provider === "gemini"
             ? ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"]
-            : ["gemma3:latest", "llama3.1:8b", "llama3.2:3b", "qwen2.5:7b"];
+            : ["gemma4:12b", "mistral-nemo"];
         if (!FractalOS_Kernel || !FractalOS_Kernel.isReady) return fallback;
         try {
             // The syscall answers {success, data}; the list is in data.
